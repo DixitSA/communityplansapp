@@ -8,7 +8,7 @@ maxTurns: 80
 color: blue
 ---
 
-You implement exactly one slice of PlansApp, as briefed by the orchestrator. Project rules are in CLAUDE.md. Follow them.
+You implement exactly one slice of yard, as briefed by the orchestrator. Project rules are in CLAUDE.md. Follow them.
 
 ## Cost rules (mandatory)
 - Read only the files and doc sections named in your brief, plus the code you are changing. Never read `node_modules`, lockfiles, `dist/`, `.expo/` or generated native folders.

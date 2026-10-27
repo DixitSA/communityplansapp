@@ -1,7 +1,13 @@
 # Design
 
-The v1 mockups (`design/reference/mockups-v1.html`) set the **tone**: warm paper, soft violet, rounded, friendly, calm.
-This document sets the **bar**. Copy the tone, not the layouts. Every screen below is upgraded with patterns from the best iOS apps shipping today.
+**The app is called yard.** Its visual direction is the owner's v2 mockup, `design/reference/mockups-v2-yard.webp` (Discover, Map, Event):
+- warm cream canvas, deep forest green
+- photo-first cards with text on the image
+- the lowercase **yard.** wordmark and the line **"Find your people."**
+
+The v1 HTML mockups (`mockups-v1.html`) are superseded and kept only for history.
+
+This document sets the **bar**. Follow the v2 direction's look, and apply the interaction upgrades below. They come from the best iOS apps shipping today.
 
 **North star: it should feel like Apple built a social app.** Native first, content first, quietly delightful, and never another engagement-bait feed.
 
@@ -40,27 +46,42 @@ Take patterns, not assets. Never reuse another app's icons, illustrations or cop
 Defined once in `mobile/src/design/` and read through `useTheme()`. Screens never use raw colors, font sizes or numbers.
 
 ### Color
-The mockup palette, tuned for **WCAG AA**. The original muted gray (#918B90) is 3.1:1 on the page, and white on violet (#8A71C3) is 4.0:1. Both fail for body text.
+The yard palette, checked for **WCAG AA**: text ≥ 4.5:1, glyphs on solid pins and chips ≥ 3:1.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `canvas` | `#FAF8F5` | `#121016` | Screen background |
-| `surface` | `#FFFFFF` | `#1C1A22` | Cards, sheets |
-| `surfaceMuted` | `#F4F1F0` | `#24212B` | Segmented controls, inputs |
-| `ink` | `#1D1B22` | `#F4F1F6` | Primary text |
-| `inkSecondary` | `#6B6570` (5.3:1) | `#A39DA8` (7.2:1) | Secondary text |
-| `line` | `#ECE8E7` | `#2E2A35` | Hairlines (use sparingly) |
-| `accent` | `#7158B5` (5.6:1 w/ white) | `#A995E6` | Primary buttons, selection, links |
-| `accentSoft` | `#EEE8FA` | `#2C2540` | Selected chips, "Interested" state |
-| `peach` / `peachSoft` | `#F3BC9F` / `#FFF1E9` | `#E9A784` / `#3A2A22` | "Down if friends go" state, warm tags |
-| `mint` / `mintSoft` | `#5E9C86` / `#D9EAE3` | `#7CC3A8` / `#1E3029` | "Going" state, success |
-| `deep` | `#352C48` | `#E8E1F5` | Map pins, high-emphasis surfaces |
+| `canvas` | `#F6F3EC` | `#101411` | Screen background (warm cream) |
+| `surface` | `#FFFFFF` | `#1A1F1B` | Cards, sheets |
+| `surfaceMuted` | `#ECE8DF` | `#232A25` | Segmented track, inputs, unselected chips |
+| `ink` | `#16201A` | `#EEF2EE` | Primary text |
+| `inkSecondary` | `#5E665F` (5.4:1) | `#A3ADA5` (8.0:1) | Secondary text |
+| `line` | `#E4E0D6` | `#2C342E` | Hairlines (use sparingly) |
+| `accent` | `#2E5B45` forest green (7.8:1 w/ white) | `#7FC3A0` | Selected states, primary buttons, active tab, Going |
+| `accentSoft` | `#DCE9E0` | `#1F3328` | Soft selection, "Down if friends go" selected state |
+
+**Category colors** are used for interest tags, map pins and placeholder art:
+
+| Interest | Solid (pins, ≥ 3:1 w/ white) | Tag background |
+|---|---|---|
+| Music | `#D9722A` | `#FDE7D6` |
+| Food & Drinks | `#8E6FD1` | `#ECE5FA` |
+| Fitness | `#3F8F5F` | `#DDF0E3` |
+| Arts & Culture | `#C98A3E` | `#FBEBD6` |
+| Nightlife | `#C9567A` | `#FBE1EA` |
+| Others | `inkSecondary` | `surfaceMuted` |
 
 **Dynamic event tint.** On event detail and chat headers, use a desaturated version of the event image's dominant color as the background wash, the way Apple Invites and Apple Music do.
 - Compute the color server-side during ingestion and store it on the event (a later migration), so the client never has to process the image.
 - Clamp it so text stays AA.
 
-**State colors are semantic.** Interested is violet, Down if friends go is peach, Going is mint. They stay consistent across chips, pins, buttons and notifications.
+**Plan states:**
+- **Interested:** ★ outline, turning to a filled star when chosen.
+- **Down if friends go:** a two-person glyph, with an `accentSoft` fill when chosen.
+- **Going:** ✓ on a filled `accent` button.
+
+The same treatment applies everywhere these states appear.
+
+**Social labels say "going", never "interested"** ("Maya + 3 going"). Interested is private.
 
 ### Type
 The system font (SF Pro), with a scale that mirrors iOS text styles (largeTitle 34, title2 22, headline 17 semibold, body 17, subheadline 15, footnote 13, caption 12). Text scales with the user's text-size setting: keep `allowFontScaling` on and cap only tight chrome with `maxFontSizeMultiplier`.
@@ -84,23 +105,25 @@ Curated events often lack good images. Generate art with **`expo-mesh-gradient`*
 These are what make the app feel exceptional rather than merely fine.
 
 1. **Living date strip.** Weeks snap horizontally.
-   - Each day shows density dots: one per few events, and a violet dot if a friend is going.
+   - Each day shows density dots: one per few events, and an accent-green dot if a friend is going.
    - Selecting a day plays a selection haptic and slides the capsule highlight with a spring.
    - The **day's feed is itself swipeable** horizontally, synced to the strip, like Calendar's day view.
    - A "Today" pill appears when you scroll away.
 2. **Card → detail zoom.** The native iOS zoom transition: the card's image grows into the hero, and swiping down dismisses it interactively.
 3. **Long-press preview.** A native context menu with a live preview of the event and quick actions: Going, Interested, Share, Directions. Power users never need to open the detail page.
-4. **Bottom RSVP bar (replaces the mockup's radio list).**
-   - A Liquid Glass bar pinned to the bottom with one big **Going** button.
-   - A compact control beside it holds ♡ *Interested* and ✦ *Down if friends go*.
-   - Each option has a one-line privacy hint ("Only you can see this").
-   - The bar morphs to reflect your current state (for example "✓ Going · Open chat").
+4. **RSVP row (per the v2 mockup).** Three equal buttons pinned at the bottom of the event page: **★ Interested · 👥 Down if friends go · ✓ Going**.
+   - Going is the filled `accent` button. The others are `surface` buttons with a hairline border.
+   - The selected state fills in, with a symbol bounce and a haptic.
+   - After you choose, a one-line privacy hint appears under the row ("Only you can see this" / "Friends and other attendees can see this").
+   - Once you're Going, the Going button becomes **"Going · Open chat"**.
 5. **The Going moment.**
    - Success haptic, then a ✦ particle burst (honors Reduce Motion).
    - A ticket-style card for the event, with actions: Open chat, Add to Calendar, Invite a friend.
    - It's a sheet, not a full page, so you're never pulled out of browsing.
 6. **"Go to see who's going."** On event detail, friends show by name and face. Other attendees appear as a blurred facepile ("+14 others") until you commit. The privacy rule becomes the motivation.
 7. **Map like Apple Maps.**
+   - A filter row above the map matches the feed (Tonight · Interests · 10 mi · List).
+   - Pins use the **category color** with the interest's SF Symbol. Friends going show as avatar pins. A blue dot marks you.
    - A full-screen Apple Map with a persistent sheet in three detents:
      - **Peek:** "24 events · Wed".
      - **Medium:** a horizontal card carousel synced to the selected pin.
@@ -139,9 +162,16 @@ The 11 mockup screens, each with its upgrade, plus the 7 missing screens v1 need
 | 01 | Welcome | Slowly animating mesh-gradient blob with a ✦. Sign in with Apple as the primary button. |
 | 02 | Interests | Large tactile tiles with SF Symbols. Selected tiles fill with the interest color, with a bounce and a haptic. The Continue button shows "Pick 3+" until valid. |
 | 03 | Location | A priming screen *before* the system prompt. A real Apple Map preview of Charlotte neighborhoods. "City only" fallback. |
-| 04 | Feed | Living date strip, image-first cards with names in the facepile, a swipeable day, a Nearby/Friends segmented control, a "Tonight" header when the time is relevant. |
-| 05 | Map | Apple Maps-style sheet with detents and a synced carousel; friend-avatar pins. |
-| 06 | Event detail | Zoom transition, dynamic tint, stretchy hero, info rows (time, place with a mini map, price, source attribution), a "Who's going" section, the bottom RSVP bar. |
+| 04 | Feed | **Header:** the `yard.` wordmark, a "📍 Charlotte, NC ⌄" city picker and a bell. **Controls:** a full-width Nearby/Friends segmented control (selected segment filled green) and the headline **"Find your people."**. **Date strip:** day pills with a filled green selected day. **Filter row:** Tonight ⌄ · Interests ⌄ · 10 mi ⌄ · map button. **Cards:** photo cards with text on a gradient scrim, the category tag bottom-right, the heart top-right, and "Maya + 3 going" with faces. The day is swipeable. |
+| 05 | Map | Same header and filter row as the feed. Category-colored pins, friend-avatar pins, an Apple Maps-style sheet with detents and a synced carousel. |
+| 06 | Event detail | Zoom transition into a full-bleed photo hero with glass back / share / ··· buttons. A content sheet with rounded top corners overlaps the hero and holds:
+- the title, date and time, a 📍 venue with distance, and category tags
+- a **Hosted by** row (organizer or venue for API and curated events)
+- a friends row ("Maya + 3 friends going")
+- the description
+- the three-button RSVP row
+
+The stretchy hero and source attribution stay. |
 | 07 | Going | Becomes a celebratory **sheet** (see §4.5), not a page. |
 | 08 | Event chat | iMessage conventions, a glass header with a countdown, Report/Block in the ··· menu (required by App Store guideline 1.2). |
 | 09 | Chats list | Event thumbnails, countdown badges, unread dots, a collapsible Archived section. |
@@ -166,7 +196,7 @@ The 11 mockup screens, each with its upgrade, plus the 7 missing screens v1 need
 
 ## 8. Copy voice
 
-Warm, short, a little playful, and never pushy. Lowercase charm is allowed in moments ("a good plan just became a real plan"), but labels stay clear ("Going", not "I'm so in!!"). Never guilt-trip ("Your friends are going without you").
+The tagline is **"Find your people."** Warm, short, a little playful, and never pushy. Lowercase charm is allowed in moments ("a good plan just became a real plan"), but labels stay clear ("Going", not "I'm so in!!"). Never guilt-trip ("Your friends are going without you").
 
 ## 9. Implementation map (Expo SDK 58)
 

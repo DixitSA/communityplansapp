@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-iOS-first social discovery app: find events in Charlotte, see which friends are going, meet people there. Name is TBD; use "PlansApp" as the placeholder in code.
+iOS-first social discovery app: find events in Charlotte, see which friends are going, meet people there. The app is called **yard** (wordmark "yard.", bundle id `com.dixitsa.yard`).
 
 **Read before working:** `docs/PRD.md` (what/why), `docs/DESIGN.md` (UI bar + Expo implementation map), `docs/ARCHITECTURE.md` (how), `docs/DATA_MODEL.md` (privacy rules), `docs/MILESTONES.md` (what's next).
 

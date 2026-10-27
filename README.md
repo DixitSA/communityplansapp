@@ -1,4 +1,4 @@
-# PlansApp (name TBD)
+# yard.
 
 An iOS-first app for making plans and meeting people in real life. It combines the event discovery of Partiful and Eventbrite, the social graph of Instagram, and the simplicity of Apple Calendar.
 

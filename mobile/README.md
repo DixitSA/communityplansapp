@@ -1,6 +1,6 @@
 # mobile
 
-The PlansApp Expo app. Project docs live in [`../docs`](../docs); setup is in [`../docs/DEV_SETUP.md`](../docs/DEV_SETUP.md).
+The yard Expo app. Project docs live in [`../docs`](../docs); setup is in [`../docs/DEV_SETUP.md`](../docs/DEV_SETUP.md).
 
 ```powershell
 npm install
