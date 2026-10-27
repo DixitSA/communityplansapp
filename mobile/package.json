@@ -1,9 +1,10 @@
 {
-  "name": "mobile",
+  "name": "yard",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.24",
+    "@expo/vector-icons": "^15.0.2",
     "expo": "~58.0.20",
     "expo-constants": "~58.0.13",
     "expo-device": "~58.0.5",
@@ -51,6 +52,9 @@
   },
   "private": true,
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/jest.setup.ts"
+    ]
   }
 }

@@ -1,16 +1,16 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'PlansApp',
-  slug: 'plansapp',
+  name: 'yard',
+  slug: 'yard',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'plansapp',
+  scheme: 'yard',
   userInterfaceStyle: 'automatic',
   ios: {
     icon: './assets/expo.icon',
-    bundleIdentifier: 'com.dixitsa.plansapp',
+    bundleIdentifier: 'com.dixitsa.yard',
     supportsTablet: false,
   },
   android: {

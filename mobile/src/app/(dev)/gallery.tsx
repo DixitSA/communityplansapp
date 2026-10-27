@@ -1,0 +1,204 @@
+import { useState, type ReactNode } from 'react';
+import { View } from 'react-native';
+
+import {
+  AppText,
+  Avatar,
+  Chip,
+  DateStrip,
+  EmptyState,
+  EventCard,
+  Facepile,
+  GlassButton,
+  Icon,
+  MeshArt,
+  Screen,
+  SegmentedControl,
+  Skeleton,
+  useTheme,
+  type DayMeta,
+  type SymbolName,
+  type TypeVariant,
+} from '@/design';
+import { getFixtureEvents } from '@/features/feed/fixtures';
+import { startOfDay, toISODate } from '@/lib/dates';
+
+const VARIANTS: TypeVariant[] = [
+  'largeTitle', 'title', 'title2', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
+];
+const COLOR_TOKENS = [
+  'canvas', 'surface', 'surfaceMuted', 'ink', 'inkSecondary', 'line', 'accent', 'accentSoft',
+  'peach', 'peachSoft', 'mint', 'mintSoft', 'deep',
+] as const;
+const PEOPLE = [
+  { id: '1', name: 'Maya Chen' },
+  { id: '2', name: 'Jordan Lee' },
+  { id: '3', name: 'Sam Ortiz' },
+];
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  const { space } = useTheme();
+  return (
+    <View style={{ gap: space.md, paddingTop: space.xxl }}>
+      <AppText variant="overline" color="inkSecondary">
+        {title}
+      </AppText>
+      {children}
+    </View>
+  );
+}
+
+export default function Gallery() {
+  const { colors, space, scheme, radius } = useTheme();
+  const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
+  const [seg, setSeg] = useState('a');
+  const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
+  const [saved, setSaved] = useState(false);
+  const events = getFixtureEvents();
+  const today = toISODate(new Date());
+  const dayMeta: Record<string, DayMeta> = { [today]: { count: 5, friendsGoing: true } };
+  const row = { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.md } as const;
+
+  return (
+    <Screen>
+      <AppText variant="largeTitle">Gallery</AppText>
+      <AppText variant="subheadline" color="inkSecondary">
+        Scheme: {scheme}
+      </AppText>
+
+      <Section title="Colors">
+        <View style={row}>
+          {COLOR_TOKENS.map((c) => (
+            <View key={c} style={{ width: 72, gap: space.xs }}>
+              <View
+                style={{
+                  height: 44,
+                  borderRadius: radius.thumb,
+                  borderCurve: 'continuous',
+                  backgroundColor: colors[c],
+                  borderWidth: 1,
+                  borderColor: colors.line,
+                }}
+              />
+              <AppText variant="caption" color="inkSecondary">
+                {c}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      </Section>
+
+      <Section title="Type">
+        {VARIANTS.map((v) => (
+          <AppText key={v} variant={v}>
+            {v} · Charlotte plans
+          </AppText>
+        ))}
+        <AppText variant="headline" rounded>
+          Rounded 0123456789
+        </AppText>
+      </Section>
+
+      <Section title="Icon">
+        <View style={row}>
+          <Icon name="sparkles" size={28} color="accent" />
+          <Icon name="heart" size={28} />
+          <Icon name="heart.fill" size={28} color="accent" />
+          <Icon name="bell" size={28} />
+          {/* Deliberately unmapped: shows the dot fallback. */}
+          <Icon name={"unmapped.symbol" as SymbolName} size={28} />
+        </View>
+      </Section>
+
+      <Section title="Chip">
+        <View style={row}>
+          {(['accent', 'peach', 'mint'] as const).map((tone) => (
+            <Chip
+              key={tone}
+              label={tone}
+              tone={tone}
+              symbol="sparkles"
+              selected={!!chipOn[tone]}
+              onPress={() => setChipOn((s) => ({ ...s, [tone]: !s[tone] }))}
+            />
+          ))}
+          <Chip label="Tonight" trailingSymbol="chevron.down" selected filled />
+          <Chip label="Interests" trailingSymbol="chevron.down" />
+          <Chip label="Unselected" />
+          <Chip label="Small tag" size="small" />
+          <Chip label="Music" size="small" category="music" />
+          <Chip label="Food & Drinks" size="small" category="food_drinks" />
+          <Chip label="Fitness" size="small" category="fitness" />
+          <Chip label="Arts" size="small" category="arts_culture" />
+          <Chip label="Nightlife" size="small" category="nightlife" />
+        </View>
+      </Section>
+
+      <Section title="Avatar and Facepile">
+        <View style={row}>
+          <Avatar name="Maya Chen" size={40} />
+          <Avatar name="Jordan Lee" size={40} />
+          <Avatar name="Sam" size={40} />
+        </View>
+        <Facepile people={PEOPLE.slice(0, 1)} total={1} />
+        <Facepile people={PEOPLE.slice(0, 2)} total={2} />
+        <Facepile people={PEOPLE} total={5} />
+      </Section>
+
+      <Section title="MeshArt">
+        <View style={{ flexDirection: 'row', gap: space.md }}>
+          {(['music', 'food_drinks', 'fitness', 'arts_culture', 'nightlife'] as const).map((k, i) => (
+            <View key={k} style={{ flex: 1, height: 96, borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}>
+              <MeshArt id={`gallery-${i}`} interest={k} symbol="sparkles" />
+            </View>
+          ))}
+        </View>
+      </Section>
+
+      <Section title="GlassButton">
+        <View style={row}>
+          <GlassButton symbol="chevron.left" accessibilityLabel="Back" />
+          <GlassButton symbol="square.and.arrow.up" accessibilityLabel="Share" />
+          <GlassButton symbol="bell" accessibilityLabel="Notifications" />
+          <GlassButton symbol="heart" iconColor="onImage" overImage accessibilityLabel="Save" />
+        </View>
+      </Section>
+
+      <Section title="SegmentedControl">
+        <SegmentedControl
+          options={[{ value: 'a', label: 'Nearby' }, { value: 'b', label: 'Friends' }]}
+          value={seg}
+          onChange={setSeg}
+        />
+        <SegmentedControl
+          options={[{ value: 'a', label: 'Day' }, { value: 'b', label: 'Week' }, { value: 'c', label: 'Month' }]}
+          value={seg}
+          onChange={setSeg}
+        />
+      </Section>
+
+      <Section title="DateStrip">
+        <View style={{ marginHorizontal: -space.lg }}>
+          <DateStrip selected={selectedDay} onSelect={setSelectedDay} dayMeta={dayMeta} />
+        </View>
+      </Section>
+
+      <Section title="Skeleton">
+        <View style={{ gap: space.sm }}>
+          <Skeleton height={160} radius={radius.sheet} />
+          <Skeleton width="60%" />
+          <Skeleton width="40%" height={12} />
+        </View>
+      </Section>
+
+      <Section title="EmptyState">
+        <EmptyState symbol="sparkles" title="Nothing planned yet" message="Try another date." />
+      </Section>
+
+      <Section title="EventCard">
+        <EventCard event={events[4]} saved={saved} onToggleSave={() => setSaved((s) => !s)} />
+        <EventCard event={events[1]} />
+      </Section>
+    </Screen>
+  );
+}

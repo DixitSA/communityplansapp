@@ -66,7 +66,7 @@ The yard palette, checked for **WCAG AA**: text ≥ 4.5:1, glyphs on solid pins 
 | Music | `#D9722A` | `#FDE7D6` |
 | Food & Drinks | `#8E6FD1` | `#ECE5FA` |
 | Fitness | `#3F8F5F` | `#DDF0E3` |
-| Arts & Culture | `#C98A3E` | `#FBEBD6` |
+| Arts & Culture | `#B87A30` | `#FBEBD6` |
 | Nightlife | `#C9567A` | `#FBE1EA` |
 | Others | `inkSecondary` | `surfaceMuted` |
 

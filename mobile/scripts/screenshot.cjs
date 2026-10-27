@@ -1,4 +1,5 @@
-// Usage: node scripts/screenshot.cjs [route ...]   (default route: /)
+// Usage: node scripts/screenshot.cjs [--full] [route ...]   (default route: /)
+// --full captures the whole scrollable page instead of just the viewport.
 // Starts the Expo web dev server, screenshots each route in light and dark mode
 // at iPhone size, and writes PNGs to mobile/.screenshots/.
 const { spawn, execSync } = require('child_process');
@@ -63,7 +64,9 @@ async function waitForServer(timeoutMs) {
 }
 
 async function main() {
-  const routes = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const full = args.includes('--full');
+  const routes = args.filter((a) => a !== '--full');
   if (routes.length === 0) routes.push('/');
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -96,8 +99,19 @@ async function main() {
             throw new Error(`HTTP ${response ? response.status() : 'no response'}`);
           }
           await page.waitForTimeout(1500);
+          if (full) {
+            // RN web scrolls inside a ScrollView, not the document, so grow the viewport to fit.
+            const height = await page.evaluate(() =>
+              Math.max(
+                document.documentElement.scrollHeight,
+                ...Array.from(document.querySelectorAll('div')).map((el) => el.scrollHeight),
+              ),
+            );
+            await page.setViewportSize({ width: 393, height: Math.min(height, 8000) });
+            await page.waitForTimeout(800);
+          }
           const file = path.join(OUT_DIR, `${slugFor(route)}-${scheme}.png`);
-          await page.screenshot({ path: file, fullPage: false });
+          await page.screenshot({ path: file, fullPage: full });
           console.log(file);
         } catch (err) {
           failed = true;
