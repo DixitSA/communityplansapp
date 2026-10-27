@@ -136,6 +136,12 @@ select throws_ok($$ insert into public.admins values ('00000000-0000-0000-0000-0
 select throws_ok($$ insert into public.events (source, city_id, title, starts_at, location)
   values ('curated', 1, 'Fake', now(), extensions.st_makepoint(0, 0)::extensions.geography) $$,
   '42501', null, 'non-admins cannot create events');
+select throws_ok($$ insert into public.device_tokens (token, user_id)
+  values ('ExponentPushToken[abc]', '00000000-0000-0000-0000-00000000000b') $$,
+  '42501', null, 'cannot register a push token for someone else');
+select throws_ok($$ insert into public.device_tokens (token, user_id)
+  values ('raw-apns-token', '00000000-0000-0000-0000-00000000000d') $$,
+  '23514', null, 'only Expo push tokens are accepted');
 
 -- 8. Friend requests ---------------------------------------------------------
 select lives_ok($$ insert into public.friendships (user_a, user_b, requested_by)

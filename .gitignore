@@ -14,3 +14,16 @@ Config.xcconfig
 # Supabase local state
 supabase/.temp/
 supabase/.branches/
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+web-build/
+mobile/ios/
+mobile/android/
+*.p8
+*.p12
+*.mobileprovision
+*.jks
+npm-debug.*

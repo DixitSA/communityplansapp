@@ -114,7 +114,7 @@ Launch neighborhoods: **Uptown, South End, NoDa, Plaza Midwood, Camp North End /
 | Risk | Mitigation |
 |---|---|
 | Empty feed / cold start | Ticketmaster baseline + curated weekly + the Nearby mode works with zero friends |
-| A solo developer new to Swift on a 12-week clock | Strict v1 scope, a cut list in MILESTONES, Claude Code + XcodeBuildMCP, native components over custom ones |
+| A solo developer new to mobile, on Windows, on a 12-week clock | Strict v1 scope, a cut list in MILESTONES, Expo + EAS (no Mac needed), Claude Code with Expo skills, native components over custom ones |
 | Stream free tier capped at 2,000 MAU | Chat sits behind a `ChatService` protocol; upgrade or migrate if we hit it (a good problem) |
 | Supabase free tier pauses after inactivity | Fine for development; upgrade to Pro ($25/mo) at public launch |
 | Strangers in chats → safety incidents | 18+, block/report, moderation, chat only for people who are Going, archive after the event |

@@ -1,0 +1,21 @@
+name: Database tests
+
+on:
+  pull_request:
+    paths: ["supabase/**", ".github/workflows/db-tests.yml"]
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/db-tests.yml"]
+
+jobs:
+  pgtap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Start local Postgres and apply migrations
+        run: supabase db start
+      - name: Run pgTAP tests
+        run: supabase test db
