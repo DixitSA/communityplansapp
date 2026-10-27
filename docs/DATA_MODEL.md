@@ -1,6 +1,6 @@
 # Data model and privacy
 
-Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase/tests/database/privacy.test.sql` (31 assertions).
+Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase/tests/database/privacy.test.sql` (33 assertions, run in CI on every PR).
 
 ## Tables
 
@@ -18,7 +18,7 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 | `event_interests` | Event ↔ interest | |
 | `rsvps` | One plan per user per event | `status` ∈ interested, down_if_friends, going |
 | `notifications` | Activity feed + push source | friend_going, friend_request, friend_accepted, event_update |
-| `device_tokens` | APNs tokens | |
+| `device_tokens` | Expo push tokens | Only `ExponentPushToken[...]` accepted; chat push tokens are registered with Stream instead |
 | `reports` | Moderation queue | Insert-only for clients |
 
 ## Privacy matrix (enforced by RLS)
@@ -42,7 +42,7 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 ## Server-side behavior
 - **Down if friends go:** an `after insert/update of status` trigger on `rsvps`. When a user becomes Going, every friend who is `down_if_friends` on that event and hasn't been alerted gets one `friend_going` notification, and `friend_alert_sent_at` is stamped. Switching back to "Down if" re-arms the alert.
 - **Friend notifications:** a trigger on `friendships` creates `friend_request` / `friend_accepted` rows.
-- **Push:** a Database Webhook on `notifications` insert calls the `send-push` Edge Function.
+- **Push:** a Database Webhook on `notifications` insert calls the `send-push` Edge Function, which sends via the Expo Push Service.
 
 ## Rules for changing the schema
 1. Never edit an applied migration. Add a new file (`supabase migration new <name>`).
