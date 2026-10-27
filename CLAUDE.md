@@ -29,9 +29,10 @@ design/reference/     v1 mockups (tone reference only, see DESIGN.md)
 ```
 
 ## Commands (from `mobile/`)
-- Dev server: `npx expo start`. The user's iPhone dev build connects to it.
+- Dev server: `npx expo start`. The user's iPhone connects through **Expo Go** until week 8, then through the development build.
 - Checks before saying anything is done: `npx tsc --noEmit`, `npx expo lint`, `npx jest`.
-- A native change needs a new dev build: `eas build --profile development --platform ios`. Tell the user when a change needs one (a new native package, or a config plugin / `app.config.ts` change). JS-only changes never do.
+- **Until week 8, everything must run in Expo Go.** Don't add packages Expo Go doesn't include, or config plugins that need a custom build. If a feature can't work in Expo Go, say so and ask before proceeding.
+- From week 8, a native change needs a new dev build: `eas build --profile development --platform ios`. Tell the user when a change needs one (a new native package, or a config plugin / `app.config.ts` change). JS-only changes never do.
 - Backend: `npx supabase db push`, `npx supabase gen types typescript --linked > src/lib/database.types.ts`, `npx supabase functions deploy <name>`.
 
 ## How to work

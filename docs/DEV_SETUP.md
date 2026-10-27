@@ -6,13 +6,14 @@ You build on **Windows**, test on **your iPhone** (iOS 26), and Expo's cloud (EA
 ```
 Windows: you + Claude Code edit TypeScript
    └─ `npx expo start` (Metro dev server)
-         └─ iPhone: development build app reloads in ~1 s on every save (same Wi-Fi, or --tunnel)
+         └─ iPhone: Expo Go (weeks 0–7) or your development build (week 8+) reloads in ~1 s on every save
+            (same Wi-Fi, or `--tunnel`)
 
-Native changes (new native package, app.config.ts plugins, icons) →
-   `eas build --profile development --platform ios` → install on iPhone (~15–25 min, cloud)
+Week 8+: native changes → `eas build --profile development --platform ios` → install on iPhone (~15–25 min, cloud)
 Release → `eas build --profile preview` + `eas submit` → TestFlight
 ```
-You only need a new cloud build when **native** code changes. That's roughly a few times a month, well inside EAS's free tier.
+
+**Free until week 8.** In weeks 0–7 the app runs in **Expo Go**, the free App Store app. That needs no Apple Developer account and no cloud builds, so the whole stack costs $0. In week 7 you enroll in the Apple Developer Program ($99/yr), because push notifications, chat push, TestFlight and the App Store need your own signed build. Until then, every package must work in Expo Go (see `docs/ARCHITECTURE.md`).
 
 ## 1. Windows tools
 1. **Git for Windows**: git-scm.com (also gives you Git Bash, which Claude Code uses).
@@ -28,17 +29,17 @@ You only need a new cloud build when **native** code changes. That's roughly a f
 7. **Docker Desktop** is *optional*. You only need it to run Supabase locally. Database tests already run in GitHub Actions on every PR, and you can develop against the hosted `staging` project.
 
 ## 2. iPhone
-1. Turn on **Developer Mode**: Settings › Privacy & Security › Developer Mode, then restart. The setting only appears after a development build has been installed once, so do this step in §5.
-2. Install **Expo Go** from the App Store. You'll use it in week 0 before your Apple Developer account is ready.
-3. Keep the phone on the same Wi-Fi as your PC. If your network blocks that, use `npx expo start --tunnel`.
+1. Install **Expo Go** from the App Store. It's all you need until week 8.
+2. Keep the phone on the same Wi-Fi as your PC. If your network blocks that, use `npx expo start --tunnel`.
+3. Week 8: turn on **Developer Mode** (Settings › Privacy & Security › Developer Mode, then restart) when you install your first development build. The setting appears only after a development build has been installed once.
 
 ## 3. Accounts
 | Service | What to do | Cost |
 |---|---|---|
-| **Apple Developer Program** | Enroll at developer.apple.com. It takes 1–2 days, so **start today** | $99/yr |
+| **Apple Developer Program** | Enroll at developer.apple.com in **week 7** (approval takes 1–2 days). Not needed before then | $99/yr |
 | **Expo** | Sign up at expo.dev (free plan: ~15 iOS cloud builds/mo) | Free |
 | Supabase | Create `staging` project (later `prod`) | Free → Pro $25/mo at launch |
-| Twilio (for phone OTP) | Connect it in Supabase › Auth › Phone. Needed for phone sign-in / contact discovery | ~$1–5/mo at beta scale |
+| Twilio (for phone OTP) | Week 10, before the beta. Until then, sign-in is Apple + free email OTP, and contact matching is tested with Supabase test phone numbers | ~$1–5/mo at beta scale |
 | Stream | Sign up, apply for the **Maker Account** (free under 5 people, $10k/mo revenue, 2,000 chat MAU) | Free |
 | Ticketmaster | developer.ticketmaster.com → create an app → Consumer Key | Free |
 | SeatGeek | seatgeek.com/build → client ID (stretch) | Free |
@@ -68,7 +69,7 @@ npx create-expo-app@latest mobile        # default template: Expo Router + TypeS
 cd mobile
 npx expo start                           # scan the QR code with the iPhone camera → opens in Expo Go
 ```
-Once your Apple Developer account is active (around week 1–2):
+Week 8, once your Apple Developer account is active:
 ```powershell
 npm install -g eas-cli
 eas login

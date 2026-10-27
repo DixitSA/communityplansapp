@@ -14,6 +14,8 @@ Build & ship: EAS Build (cloud macOS) → EAS Submit → TestFlight / App Store 
 External: Ticketmaster / SeatGeek APIs (ingestion) · Expo Push Service → APNs · PostHog · Sentry
 ```
 
+**Expo Go first:** weeks 0–7 run entirely in Expo Go (free, no Apple account); the first custom development build arrives in week 8 for push notifications. Until then, only use packages that ship in Expo Go.
+
 **Why Expo:** development happens on Windows. Expo's cloud (EAS) does the macOS-only steps: native builds, signing, and App Store upload. Day to day, code changes appear on your iPhone in about a second through a **development build**. Expo UI, native tabs and `expo-glass-effect` render real iOS components (Liquid Glass included), so the app stays native-feeling. Android is a later option from the same code.
 
 ## Mobile app

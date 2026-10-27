@@ -46,7 +46,7 @@ Launch neighborhoods: **Uptown, South End, NoDa, Plaza Midwood, Camp North End /
 ## 5. v1 features and acceptance criteria
 
 ### 5.1 Onboarding
-- Welcome → Sign in with Apple *or* phone number (SMS OTP) → profile basics (name, @username, photo optional, birthdate) → interests (pick 3+) → location (When In Use, or choose Charlotte manually) → find friends (optional, skippable).
+- Welcome → Sign in with Apple *or* phone number (SMS OTP; email OTP stands in during development) → profile basics (name, @username, photo optional, birthdate) → interests (pick 3+) → location (When In Use, or choose Charlotte manually) → find friends (optional, skippable).
 - Users under 18 are blocked at the birthdate step, with a neutral message.
 - Done when: a new user reaches a populated feed in **under 90 seconds**.
 
