@@ -12,6 +12,7 @@ An iOS-first app for making plans and meeting people in real life. It combines t
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Tables, privacy matrix, how clients read and write |
 | [docs/MILESTONES.md](docs/MILESTONES.md) | Week-by-week plan, cut list, working rhythm |
 | [docs/DEV_SETUP.md](docs/DEV_SETUP.md) | Windows + iPhone setup, accounts, Claude Code plugins, EAS builds |
+| [docs/AGENTS.md](docs/AGENTS.md) | Agent team (builder / runner / judge), review loop, cost controls |
 | [CLAUDE.md](CLAUDE.md) | Instructions for Claude Code |
 
 ## Status

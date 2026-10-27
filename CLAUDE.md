@@ -43,6 +43,7 @@ design/reference/     v1 mockups (tone reference only, see DESIGN.md)
    - For UI, ask the user for an iPhone screenshot (light and dark when relevant) and compare it against DESIGN.md before calling it done.
    - You can't see the phone yourself, so never claim a visual result you haven't seen.
 4. Keep diffs surgical. Don't refactor unrelated code, and don't add speculative abstractions.
+5. **Delegate** per `docs/AGENTS.md`: `builder` (Sonnet) implements, `runner` (Haiku) runs commands, `judge` (Opus) reviews and makes the calls that would otherwise go to the user.
 
 ## App rules
 - Screens never import the Supabase or Stream clients. Screen → feature hook → `src/lib/api` → Supabase.
