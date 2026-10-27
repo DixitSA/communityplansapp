@@ -1,6 +1,6 @@
 # Product Requirements: v1 (Charlotte launch)
 
-*Product name: TBD. Status: planning. Last updated: 2026-10-27.*
+*Product: **yard.** Tagline: "Find your people." Status: building. Last updated: 2026-10-27.*
 
 ## 1. Problem
 Making friends as a young adult is hard:

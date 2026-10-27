@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-iOS-first social discovery app: find events in Charlotte, see which friends are going, meet people there. Name is TBD; use "PlansApp" as the placeholder in code.
+iOS-first social discovery app: find events in Charlotte, see which friends are going, meet people there. The app is called **yard** (wordmark "yard.", bundle id `com.dixitsa.yard`).
 
 **Read before working:** `docs/PRD.md` (what/why), `docs/DESIGN.md` (UI bar + Expo implementation map), `docs/ARCHITECTURE.md` (how), `docs/DATA_MODEL.md` (privacy rules), `docs/MILESTONES.md` (what's next).
 
@@ -43,6 +43,7 @@ design/reference/     v1 mockups (tone reference only, see DESIGN.md)
    - For UI, ask the user for an iPhone screenshot (light and dark when relevant) and compare it against DESIGN.md before calling it done.
    - You can't see the phone yourself, so never claim a visual result you haven't seen.
 4. Keep diffs surgical. Don't refactor unrelated code, and don't add speculative abstractions.
+5. **Delegate** per `docs/AGENTS.md`: `builder` (Sonnet) implements, `runner` (Haiku) runs commands, `judge` (Opus) reviews and makes the calls that would otherwise go to the user.
 
 ## App rules
 - Screens never import the Supabase or Stream clients. Screen → feature hook → `src/lib/api` → Supabase.

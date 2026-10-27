@@ -16,6 +16,13 @@ External: Ticketmaster / SeatGeek APIs (ingestion) · Expo Push Service → APNs
 
 **Expo Go first:** weeks 0–7 run entirely in Expo Go (free, no Apple account); the first custom development build arrives in week 8 for push notifications. Until then, only use packages that ship in Expo Go.
 
+Checked against Expo Go's manifest (`expo/expo` → `apps/expo-go/package.json`, 2026-10-27). Expo Go includes:
+- `expo-router` (which brings `expo-glass-effect` and `expo-symbols`), `@expo/ui`, `expo-maps`, `expo-mesh-gradient`, `expo-image`, `expo-haptics`
+- `expo-calendar`, `expo-contacts`, `expo-location`, `expo-apple-authentication`, `expo-notifications`, `expo-image-picker`, `expo-sqlite`
+- `react-native-reanimated`, `react-native-gesture-handler` (so `@gorhom/bottom-sheet` works)
+
+Not verified for Expo Go: `stream-chat-expo` (week 9) and `@sentry/react-native` (week 10). Both arrive after the week-8 dev build anyway.
+
 **Why Expo:** development happens on Windows. Expo's cloud (EAS) does the macOS-only steps: native builds, signing, and App Store upload. Day to day, code changes appear on your iPhone in about a second through a **development build**. Expo UI, native tabs and `expo-glass-effect` render real iOS components (Liquid Glass included), so the app stays native-feeling. Android is a later option from the same code.
 
 ## Mobile app

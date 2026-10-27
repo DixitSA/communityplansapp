@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./mobile/node_modules/**)",
+      "Read(./node_modules/**)",
+      "Read(./mobile/package-lock.json)",
+      "Read(./mobile/.expo/**)",
+      "Read(./mobile/dist/**)",
+      "Read(./mobile/ios/**)",
+      "Read(./mobile/android/**)"
+    ]
+  },
+  "env": {
+    "EXPO_NO_TELEMETRY": "1",
+    "BASH_MAX_OUTPUT_LENGTH": "30000"
+  }
+}

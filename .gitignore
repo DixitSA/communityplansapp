@@ -27,3 +27,6 @@ mobile/android/
 *.mobileprovision
 *.jks
 npm-debug.*
+
+# Judge screenshots
+mobile/.screenshots/
