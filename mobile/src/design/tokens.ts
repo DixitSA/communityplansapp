@@ -12,6 +12,8 @@ export const lightColors = {
   line: '#E4E0D6',
   accent: '#2E5B45',
   accentSoft: '#DCE9E0',
+  /** Errors and destructive actions. 5.4:1 on canvas. */
+  danger: '#B3382C',
   peach: '#F3BC9F',
   peachSoft: '#FFF1E9',
   mint: '#5E9C86',
@@ -33,6 +35,7 @@ export const darkColors: Colors = {
   line: '#2C342E',
   accent: '#7FC3A0',
   accentSoft: '#1F3328',
+  danger: '#F08A7E',
   peach: '#E9A784',
   peachSoft: '#3A2A22',
   mint: '#7CC3A8',
@@ -53,6 +56,25 @@ export const categoryColors = {
   arts_culture: { solid: '#B87A30', soft: { light: '#FBEBD6', dark: '#3A2E1E' } },
   nightlife: { solid: '#C9567A', soft: { light: '#FBE1EA', dark: '#3A2230' } },
 } as const;
+
+/**
+ * Solid tile colors for every seeded interest (white glyphs on these are >= 3:1). The five
+ * categories reuse their pin colors; the rest extend the same family.
+ */
+export const interestColors: Record<string, string> = {
+  nightlife: categoryColors.nightlife.solid,
+  music: categoryColors.music.solid,
+  food_drinks: categoryColors.food_drinks.solid,
+  fitness: categoryColors.fitness.solid,
+  arts_culture: categoryColors.arts_culture.solid,
+  sports: '#2F7DA8',
+  wellness: '#3C8C7E',
+  outdoor: '#6E8F2E',
+  community: '#5B6FC4',
+  tech: '#4F6D7A',
+  fashion: '#B05A9C',
+  comedy: '#B07A12',
+};
 
 export type CategorySlug = keyof typeof categoryColors;
 
@@ -80,6 +102,8 @@ export const radius = {
 
 export const type = {
   largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: '700', letterSpacing: -0.4 },
+  /** The yard. wordmark on the welcome screen. */
+  display: { fontSize: 56, lineHeight: 60, fontWeight: '800', letterSpacing: -2 },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.4 },
   title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.4 },
   headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' },

@@ -18,7 +18,8 @@ export {
 export { Facepile, formatFriendsLabel, type FacepileProps } from './components/Facepile';
 export { GlassButton, type GlassButtonProps } from './components/GlassButton';
 export { GlassSurface, type GlassSurfaceProps } from './components/GlassSurface';
-export { Icon, type IconProps, type SymbolName } from './components/Icon';
+export { Icon, asSymbol, type IconProps, type SymbolName } from './components/Icon';
+export { MeshBackground, type MeshBackgroundProps } from './components/MeshBackground';
 export { MeshArt, buildMesh, seededRandom, type MeshArtProps } from './components/MeshArt';
 export { SegmentedControl, type SegmentedControlProps } from './components/SegmentedControl';
 export { Skeleton, type SkeletonProps } from './components/Skeleton';
@@ -26,3 +27,7 @@ export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { Screen } from './components/Screen';
 export { PrimaryButton, type PrimaryButtonProps } from './components/PrimaryButton';
 export { RollingNumber, type RollingNumberProps } from './components/RollingNumber';
+export { TextField, FieldStatusLine, type FieldStatus, type TextFieldProps } from './components/TextField';
+export { CodeField, type CodeFieldProps } from './components/CodeField';
+export { InterestTile, type InterestTileProps } from './components/InterestTile';
+export { StepProgress, type StepProgressProps } from './components/StepProgress';

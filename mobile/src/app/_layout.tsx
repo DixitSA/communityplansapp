@@ -1,18 +1,81 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
+import { View } from 'react-native';
 
-import { useTheme } from '@/design';
+import { Button, EmptyState, useTheme } from '@/design';
+import { AuthProvider } from '@/features/auth/AuthProvider';
+import { gateAllows } from '@/features/auth/gate';
+import { useGate } from '@/features/auth/useGate';
 import { useHydrated } from '@/lib/useHydrated';
 
+/**
+ * Decides which screens exist for the viewer right now. `Stack.Protected` hides a group of routes
+ * when its `guard` is false, and Expo Router moves people off a hidden route by itself, so signing
+ * in or finishing onboarding needs no manual navigation.
+ */
+function GatedStack() {
+  const { colors, space } = useTheme();
+  const { gate, profile } = useGate();
+
+  if (gate === 'loading') {
+    if (profile.isError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', padding: space.lg, backgroundColor: colors.canvas }}>
+          <EmptyState
+            symbol="exclamationmark.circle.fill"
+            title="Couldn’t load your profile"
+            message="Check your connection and try again."
+          >
+            <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+              <Button label="Try again" onPress={() => profile.refetch()} />
+            </View>
+          </EmptyState>
+        </View>
+      );
+    }
+    // Reading the saved session: keep the canvas up instead of flashing the wrong screen.
+    return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
+      <Stack.Protected guard={gateAllows(gate, 'app')}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="event/[id]" />
+        <Stack.Screen name="event/[id]/going" />
+        <Stack.Screen name="filters" />
+        <Stack.Screen name="city" />
+        <Stack.Screen name="activity" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="(dev)/gallery" />
+      </Stack.Protected>
+      <Stack.Protected guard={gateAllows(gate, 'onboarding')}>
+        <Stack.Screen name="onboarding" />
+      </Stack.Protected>
+      <Stack.Protected guard={gateAllows(gate, 'auth')}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
-  const { scheme, colors } = useTheme();
+  const { scheme } = useTheme();
   // The server can't know the color scheme, so a hydrating web page waits one render (always true on native).
   const hydrated = useHydrated();
+  // TanStack Query's cache lives in this object, created once per app launch.
+  const [queryClient] = useState(
+    () => new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } }),
+  );
   if (!hydrated) return null;
   return (
-    <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }} />
-    </>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <GatedStack />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

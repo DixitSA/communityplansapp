@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +27,7 @@ import {
 import { useFiltersStore } from '@/features/feed/filtersStore';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { EventCardLink } from '@/features/event/EventCardLink';
+import { useDemoPlans } from '@/features/event/demoPlans';
 import { EventMap } from '@/features/map/EventMap';
 import { MONTHS_LONG, WEEKDAYS_SHORT, formatShortDate } from '@/lib/dates';
 import { selection } from '@/lib/haptics';
@@ -36,6 +37,8 @@ const DISTANCE_OPTIONS = DISTANCES.map((d) => ({ value: d, label: `${d} mi` }));
 export default function FeedScreen() {
   const { space, colors, radius } = useTheme();
   const insets = useSafeAreaInsets();
+  const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
+  useDemoPlans(demoPlans);
 
   const timeOfDay = useFiltersStore((s) => s.timeOfDay);
   const interests = useFiltersStore((s) => s.interests);
@@ -131,6 +134,7 @@ export default function FeedScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isMap ? 'Show list' : 'Show map'}
+          hitSlop={space.xs}
           onPress={() => {
             selection();
             setView(isMap ? 'list' : 'map');

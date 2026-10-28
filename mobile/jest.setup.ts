@@ -6,9 +6,12 @@ jest.mock('react-native-reanimated', () => {
     __esModule: true,
     default: { View },
     useReducedMotion: () => true,
-    useSharedValue: (v: unknown) => ({ value: v }),
+    useSharedValue: (v: unknown) => ({ value: v, set: () => {} }),
     useAnimatedStyle: () => ({}),
     withRepeat: (v: unknown) => v,
     withTiming: (v: unknown) => v,
+    Easing: { linear: (t: number) => t },
+    withSpring: (v: unknown) => v,
+    withSequence: (...v: unknown[]) => v[v.length - 1],
   };
 });

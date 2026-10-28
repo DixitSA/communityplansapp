@@ -6,6 +6,7 @@ import {
   Avatar,
   Button,
   Chip,
+  CodeField,
   DateStrip,
   EmptyState,
   EventCard,
@@ -13,12 +14,15 @@ import {
   GlassButton,
   GlassSurface,
   Icon,
+  InterestTile,
   MeshArt,
   PrimaryButton,
   RollingNumber,
   Screen,
   SegmentedControl,
   Skeleton,
+  StepProgress,
+  TextField,
   useTheme,
   type DayMeta,
   type SymbolName,
@@ -29,10 +33,10 @@ import { getFixtureEvents } from '@/features/feed/fixtures';
 import { startOfDay, toISODate } from '@/lib/dates';
 
 const VARIANTS: TypeVariant[] = [
-  'largeTitle', 'title', 'title2', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
+  'display', 'largeTitle', 'title', 'title2', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
 ];
 const COLOR_TOKENS = [
-  'canvas', 'surface', 'surfaceMuted', 'ink', 'inkSecondary', 'line', 'accent', 'accentSoft',
+  'canvas', 'surface', 'surfaceMuted', 'ink', 'inkSecondary', 'line', 'accent', 'accentSoft', 'danger',
   'peach', 'peachSoft', 'mint', 'mintSoft', 'deep',
 ] as const;
 const PEOPLE = [
@@ -60,6 +64,9 @@ export default function Gallery() {
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
   const [interested, setInterested] = useState(false);
   const [count, setCount] = useState(24);
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [tiles, setTiles] = useState<Record<string, boolean>>({ music: true });
   const events = getFixtureEvents();
   const today = toISODate(new Date());
   const dayMeta: Record<string, DayMeta> = { [today]: { count: 5, friendsGoing: true } };
@@ -155,6 +162,44 @@ export default function Gallery() {
       <Section title="Button (icon, primary and secondary)">
         <Button variant="primary" symbol="message.fill" label="Open chat" onPress={() => {}} />
         <Button symbol="calendar.badge.plus" label="Add to Calendar" onPress={() => {}} />
+      </Section>
+
+      <Section title="TextField (idle, prefix, success, checking, error)">
+        <TextField label="Name" value={name} onChangeText={setName} placeholder="Your name" />
+        <TextField label="Username" prefix="@" value="maya.c" onChangeText={() => {}} status={{ tone: 'success', text: '@maya.c is available' }} />
+        <TextField label="Username" prefix="@" value="maya" onChangeText={() => {}} status={{ tone: 'checking', text: 'Checking…' }} />
+        <TextField label="Email" value="maya@example" onChangeText={() => {}} status={{ tone: 'error', text: 'That email doesn’t look right.' }} />
+      </Section>
+
+      <Section title="CodeField (type 6 digits; second one shows the error state)">
+        <CodeField value={code} onChangeText={setCode} autoFocus={false} />
+        <CodeField value="123" onChangeText={() => {}} error autoFocus={false} />
+      </Section>
+
+      <Section title="InterestTile (tap to select)">
+        <View style={{ flexDirection: 'row', gap: space.md }}>
+          {([['music', 'Music', 'music.note'], ['sports', 'Sports', 'sportscourt.fill']] as const).map(([slug, label, symbol]) => (
+            <InterestTile
+              key={slug}
+              slug={slug}
+              label={label}
+              symbol={symbol}
+              selected={!!tiles[slug]}
+              onPress={() => setTiles((t) => ({ ...t, [slug]: !t[slug] }))}
+            />
+          ))}
+        </View>
+        <View style={{ flexDirection: 'row', gap: space.md }}>
+          {([['comedy', 'Comedy', 'theatermasks.fill'], ['wellness', 'Wellness', 'leaf.fill']] as const).map(([slug, label, symbol]) => (
+            <InterestTile key={slug} slug={slug} label={label} symbol={symbol} selected={slug === 'comedy'} onPress={() => {}} />
+          ))}
+        </View>
+      </Section>
+
+      <Section title="StepProgress">
+        <View style={{ flexDirection: 'row' }}>
+          <StepProgress step={2} />
+        </View>
       </Section>
 
       <Section title="GlassSurface (RSVP bar backing)">

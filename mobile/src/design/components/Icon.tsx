@@ -54,7 +54,28 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'lock.fill': 'lock-closed',
   'message.fill': 'chatbubble',
   'ticket.fill': 'ticket',
+  'xmark.circle.fill': 'close-circle',
+  'exclamationmark.circle.fill': 'alert-circle',
+  gearshape: 'settings-outline',
+  'location.fill': 'navigate',
+  'envelope.fill': 'mail',
+  'lock.shield.fill': 'shield-checkmark',
+  'sportscourt.fill': 'basketball',
+  'leaf.fill': 'leaf',
+  'sun.max.fill': 'sunny',
+  'person.3.fill': 'people-circle',
+  laptopcomputer: 'laptop-outline',
+  'tshirt.fill': 'shirt',
+  'rectangle.portrait.and.arrow.right': 'log-out-outline',
 };
+
+/**
+ * Interest symbols come from the database as plain strings. They are SF Symbol names by contract
+ * (the `interests.symbol` column), so this narrows the type; an unknown name just renders blank.
+ */
+export function asSymbol(name: string): SymbolName {
+  return name as SymbolName;
+}
 
 export type IconProps = {
   name: SymbolName;

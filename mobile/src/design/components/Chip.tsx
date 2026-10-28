@@ -90,10 +90,11 @@ export function Chip({
     >
       {symbol ? <Icon name={symbol} size={iconSize} color={iconColor} /> : null}
       <AppText
-        variant={small ? 'caption' : 'subheadline'}
+        variant={small && !filled ? 'caption' : 'subheadline'}
         color={fg}
         style={{ fontWeight: '500' }}
-        maxFontSizeMultiplier={1.6}
+        // The filled filter-row chips sit in a tight row beside the map toggle, so they cap sooner.
+        maxFontSizeMultiplier={filled ? 1.4 : 1.6}
       >
         {label}
       </AppText>
