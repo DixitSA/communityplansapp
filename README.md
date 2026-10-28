@@ -19,5 +19,6 @@ An iOS-first app for making plans and meeting people in real life. It combines t
 - [x] Planning package
 - [x] Schema + RLS + privacy tests (`supabase/`): 33/33 passing, run in CI on every PR
 - [x] Expo app scaffold + week-1 design system, Feed shell and `/gallery` (judge PASS 8/10)
-- [ ] Owner check in Expo Go on iPhone (light + dark)
-- [ ] Week 2: auth + onboarding
+- [x] Owner check in Expo Go on iPhone (week 1)
+- [x] Week 2: sign-in (Apple + email code), onboarding, Profile; working Feed controls, event page, map (judge PASS 8/10 each; onboarding backend PASS 9/10)
+- [ ] Week 3: events in (Ticketmaster ingestion + curated events)

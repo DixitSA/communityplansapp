@@ -79,7 +79,7 @@ Rules:
 |---|---|
 | Core | `expo@58`, `expo-router`, `react-native-reanimated@4`, TypeScript |
 | Native UI | `expo-glass-effect`, `@expo/ui` (SwiftUI-backed components), `expo-symbols` (SF Symbols), `expo-mesh-gradient`, `expo-image`, `expo-haptics` |
-| Data | `@supabase/supabase-js`, `@tanstack/react-query`, `zustand`, `expo-sqlite` (session + cache storage) |
+| Data | `@supabase/supabase-js`, `@tanstack/react-query`, `zustand`, `expo-sqlite` (session + cache storage), `expo-crypto` (Apple sign-in nonce) |
 | Device | `expo-location`, `expo-calendar`, `expo-contacts`, `expo-notifications`, `expo-apple-authentication`, `expo-image-picker`, `expo-maps` (Apple Maps; was alpha in recent docs, so fall back to `react-native-maps` if it's not stable enough) |
 | Sheets, pickers, sliders, menus | `@expo/ui` (native SwiftUI). Expo's official guidance prefers it over `@gorhom/bottom-sheet` |
 | Chat | `stream-chat-expo` |
