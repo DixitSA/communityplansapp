@@ -26,11 +26,13 @@ export type FacepileProps = {
   avatarSize?: number;
   /** Use 'onImage' when the pile sits on photo/art. */
   labelColor?: ColorToken;
+  /** Truncate the label to this many lines (tight layouts like the map pin card). */
+  labelLines?: number;
 };
 
 const MAX_FACES = 3;
 
-export function Facepile({ people, total, avatarSize = 26, labelColor = 'inkSecondary' }: FacepileProps) {
+export function Facepile({ people, total, avatarSize = 26, labelColor = 'inkSecondary', labelLines }: FacepileProps) {
   const { space } = useTheme();
   const label = formatFriendsLabel(
     people.map((p) => p.name),
@@ -51,7 +53,7 @@ export function Facepile({ people, total, avatarSize = 26, labelColor = 'inkSeco
           </View>
         ))}
       </View>
-      <AppText variant="footnote" color={labelColor} style={{ flexShrink: 1 }}>
+      <AppText variant="footnote" color={labelColor} numberOfLines={labelLines} style={{ flexShrink: 1 }}>
         {label}
       </AppText>
     </View>

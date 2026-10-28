@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AppText,
+  Button,
   Chip,
   DateStrip,
   EmptyState,
@@ -20,13 +21,14 @@ import {
   TIME_OPTIONS,
   chipStates,
   isDefaultFilters,
+  nextDayWithEvents,
   type DistanceMi,
 } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { EventCardLink } from '@/features/event/EventCardLink';
 import { EventMap } from '@/features/map/EventMap';
-import { MONTHS_LONG, WEEKDAYS_SHORT } from '@/lib/dates';
+import { MONTHS_LONG, WEEKDAYS_SHORT, formatShortDate } from '@/lib/dates';
 import { selection } from '@/lib/haptics';
 
 const DISTANCE_OPTIONS = DISTANCES.map((d) => ({ value: d, label: `${d} mi` }));
@@ -44,7 +46,7 @@ export default function FeedScreen() {
   const selected = useFiltersStore((s) => s.selectedDay);
   const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, clearFilters } = useFiltersStore.getState();
 
-  const { dayEvents, dayTotal, dayMeta } = useFeedEvents();
+  const { filtered, dayEvents, dayTotal, dayMeta } = useFeedEvents();
   const criteria = { timeOfDay, interests, distanceMi, price, scope };
   const chips = chipStates(criteria);
   const isMap = view === 'map';
@@ -134,12 +136,9 @@ export default function FeedScreen() {
             setView(isMap ? 'list' : 'map');
           }}
           style={{
-            height: 40,
+            width: 36,
+            height: 36,
             marginRight: space.lg,
-            paddingHorizontal: isMap ? space.md : 0,
-            width: isMap ? undefined : 40,
-            flexDirection: 'row',
-            gap: space.xs,
             borderRadius: radius.pill,
             borderCurve: 'continuous',
             alignItems: 'center',
@@ -149,12 +148,8 @@ export default function FeedScreen() {
             borderColor: colors.line,
           }}
         >
-          <Icon name={isMap ? 'list.bullet' : 'map'} size={isMap ? 16 : 20} />
-          {isMap ? (
-            <AppText variant="subheadline" style={{ fontWeight: '600' }} maxFontSizeMultiplier={1.4}>
-              List
-            </AppText>
-          ) : null}
+          {/* Icon only in both modes: with a "List" label the three chips and the toggle don't fit in 393pt. */}
+          <Icon name={isMap ? 'list.bullet' : 'map'} size={18} />
         </Pressable>
       </View>
     </>
@@ -173,6 +168,16 @@ export default function FeedScreen() {
 
   const filtersOff = isDefaultFilters(criteria);
   const friendsOnly = scope === 'friends' && filtersOff;
+  const nextDay = nextDayWithEvents(filtered, selected);
+  const tryNextDay = nextDay ? (
+    <Button
+      label={`Try ${formatShortDate(nextDay)}`}
+      onPress={() => {
+        selection();
+        setSelectedDay(nextDay);
+      }}
+    />
+  ) : null;
   return (
     <Screen gutter={false}>
       {header}
@@ -186,7 +191,9 @@ export default function FeedScreen() {
               symbol="sparkles"
               title="Nothing planned yet"
               message="No events on this day. Try another date, or check back soon."
-            />
+            >
+              {tryNextDay ? <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>{tryNextDay}</View> : null}
+            </EmptyState>
           ) : (
             <EmptyState
               symbol="line.3.horizontal.decrease.circle"
@@ -197,11 +204,12 @@ export default function FeedScreen() {
                   : 'Your filters leave nothing for this day. Loosen them to see more.'
               }
             >
-              <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+              <View style={{ alignSelf: 'stretch', paddingTop: space.md, gap: space.sm }}>
                 <PrimaryButton
                   label={friendsOnly ? 'Show nearby' : 'Clear filters'}
                   onPress={friendsOnly ? () => setScope('nearby') : clearFilters}
                 />
+                {tryNextDay}
               </View>
             </EmptyState>
           )

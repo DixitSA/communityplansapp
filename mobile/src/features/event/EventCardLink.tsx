@@ -9,7 +9,7 @@ import { usePlanStatus, usePlansStore } from './plansStore';
 
 /**
  * An EventCard that opens the event page (zoom transition on iOS 18+) and shares the plans store,
- * so the heart and the event page always agree. Long-press shows a preview and quick actions.
+ * so the corner indicator and the event page always agree. Long-press shows a preview and quick actions.
  */
 export function EventCardLink({ event }: { event: EventCardData }) {
   const router = useRouter();
@@ -33,8 +33,9 @@ export function EventCardLink({ event }: { event: EventCardData }) {
   return (
     <EventCard
       event={event}
-      saved={status !== null}
-      onToggleSave={() => toggleInterested(event.id)}
+      plan={status}
+      onToggleInterested={() => toggleInterested(event.id)}
+      onOpenPlan={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
       href={{ pathname: '/event/[id]', params: { id: event.id } }}
       menuActions={[
         <Link.MenuAction key="going" title={going ? 'Open chat' : 'Going'} icon="checkmark.circle" onPress={goingAction} />,

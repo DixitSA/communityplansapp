@@ -233,22 +233,10 @@ export default function EventScreen() {
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}
               >
                 <Facepile people={event.friends} total={event.friendsGoing} avatarSize={32} labelColor="ink" />
-                <Icon name="chevron.down" size={13} color="inkSecondary" weight="semibold" />
+                <Icon name="chevron.right" size={13} color="inkSecondary" weight="semibold" />
               </Pressable>
             </>
           ) : null}
-
-          <Divider />
-
-          <View onLayout={(e) => (whosGoingY.current = e.nativeEvent.layout.y + heroHeight - radius.hero)}>
-            <WhosGoing
-              friends={event.friends}
-              friendsGoing={event.friendsGoing}
-              others={revealed ? event.otherAttendees : []}
-              othersGoing={event.othersGoing}
-              revealed={revealed}
-            />
-          </View>
 
           <Divider />
 
@@ -272,6 +260,18 @@ export default function EventScreen() {
                 </AppText>
               </Pressable>
             ) : null}
+          </View>
+
+          <Divider />
+
+          <View onLayout={(e) => (whosGoingY.current = e.nativeEvent.layout.y + heroHeight - radius.hero)}>
+            <WhosGoing
+              friends={event.friends}
+              friendsGoing={event.friendsGoing}
+              others={revealed ? event.otherAttendees : []}
+              othersGoing={event.othersGoing}
+              revealed={revealed}
+            />
           </View>
         </View>
       </Animated.ScrollView>

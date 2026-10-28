@@ -62,7 +62,7 @@ export default function FiltersSheet() {
           presentation: 'formSheet',
           headerShown: false,
           sheetGrabberVisible: true,
-          sheetAllowedDetents: [0.72, 1],
+          sheetAllowedDetents: [0.6, 1],
           contentStyle: { backgroundColor: colors.canvas },
         }}
       />
@@ -96,7 +96,9 @@ export default function FiltersSheet() {
         </Pressable>
       </View>
 
+      {/* flexGrow 0: the button sits right under Price, and the list only scrolls if it can't fit. */}
       <ScrollView
+        style={{ flexGrow: 0 }}
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingVertical: space.md, gap: space.xxl }}
         showsVerticalScrollIndicator={false}
       >

@@ -1,5 +1,7 @@
 import type { SymbolName } from '@/design';
 
+import { addDays, startOfDay } from '@/lib/dates';
+
 import { deriveDistanceMi, derivePriceUsd } from './derive';
 
 export type TimeOfDay = 'any' | 'morning' | 'afternoon' | 'tonight';
@@ -127,4 +129,18 @@ export function chipStates(f: FilterCriteria): { time: ChipState; interests: Chi
     interests: { label: interestsLabel, active: interestsActive },
     distance: { label: `${f.distanceMi} mi`, active: f.distanceMi !== DEFAULT_CRITERIA.distanceMi },
   };
+}
+
+/**
+ * The first day after `from` that has at least one of `events` (pass the already-filtered list),
+ * as local midnight. `null` when nothing is coming up. Drives the empty state's "Try Fri, Oct 30".
+ */
+export function nextDayWithEvents(events: { startsAt: Date }[], from: Date): Date | null {
+  const cutoff = addDays(startOfDay(from), 1).getTime();
+  let best: number | null = null;
+  for (const e of events) {
+    const t = e.startsAt.getTime();
+    if (t >= cutoff && (best === null || t < best)) best = t;
+  }
+  return best === null ? null : startOfDay(new Date(best));
 }

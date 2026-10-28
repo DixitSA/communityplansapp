@@ -34,6 +34,43 @@ export type EventCardData = {
   friendsGoing: number;
 };
 
+/** The viewer's own plan for an event. `null` means no plan. Mirrors the plans store. */
+export type CardPlan = 'interested' | 'down_if_friends' | 'going' | null;
+
+export type PlanIndicator = {
+  symbol: SymbolName;
+  /** Solid accent circle (Going) instead of glass. */
+  accentFill: boolean;
+  /** Tapping toggles Interested, or opens the event page for the two stronger plans. */
+  action: 'toggle' | 'open';
+  accessibilityLabel: string;
+};
+
+/** What the card's corner button shows for each plan (a pure function so it can be tested). */
+export function planIndicator(plan: CardPlan, title: string): PlanIndicator {
+  switch (plan) {
+    case 'going':
+      return { symbol: 'checkmark', accentFill: true, action: 'open', accessibilityLabel: `You're going to ${title}. Open event` };
+    case 'down_if_friends':
+      return {
+        symbol: 'person.2.fill',
+        accentFill: false,
+        action: 'open',
+        accessibilityLabel: `You're down if friends go to ${title}. Open event`,
+      };
+    case 'interested':
+      return { symbol: 'heart.fill', accentFill: false, action: 'toggle', accessibilityLabel: `Remove interest in ${title}` };
+    default:
+      return { symbol: 'heart', accentFill: false, action: 'toggle', accessibilityLabel: `Mark ${title} as interesting` };
+  }
+}
+
+const PLAN_A11Y: Record<Exclude<CardPlan, null>, string> = {
+  interested: 'Interested.',
+  down_if_friends: 'Down if friends go.',
+  going: "You're going.",
+};
+
 /** "Wed, Oct 28 · 8:00 PM" and "The Music Yard · 2.1 mi". */
 export function eventMetaLines(e: EventCardData): [string, string] {
   return [
@@ -43,7 +80,7 @@ export function eventMetaLines(e: EventCardData): [string, string] {
 }
 
 /** VoiceOver label: "Warehouse Party, Wednesday 9 PM, The District, 2.1 miles. Maya is going." */
-export function eventA11yLabel(e: EventCardData, saved = false): string {
+export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string {
   const day = WEEKDAYS_LONG[e.startsAt.getDay()];
   const miles = `${e.distanceMi.toFixed(1)} ${e.distanceMi === 1 ? 'mile' : 'miles'}`;
   const friends = formatFriendsLabel(
@@ -53,7 +90,7 @@ export function eventA11yLabel(e: EventCardData, saved = false): string {
   return [
     `${e.title}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
     friends ? `${friends}.` : '',
-    saved ? 'Saved.' : '',
+    plan ? PLAN_A11Y[plan] : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -61,9 +98,13 @@ export function eventA11yLabel(e: EventCardData, saved = false): string {
 
 export type EventCardProps = {
   event: EventCardData;
-  saved?: boolean;
+  /** The viewer's plan. Drives the corner indicator (heart, people, or check). */
+  plan?: CardPlan;
   onPress?: () => void;
-  onToggleSave?: () => void;
+  /** The heart: toggles Interested. */
+  onToggleInterested?: () => void;
+  /** Tapping the people / check indicator (Down if friends go, Going) opens the event page. */
+  onOpenPlan?: () => void;
   /**
    * Makes the card a link to this route, with the native iOS zoom transition (iOS 18+; a plain
    * push elsewhere). Don't also pass `onPress`.
@@ -73,9 +114,10 @@ export type EventCardProps = {
   menuActions?: ReactNode;
 };
 
-export function EventCard({ event, saved = false, onPress, onToggleSave, href, menuActions }: EventCardProps) {
+export function EventCard({ event, plan = null, onPress, onToggleInterested, onOpenPlan, href, menuActions }: EventCardProps) {
   const { space, radius, colors, scheme } = useTheme();
   const [dateLine, venueLine] = eventMetaLines(event);
+  const indicator = planIndicator(plan, event.title);
 
   const cardContent = (
     <View style={{ minHeight: 170, justifyContent: 'flex-end' }}>
@@ -127,10 +169,14 @@ export function EventCard({ event, saved = false, onPress, onToggleSave, href, m
     <Pressable
       accessible
       accessibilityRole={href ? 'link' : 'button'}
-      accessibilityLabel={eventA11yLabel(event, saved)}
-      accessibilityActions={[{ name: 'save', label: saved ? 'Remove from saved' : 'Save' }]}
+      accessibilityLabel={eventA11yLabel(event, plan)}
+      accessibilityActions={
+        plan === null || plan === 'interested'
+          ? [{ name: 'interested', label: plan === 'interested' ? 'Remove interest' : 'Mark interested' }]
+          : []
+      }
       onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'save') onToggleSave?.();
+        if (e.nativeEvent.actionName === 'interested') onToggleInterested?.();
       }}
       onPress={onPress}
       style={({ pressed }) => [{ minHeight: 170 }, pressed && { opacity: 0.92 }]}
@@ -140,7 +186,7 @@ export function EventCard({ event, saved = false, onPress, onToggleSave, href, m
   );
 
   return (
-    // The heart is a sibling of the card Pressable (not a child) so buttons never nest on web.
+    // The plan indicator is a sibling of the card Pressable (not a child) so buttons never nest on web.
     <View
       style={{
         minHeight: 170,
@@ -169,13 +215,15 @@ export function EventCard({ event, saved = false, onPress, onToggleSave, href, m
 
       <View style={{ position: 'absolute', top: space.sm, right: space.sm }}>
         <GlassButton
-          symbol={saved ? 'heart.fill' : 'heart'}
-          iconColor="onImage"
+          symbol={indicator.symbol}
+          iconColor={indicator.accentFill ? 'onAccent' : 'onImage'}
+          fill={indicator.accentFill ? 'accent' : undefined}
           overImage
-          accessibilityLabel={saved ? `Unsave ${event.title}` : `Save ${event.title}`}
+          accessibilityLabel={indicator.accessibilityLabel}
           onPress={() => {
             light();
-            onToggleSave?.();
+            if (indicator.action === 'toggle') onToggleInterested?.();
+            else onOpenPlan?.();
           }}
         />
       </View>

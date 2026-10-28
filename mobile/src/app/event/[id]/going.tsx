@@ -31,7 +31,7 @@ export default function GoingSheet() {
       <Stack.Screen
         options={{
           presentation: 'formSheet',
-          sheetAllowedDetents: [0.8, 1],
+          sheetAllowedDetents: 'fitToContents',
           sheetGrabberVisible: true,
           contentStyle: { backgroundColor: colors.canvas },
         }}
@@ -61,7 +61,7 @@ export default function GoingSheet() {
                 You&apos;re going
               </AppText>
               <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }}>
-                a good plan just became a real plan.
+                A good plan just became a real plan.
               </AppText>
             </View>
           </View>

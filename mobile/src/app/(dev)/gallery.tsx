@@ -58,7 +58,7 @@ export default function Gallery() {
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
   const [seg, setSeg] = useState('a');
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
-  const [saved, setSaved] = useState(false);
+  const [interested, setInterested] = useState(false);
   const [count, setCount] = useState(24);
   const events = getFixtureEvents();
   const today = toISODate(new Date());
@@ -225,9 +225,14 @@ export default function Gallery() {
       </Section>
 
       <Section title="EventCard">
-        <EventCard event={events[4]} saved={saved} onToggleSave={() => setSaved((s) => !s)} />
-        <EventCard event={events[1]} />
-        {/* Opens the event page with the zoom transition; the heart shares the plans store. */}
+        <EventCard
+          event={events[4]}
+          plan={interested ? 'interested' : null}
+          onToggleInterested={() => setInterested((s) => !s)}
+        />
+        <EventCard event={events[1]} plan="down_if_friends" />
+        <EventCard event={events[3]} plan="going" />
+        {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
         <EventCardLink event={events[2]} />
       </Section>
     </Screen>

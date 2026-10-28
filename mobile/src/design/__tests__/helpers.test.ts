@@ -52,9 +52,9 @@ describe('eventA11yLabel', () => {
     );
   });
 
-  it('omits friends when none and appends Saved', () => {
-    expect(eventA11yLabel({ ...event, friends: [], friendsGoing: 0 }, true)).toBe(
-      'Warehouse Party, Wednesday 9 PM, The District, 2.1 miles. Saved.',
+  it('omits friends when none and appends the plan', () => {
+    expect(eventA11yLabel({ ...event, friends: [], friendsGoing: 0 }, 'interested')).toBe(
+      'Warehouse Party, Wednesday 9 PM, The District, 2.1 miles. Interested.',
     );
   });
 });

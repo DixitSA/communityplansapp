@@ -75,6 +75,8 @@ export function Chip({
         gap: space.xs,
         paddingHorizontal: small ? space.sm : space.md,
         paddingVertical: small ? space.xs : space.sm,
+        // Regular chips are 36pt tall (matches the map/List toggle in the filter row).
+        minHeight: small ? undefined : 36,
         borderRadius: radius.pill,
         borderCurve: 'continuous',
         backgroundColor: bg,

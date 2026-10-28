@@ -1,6 +1,6 @@
 import { Stack, router, type Href } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Avatar, Chip, EmptyState, useTheme } from '@/design';
 import { formatAgo } from '@/features/activity/format';
@@ -117,6 +117,8 @@ export default function ActivityScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Clear all activity"
                 hitSlop={space.md}
+                // The web header has no inset on the right, so "Clear" would clip.
+                style={Platform.OS === 'web' ? { paddingRight: space.lg } : undefined}
                 onPress={() => {
                   selection();
                   setItems([]);

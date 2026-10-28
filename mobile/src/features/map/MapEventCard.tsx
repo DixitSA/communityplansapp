@@ -65,7 +65,7 @@ export function MapEventCard({ event }: { event: EventCardData }) {
         </AppText>
         {event.friendsGoing > 0 ? (
           <View style={{ paddingTop: space.xs }}>
-            <Facepile people={event.friends} total={event.friendsGoing} avatarSize={22} />
+            <Facepile people={event.friends} total={event.friendsGoing} avatarSize={22} labelLines={1} />
           </View>
         ) : null}
       </View>

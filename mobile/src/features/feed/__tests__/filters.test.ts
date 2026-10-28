@@ -4,6 +4,7 @@ import {
   applyFilters,
   chipStates,
   isDefaultFilters,
+  nextDayWithEvents,
   type FilterCriteria,
   type FilterableEvent,
 } from '../filters';
@@ -123,5 +124,22 @@ describe('filters store', () => {
     expect(after.timeOfDay).toBe('any');
     expect(after.scope).toBe('friends');
     expect(after.view).toBe('map');
+  });
+});
+
+describe('nextDayWithEvents', () => {
+  const on = (day: number, hour = 20) => ({ startsAt: new Date(2026, 9, day, hour, 0) });
+
+  it('returns the next day after `from` that has events, at local midnight', () => {
+    const next = nextDayWithEvents([on(28), on(31, 9), on(30, 22)], new Date(2026, 9, 28, 12));
+    expect(next).toEqual(new Date(2026, 9, 30));
+  });
+
+  it('ignores the selected day itself and earlier days', () => {
+    expect(nextDayWithEvents([on(27), on(28)], new Date(2026, 9, 28))).toBeNull();
+  });
+
+  it('returns null when there are no events', () => {
+    expect(nextDayWithEvents([], new Date(2026, 9, 28))).toBeNull();
   });
 });
