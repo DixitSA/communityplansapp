@@ -8,5 +8,5 @@ import { resolveGate, type Gate } from './gate';
 export function useGate(): { gate: Gate; profile: ReturnType<typeof useMyProfile> } {
   const session = useSession();
   const profile = useMyProfile();
-  return { gate: resolveGate({ configured: isBackendConfigured, session, profile: profile.data }), profile };
+  return { gate: resolveGate({ configured: isBackendConfigured, dev: __DEV__, session, profile: profile.data }), profile };
 }

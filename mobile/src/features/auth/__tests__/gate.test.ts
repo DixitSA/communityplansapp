@@ -6,31 +6,36 @@ const session: AuthSession = { userId: 'u1', email: 'a@b.co' };
 const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, interests: [] };
 
 describe('resolveGate', () => {
-  it('is demo mode whenever the backend is not configured, whatever the session', () => {
-    expect(resolveGate({ configured: false, session: null, profile: null })).toBe('demo');
-    expect(resolveGate({ configured: false, session: undefined, profile: undefined })).toBe('demo');
-    expect(resolveGate({ configured: false, session, profile })).toBe('demo');
+  it('is demo mode when the backend is not configured in a development build, whatever the session', () => {
+    expect(resolveGate({ configured: false, dev: true, session: null, profile: null })).toBe('demo');
+    expect(resolveGate({ configured: false, dev: true, session: undefined, profile: undefined })).toBe('demo');
+    expect(resolveGate({ configured: false, dev: true, session, profile })).toBe('demo');
+  });
+
+  it('never opens demo mode in a release build without config', () => {
+    expect(resolveGate({ configured: false, dev: false, session: null, profile: null })).toBe('unconfigured');
+    expect(resolveGate({ configured: false, dev: false, session, profile })).toBe('unconfigured');
   });
 
   it('waits while the saved session is being read', () => {
-    expect(resolveGate({ configured: true, session: undefined, profile: undefined })).toBe('loading');
+    expect(resolveGate({ configured: true, dev: false, session: undefined, profile: undefined })).toBe('loading');
   });
 
   it('sends signed-out people to auth', () => {
-    expect(resolveGate({ configured: true, session: null, profile: undefined })).toBe('auth');
-    expect(resolveGate({ configured: true, session: null, profile: null })).toBe('auth');
+    expect(resolveGate({ configured: true, dev: false, session: null, profile: undefined })).toBe('auth');
+    expect(resolveGate({ configured: true, dev: false, session: null, profile: null })).toBe('auth');
   });
 
   it('waits for the profile after sign-in', () => {
-    expect(resolveGate({ configured: true, session, profile: undefined })).toBe('loading');
+    expect(resolveGate({ configured: true, dev: false, session, profile: undefined })).toBe('loading');
   });
 
   it('sends signed-in people without a profile to onboarding', () => {
-    expect(resolveGate({ configured: true, session, profile: null })).toBe('onboarding');
+    expect(resolveGate({ configured: true, dev: false, session, profile: null })).toBe('onboarding');
   });
 
   it('opens the app once there is a profile', () => {
-    expect(resolveGate({ configured: true, session, profile })).toBe('app');
+    expect(resolveGate({ configured: true, dev: false, session, profile })).toBe('app');
   });
 });
 
@@ -51,7 +56,10 @@ describe('gateAllows', () => {
     expect(gateAllows('app', 'auth')).toBe(false);
   });
 
-  it('opens nothing while loading', () => {
+  it('opens nothing while loading or unconfigured', () => {
+    expect(gateAllows('unconfigured', 'auth')).toBe(false);
+    expect(gateAllows('unconfigured', 'onboarding')).toBe(false);
+    expect(gateAllows('unconfigured', 'app')).toBe(false);
     expect(gateAllows('loading', 'auth')).toBe(false);
     expect(gateAllows('loading', 'onboarding')).toBe(false);
     expect(gateAllows('loading', 'app')).toBe(false);

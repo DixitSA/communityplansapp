@@ -43,7 +43,7 @@ export function EventCardLink({ event }: { event: EventCardData }) {
           <Link.MenuAction
             key="interested"
             title={status === 'interested' ? 'Remove Interested' : 'Interested'}
-            icon={status === 'interested' ? 'star.slash' : 'star'}
+            icon={status === 'interested' ? 'heart.slash' : 'heart'}
             onPress={() => toggleInterested(event.id)}
           />
         ) : null,

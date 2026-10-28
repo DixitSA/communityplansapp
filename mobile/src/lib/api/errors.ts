@@ -59,7 +59,8 @@ export function onboardingStepForError(code: string | null | undefined): 'profil
 
 const AUTH_COPY: Record<string, string> = {
   otp_invalid: 'That code isn’t right. Check it and try again.',
-  otp_expired: 'That code expired. Send a new one.',
+  // Supabase reports a wrong code and an expired one with the same code.
+  otp_expired: 'That code is wrong or expired.',
   over_email_send_rate_limit: 'Too many codes requested. Wait a minute, then try again.',
   over_request_rate_limit: 'Too many tries. Wait a minute, then try again.',
   validation_failed: 'That email doesn’t look right.',
@@ -78,6 +79,9 @@ export function errorCode(err: unknown): string {
   if (err instanceof ApiError) return err.code;
   if (err && typeof err === 'object') {
     const e = err as { code?: unknown; message?: unknown; name?: unknown };
+    // PostgREST wraps `raise exception 'must_be_18'` as { code: 'P0001', message: 'must_be_18' },
+    // so for raised exceptions the message is the real code.
+    if (e.code === 'P0001' && typeof e.message === 'string') return e.message;
     if (typeof e.code === 'string') return e.code;
     if (e.name === 'AuthRetryableFetchError' || (typeof e.message === 'string' && /network request failed/i.test(e.message))) {
       return 'network';

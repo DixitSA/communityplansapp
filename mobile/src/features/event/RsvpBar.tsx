@@ -130,8 +130,8 @@ export function RsvpBar({ status, onChoose, onGoing, onLayoutHeight }: RsvpBarPr
           <RsvpButton
             label="Interested"
             hint="Only you can see this"
-            symbol="star"
-            activeSymbol="star.fill"
+            symbol="heart"
+            activeSymbol="heart.fill"
             selected={status === 'interested'}
             flex={1}
             onPress={() => onChoose('interested')}

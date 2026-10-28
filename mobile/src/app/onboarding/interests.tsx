@@ -27,6 +27,7 @@ export default function InterestsScreen() {
   return (
     <Scaffold
       back
+      fade
       step={2}
       title="What are you into?"
       subtitle={`Pick ${MIN_INTERESTS} or more. We’ll use them to put the right events first.`}

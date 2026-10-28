@@ -55,7 +55,7 @@ export function Avatar({ name, size = 28, ring = false }: AvatarProps) {
         variant="caption"
         color={tint.fg}
         allowFontScaling={false}
-        style={{ fontSize: Math.round(size * 0.4), lineHeight: Math.round(size * 0.5), fontWeight: '600' }}
+        style={{ fontSize: Math.round(size * 0.38), lineHeight: Math.round(size * 0.46), fontWeight: '600' }}
       >
         {initialsOf(name)}
       </AppText>

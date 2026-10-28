@@ -5,18 +5,21 @@ import type { PlanStatus } from '../event/plansStore';
 
 export type ProfileStats = { upcoming: number; friends: number; saved: number };
 
-/** Upcoming = Going, Saved = Interested (private). Friends is 0 until the friends list exists. */
+/**
+ * Upcoming is the length of the plans the Profile lists (Going plus Down if friends go, not yet
+ * past), so the number always matches the list. Saved = Interested (private).
+ * Friends is 0 until the friends list exists.
+ */
 export function deriveProfileStats(
   statuses: Record<string, PlanStatus | undefined>,
+  plans: readonly UpcomingPlan[],
   friendsCount = 0,
 ): ProfileStats {
-  let upcoming = 0;
   let saved = 0;
   for (const status of Object.values(statuses)) {
-    if (status === 'going') upcoming += 1;
-    else if (status === 'interested') saved += 1;
+    if (status === 'interested') saved += 1;
   }
-  return { upcoming, friends: friendsCount, saved };
+  return { upcoming: plans.length, friends: friendsCount, saved };
 }
 
 export type UpcomingPlan = { event: EventCardData; status: 'going' | 'down_if_friends' };

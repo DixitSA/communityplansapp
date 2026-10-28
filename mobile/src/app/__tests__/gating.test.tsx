@@ -3,7 +3,7 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 import type { AuthSession, MyProfile } from '@/lib/api';
 
 // This file pretends Supabase is configured, so the root layout's guards are live.
-jest.mock('@/lib/env', () => ({ isBackendConfigured: true, supabaseUrl: '', supabaseAnonKey: '' }));
+jest.mock('@/lib/env', () => ({ isBackendConfigured: true, backendHost: () => 'test.supabase.co', supabaseUrl: '', supabaseAnonKey: '' }));
 jest.mock('@/design/components/Skeleton', () => ({ Skeleton: () => null }));
 jest.mock('@/features/onboarding/WelcomeBlob', () => ({ WelcomeBlob: () => null }));
 

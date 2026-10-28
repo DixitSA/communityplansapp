@@ -1,6 +1,6 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
 
 import {
   AppText,
@@ -18,7 +18,7 @@ import {
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { usePlansStore } from '@/features/event/plansStore';
 import { getFixtureEvents } from '@/features/feed/fixtures';
-import { PlanRow } from '@/features/profile/PlanRow';
+import { PlanTicket } from '@/features/profile/PlanTicket';
 import { deriveProfileStats, upcomingPlans } from '@/features/profile/stats';
 import { useMyProfile } from '@/features/profile/useMyProfile';
 import { isBackendConfigured } from '@/lib/env';
@@ -47,8 +47,12 @@ export default function ProfileScreen() {
   useDemoPlans(demoPlans);
   const profile = useMyProfile();
   const statuses = usePlansStore((s) => s.statuses);
-  const stats = useMemo(() => deriveProfileStats(statuses), [statuses]);
   const plans = useMemo(() => upcomingPlans(statuses, getFixtureEvents(new Date())), [statuses]);
+  const stats = useMemo(() => deriveProfileStats(statuses, plans), [statuses, plans]);
+  const { width: windowWidth } = useWindowDimensions();
+  // Leave a sliver of the next ticket showing so the row reads as scrollable.
+  const ticketWidth = Math.min(windowWidth - space.lg * 2 - space.xxl, 320);
+  const ticketGap = space.md;
   const demo = !isBackendConfigured;
 
   const header = (
@@ -151,7 +155,21 @@ export default function ProfileScreen() {
               </View>
             </EmptyState>
           ) : (
-            plans.map((p) => <PlanRow key={p.event.id} plan={p} />)
+            <ScrollView
+              horizontal
+              accessibilityLabel="Upcoming plans"
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToOffsets={plans.map((_, i) => i * (ticketWidth + ticketGap))}
+              snapToAlignment="start"
+              // Bleed to the screen edges, keeping the first ticket aligned with the page gutter.
+              style={{ marginHorizontal: -space.lg }}
+              contentContainerStyle={{ gap: ticketGap, paddingHorizontal: space.lg, paddingVertical: space.sm }}
+            >
+              {plans.map((p) => (
+                <PlanTicket key={p.event.id} plan={p} width={ticketWidth} />
+              ))}
+            </ScrollView>
           )}
         </View>
 

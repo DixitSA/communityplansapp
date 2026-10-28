@@ -5,8 +5,9 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Button, EmptyState, useTheme } from '@/design';
-import { AuthProvider } from '@/features/auth/AuthProvider';
+import { AuthProvider, useSession } from '@/features/auth/AuthProvider';
 import { gateAllows } from '@/features/auth/gate';
+import { LoadingScreen } from '@/features/auth/LoadingScreen';
 import { useGate } from '@/features/auth/useGate';
 import { useHydrated } from '@/lib/useHydrated';
 
@@ -18,6 +19,20 @@ import { useHydrated } from '@/lib/useHydrated';
 function GatedStack() {
   const { colors, space } = useTheme();
   const { gate, profile } = useGate();
+  const session = useSession();
+
+  if (gate === 'unconfigured') {
+    // A release build without Supabase keys: say so plainly instead of showing sample data.
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', padding: space.lg, backgroundColor: colors.canvas }}>
+        <EmptyState
+          symbol="exclamationmark.circle.fill"
+          title="yard isn’t configured"
+          message="This build is missing its server settings. Please update the app or try again later."
+        />
+      </View>
+    );
+  }
 
   if (gate === 'loading') {
     if (profile.isError) {
@@ -35,8 +50,8 @@ function GatedStack() {
         </View>
       );
     }
-    // Reading the saved session: keep the canvas up instead of flashing the wrong screen.
-    return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+    // Reading the saved session or the profile: show the wordmark instead of a blank screen.
+    return <LoadingScreen onRetry={() => session && profile.refetch()} />;
   }
 
   return (

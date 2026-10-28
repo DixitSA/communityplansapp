@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { AppState } from 'react-native';
 
 import type { Database } from './database.types';
 import { isBackendConfigured } from './env';
@@ -10,7 +11,13 @@ function create(): SupabaseClient<Database> | null {
   // Loaded only when configured, so demo mode never touches SQLite.
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- a side-effect import that must be conditional
   require('expo-sqlite/localStorage/install');
-  return createSupabaseClient(localStorage);
+  const client = createSupabaseClient(localStorage);
+  // React Native has no timers while the app sleeps, so refresh the access token only in the foreground.
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') client.auth.startAutoRefresh();
+    else client.auth.stopAutoRefresh();
+  });
+  return client;
 }
 
 /** The one Supabase client. `null` in demo mode. Only `src/lib/api` may import this. */

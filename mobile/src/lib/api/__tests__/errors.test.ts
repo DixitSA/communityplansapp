@@ -47,7 +47,7 @@ describe('onboardingStepForError', () => {
 describe('mapAuthError', () => {
   it('explains wrong, expired and rate-limited codes', () => {
     expect(mapAuthError('otp_invalid')).toMatch(/isn’t right/);
-    expect(mapAuthError('otp_expired')).toMatch(/expired/);
+    expect(mapAuthError('otp_expired')).toMatch(/wrong or expired/);
     expect(mapAuthError('over_email_send_rate_limit')).toMatch(/Wait/);
     expect(mapAuthError('network')).toMatch(/connection/);
     expect(mapAuthError('???')).toBe(GENERIC_ERROR);
@@ -61,5 +61,26 @@ describe('errorCode', () => {
     expect(errorCode({ message: 'must_be_18' })).toBe('must_be_18');
     expect(errorCode(new TypeError('Network request failed'))).toBe('network');
     expect(errorCode(null)).toBe('unknown');
+  });
+
+  it('unwraps PostgREST errors raised by RPC functions (code P0001, message is the real code)', () => {
+    const rpc = (message: string) => ({ code: 'P0001', message, details: null, hint: null });
+    expect(errorCode(rpc('must_be_18'))).toBe('must_be_18');
+    expect(errorCode(rpc('username_taken'))).toBe('username_taken');
+    expect(errorCode(rpc('already_onboarded'))).toBe('already_onboarded');
+    expect(errorCode(new ApiError(errorCode(rpc('too_few_interests'))))).toBe('too_few_interests');
+  });
+
+  it('still reads other database codes as they are', () => {
+    expect(errorCode({ code: '42501', message: 'permission denied' })).toBe('42501');
+  });
+
+  it('maps a raised RPC error all the way to friendly copy', () => {
+    const rpc = (message: string) => ({ code: 'P0001', message });
+    for (const code of ONBOARDING_ERROR_CODES) {
+      expect(mapOnboardingError(errorCode(rpc(code)))).not.toBe(GENERIC_ERROR);
+    }
+    expect(onboardingStepForError(errorCode(rpc('username_taken')))).toBe('profile');
+    expect(onboardingStepForError(errorCode(rpc('city_invalid')))).toBe('location');
   });
 });

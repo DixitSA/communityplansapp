@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '../database.types';
+import { createAppleNonce } from '../nonce';
 import { ApiError, errorCode } from './errors';
 import type { Api, AuthSession, MyProfile } from './types';
 
@@ -29,18 +30,18 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         token: code,
         type: 'email',
       });
-      if (error) {
-        // Supabase reports a wrong code as "expired or invalid" with the otp_expired code.
-        throw new ApiError(error.code === 'otp_expired' ? 'otp_invalid' : errorCode(error));
-      }
+      if (error) fail(error);
     },
 
     async signInWithApple() {
       // Loaded on demand: the module only exists as a native module on iOS.
       const AppleAuthentication = await import('expo-apple-authentication');
+      // Apple gets the hash of a random nonce and Supabase the raw value, so a stolen token can't be replayed.
+      const nonce = await createAppleNonce();
       let credential;
       try {
         credential = await AppleAuthentication.signInAsync({
+          nonce: nonce.hashed,
           requestedScopes: [
             AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
             AppleAuthentication.AppleAuthenticationScope.EMAIL,
@@ -53,6 +54,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       const { error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: credential.identityToken,
+        nonce: nonce.raw,
       });
       if (error) fail(error);
       return { givenName: credential.fullName?.givenName ?? null };

@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { PrimaryButton, TextField, useTheme, type FieldStatus } from '@/design';
 import { BirthdateField } from '@/features/onboarding/BirthdateField';
+import { useSignInFlow } from '@/features/auth/useSignInFlow';
 import { useOnboardingDraft } from '@/features/onboarding/draftStore';
 import { Scaffold } from '@/features/onboarding/Scaffold';
 import { useUsernameAvailability } from '@/features/onboarding/useUsernameAvailability';
@@ -17,6 +18,7 @@ import {
 export default function ProfileBasicsScreen() {
   const { space } = useTheme();
   const router = useRouter();
+  const { leaveOnboarding } = useSignInFlow();
   const displayName = useOnboardingDraft((s) => s.displayName);
   const username = useOnboardingDraft((s) => s.username);
   const birthdateText = useOnboardingDraft((s) => s.birthdate);
@@ -52,8 +54,10 @@ export default function ProfileBasicsScreen() {
   return (
     <Scaffold
       step={1}
+      back
+      onBack={leaveOnboarding}
       title="The basics"
-      subtitle="Tell us who you are. You can change your name and photo later."
+      subtitle="Tell us who you are. You can change your name later."
       footer={<PrimaryButton label="Continue" disabled={!ready} onPress={() => router.push('/onboarding/interests')} />}
     >
       <View style={{ gap: space.xl }}>
