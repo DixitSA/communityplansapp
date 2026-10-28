@@ -21,6 +21,11 @@ export type ChipProps = {
   /** Interest slug: tints the chip with that category's tag colors. */
   category?: string;
   size?: 'regular' | 'small';
+  /**
+   * Reserves a 2pt border so selection doesn't shift layout. `true` draws it in the category
+   * (or accent) color, `false` keeps it transparent. Leave undefined for no border at all.
+   */
+  ring?: boolean;
   /** Omit for a non-interactive tag. */
   onPress?: () => void;
 };
@@ -40,6 +45,7 @@ export function Chip({
   tone = 'accent',
   category,
   size = 'regular',
+  ring,
   onPress,
 }: ChipProps) {
   const { colors, space, radius, scheme } = useTheme();
@@ -72,6 +78,12 @@ export function Chip({
         borderRadius: radius.pill,
         borderCurve: 'continuous',
         backgroundColor: bg,
+        ...(ring === undefined
+          ? null
+          : {
+              borderWidth: 2,
+              borderColor: ring ? (isCategory(category) ? categoryColors[category].solid : colors.accent) : 'transparent',
+            }),
       }}
     >
       {symbol ? <Icon name={symbol} size={iconSize} color={iconColor} /> : null}

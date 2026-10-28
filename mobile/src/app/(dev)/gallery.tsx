@@ -4,14 +4,18 @@ import { View } from 'react-native';
 import {
   AppText,
   Avatar,
+  Button,
   Chip,
   DateStrip,
   EmptyState,
   EventCard,
   Facepile,
   GlassButton,
+  GlassSurface,
   Icon,
   MeshArt,
+  PrimaryButton,
+  RollingNumber,
   Screen,
   SegmentedControl,
   Skeleton,
@@ -20,6 +24,7 @@ import {
   type SymbolName,
   type TypeVariant,
 } from '@/design';
+import { EventCardLink } from '@/features/event/EventCardLink';
 import { getFixtureEvents } from '@/features/feed/fixtures';
 import { startOfDay, toISODate } from '@/lib/dates';
 
@@ -54,6 +59,7 @@ export default function Gallery() {
   const [seg, setSeg] = useState('a');
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
   const [saved, setSaved] = useState(false);
+  const [count, setCount] = useState(24);
   const events = getFixtureEvents();
   const today = toISODate(new Date());
   const dayMeta: Record<string, DayMeta> = { [today]: { count: 5, friendsGoing: true } };
@@ -131,7 +137,30 @@ export default function Gallery() {
           <Chip label="Fitness" size="small" category="fitness" />
           <Chip label="Arts" size="small" category="arts_culture" />
           <Chip label="Nightlife" size="small" category="nightlife" />
+          <Chip label="Music (ring, selected)" symbol="music.note" category="music" selected ring />
+          <Chip label="Music (ring, off)" symbol="music.note" ring={false} />
         </View>
+      </Section>
+
+      <Section title="PrimaryButton and RollingNumber">
+        <PrimaryButton label="Continue" onPress={() => setCount((c) => c + 1)} />
+        <PrimaryButton accessibilityLabel={`Show ${count} events`} onPress={() => setCount((c) => c + 7)}>
+          <AppText variant="headline" color="onAccent">Show</AppText>
+          <RollingNumber value={count} color="onAccent" />
+          <AppText variant="headline" color="onAccent">events (tap to roll)</AppText>
+        </PrimaryButton>
+        <PrimaryButton label="Disabled" disabled onPress={() => {}} />
+      </Section>
+
+      <Section title="Button (icon, primary and secondary)">
+        <Button variant="primary" symbol="message.fill" label="Open chat" onPress={() => {}} />
+        <Button symbol="calendar.badge.plus" label="Add to Calendar" onPress={() => {}} />
+      </Section>
+
+      <Section title="GlassSurface (RSVP bar backing)">
+        <GlassSurface style={{ padding: space.lg, borderRadius: radius.card, borderCurve: 'continuous' }}>
+          <AppText variant="subheadline">Glass on iOS 26, solid canvas elsewhere or with Reduce Transparency.</AppText>
+        </GlassSurface>
       </Section>
 
       <Section title="Avatar and Facepile">
@@ -198,6 +227,8 @@ export default function Gallery() {
       <Section title="EventCard">
         <EventCard event={events[4]} saved={saved} onToggleSave={() => setSaved((s) => !s)} />
         <EventCard event={events[1]} />
+        {/* Opens the event page with the zoom transition; the heart shares the plans store. */}
+        <EventCardLink event={events[2]} />
       </Section>
     </Screen>
   );

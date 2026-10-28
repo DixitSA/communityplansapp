@@ -1,4 +1,5 @@
 import type { EventCardData } from '@/design';
+import type { EventDetail } from '@/features/event/types';
 import { addDays, startOfWeekMonday } from '@/lib/dates';
 
 // Fictional sample data so the feed has something to show before the backend exists.
@@ -72,4 +73,139 @@ export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
     const day = addDays(monday, dayOffset);
     return { ...rest, startsAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute) };
   });
+}
+
+type DetailSeed = Omit<EventDetail, keyof EventCardData | 'tags'> & {
+  /** Tags after the primary category. */
+  moreTags?: { label: string; interest: string }[];
+};
+
+// Fictional people who are not your friends. Shown only after you're Going.
+const O = [
+  { id: 'o-alex', name: 'Alex Rivera' },
+  { id: 'o-dani', name: 'Dani Brooks' },
+  { id: 'o-kofi', name: 'Kofi Mensah' },
+  { id: 'o-lena', name: 'Lena Park' },
+  { id: 'o-ravi', name: 'Ravi Patel' },
+];
+
+const DETAILS: Record<string, DetailSeed> = {
+  'ev-001': {
+    description:
+      'Golden hour, a crate of records and a patio with good fried chicken. A local DJ spins soul and funk from the 70s while the sun goes down. Come alone or bring a friend; the best seats are the ones next to strangers.',
+    address: '1218 Thomas Ave, Charlotte, NC',
+    host: { name: 'Haberdish', kind: 'venue' },
+    priceLabel: 'Free',
+    source: { name: 'yard', curated: true },
+    otherAttendees: O.slice(0, 4),
+    othersGoing: 23,
+  },
+  'ev-002': {
+    description:
+      'A relaxed 5K loop around Camp North End, then tacos for everyone who finishes (or just shows up). All paces welcome, and the back of the pack gets the loudest cheers.',
+    address: '1824 Statesville Ave, Charlotte, NC',
+    host: { name: 'Chris Park', kind: 'organizer' },
+    priceLabel: 'Free',
+    moreTags: [{ label: 'Food & Drinks', interest: 'food_drinks' }],
+    source: { name: 'Eventbrite', url: 'https://www.eventbrite.com' },
+    otherAttendees: O.slice(1, 5),
+    othersGoing: 31,
+  },
+  'ev-003': {
+    description:
+      'Twelve food trucks parked around the green, one lunch hour. Bring a friend, split a few plates and try something you cannot pronounce yet.',
+    address: '435 S Tryon St, Charlotte, NC',
+    host: { name: 'Uptown Green', kind: 'venue' },
+    priceLabel: 'Free entry',
+    source: { name: 'Charlotte Center City Partners' },
+    otherAttendees: O.slice(0, 3),
+    othersGoing: 56,
+  },
+  'ev-004': {
+    description:
+      'Sign up at the door for a five-minute slot, or just come to listen. House mezcal flights are half price during the first hour, and the host keeps the room friendly.',
+    address: '3227 N Davidson St, Charlotte, NC',
+    host: { name: 'Evening Muse', kind: 'venue' },
+    priceLabel: '$8',
+    moreTags: [{ label: 'Food & Drinks', interest: 'food_drinks' }],
+    source: { name: 'Eventbrite', url: 'https://www.eventbrite.com' },
+    otherAttendees: O.slice(2, 5),
+    othersGoing: 14,
+  },
+  'ev-005': {
+    description:
+      'Two rooms, one rooftop and a sound system people still talk about. Doors at nine, the first set starts around ten. Dress for dancing and keep your ID handy.',
+    address: '1500 Camden Rd, Charlotte, NC',
+    host: { name: 'Jordan Reyes', kind: 'organizer' },
+    priceLabel: '$20 to $35',
+    moreTags: [{ label: 'Music', interest: 'music' }],
+    source: { name: 'yard', curated: true },
+    otherAttendees: O,
+    othersGoing: 142,
+  },
+  'ev-006': {
+    description:
+      'Make a pair of mugs at the wheel with a teacher who has seen every kind of wobbly bowl. Great for dates, double dates or flying solo. Clay, tools and one glaze each are included.',
+    address: '1500 Central Ave, Charlotte, NC',
+    host: { name: 'Plaza Midwood Studio', kind: 'venue' },
+    priceLabel: '$45',
+    source: { name: 'Eventbrite', url: 'https://www.eventbrite.com' },
+    otherAttendees: O.slice(0, 2),
+    othersGoing: 9,
+  },
+  'ev-007': {
+    description:
+      'Cheap drinks, a skyline view and a good crowd before the weekend starts. Arrive early to grab a spot near the glass; the sunset is free.',
+    address: '100 N Tryon St, Charlotte, NC',
+    host: { name: 'Skye Bar', kind: 'venue' },
+    priceLabel: 'Free entry',
+    moreTags: [{ label: 'Food & Drinks', interest: 'food_drinks' }],
+    source: { name: 'yard', curated: true },
+    otherAttendees: O.slice(1, 4),
+    othersGoing: 38,
+  },
+  'ev-008': {
+    description:
+      'Six local comedians, one hour and a very forgiving audience. The front row is a trap. Grab a seat in the middle and bring a friend who laughs loudly.',
+    address: '300 Camp Rd, Charlotte, NC',
+    host: { name: 'Camp North End', kind: 'venue' },
+    priceLabel: '$15',
+    source: { name: 'Eventbrite', url: 'https://www.eventbrite.com' },
+    otherAttendees: O.slice(2, 5),
+    othersGoing: 47,
+  },
+  'ev-009': {
+    description:
+      'An easy ride along the greenway with a brunch stop halfway. Loaner bikes are limited, so bring your own if you can. We regroup at every intersection, so no one gets dropped.',
+    address: '1900 East Blvd, Charlotte, NC',
+    host: { name: 'Priya Nair', kind: 'organizer' },
+    priceLabel: 'Free',
+    moreTags: [{ label: 'Food & Drinks', interest: 'food_drinks' }],
+    source: { name: 'Charlotte Bike Collective' },
+    otherAttendees: O.slice(0, 4),
+    othersGoing: 18,
+  },
+  'ev-010': {
+    description:
+      'A one-night ramen counter inside the brewery taproom. Three bowls, one vegetarian, and a limited batch of tonkotsu that sells out by eleven.',
+    address: '2921 N Tryon St, Charlotte, NC',
+    host: { name: 'NoDa Brewing', kind: 'venue' },
+    priceLabel: '$14 a bowl',
+    source: { name: 'yard', curated: true },
+    otherAttendees: O.slice(1, 3),
+    othersGoing: 12,
+  },
+};
+
+/** One fixture event with everything the event page needs, or undefined for an unknown id. */
+export function getFixtureEvent(id: string, now: Date = new Date()): EventDetail | undefined {
+  const card = getFixtureEvents(now).find((e) => e.id === id);
+  const detail = DETAILS[id];
+  if (!card || !detail) return undefined;
+  const { moreTags = [], ...rest } = detail;
+  return {
+    ...card,
+    ...rest,
+    tags: [{ label: card.categoryLabel, interest: card.interest }, ...moreTags],
+  };
 }
