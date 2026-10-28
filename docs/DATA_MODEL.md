@@ -38,6 +38,8 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 - **Friend request:** insert into `friendships` with `user_a`/`user_b` ordered (smaller UUID first), `requested_by = me`. Accept: update `status = 'accepted'` (only the recipient can). Decline/unfriend: delete.
 - **Feed and map:** `rpc('get_feed', { p_city_id, p_day, p_lat, p_lng, p_radius_m, p_interest_ids, p_price, p_mode })`. The day boundary uses the city's timezone.
 - **Detail social context:** `rpc('get_event_social', { p_event_id })`.
+- **Onboarding:** `rpc('username_available', { p_username })` returns a boolean (false when invalid or taken, case-insensitive). `rpc('complete_onboarding', { p_username, p_display_name, p_birthdate, p_interest_ids, p_home_city_id })` atomically creates `profiles`, `profiles_private` and `profile_interests` for `auth.uid()`; clients never insert these directly during onboarding.
+- Errors are raised as exact messages: `not_authenticated`, `already_onboarded`, `username_invalid`, `username_taken`, `display_name_invalid`, `must_be_18`, `too_few_interests`, `city_invalid`.
 
 ## Server-side behavior
 - **Down if friends go:** an `after insert/update of status` trigger on `rsvps`. When a user becomes Going, every friend who is `down_if_friends` on that event and hasn't been alerted gets one `friend_going` notification, and `friend_alert_sent_at` is stamped. Switching back to "Down if" re-arms the alert.
