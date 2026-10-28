@@ -206,7 +206,7 @@ The tagline is **"Find your people."** Warm, short, a little playful, and never 
 | Card → detail zoom | `Link.AppleZoom` (Expo Router, iOS 18+) |
 | Long-press preview + menu | `Link.Preview` + `Link.Menu` (Expo Router) |
 | Sheets with detents (filters, Going) | Route with `presentation: 'formSheet'`, `sheetAllowedDetents` |
-| Persistent map sheet | `@gorhom/bottom-sheet` over `expo-maps` (Apple Maps) |
+| Persistent map sheet | `@expo/ui` `BottomSheet` over `expo-maps` (Apple Maps) |
 | Glass buttons/bars | `GlassView` / `GlassContainer` from `expo-glass-effect` |
 | Native toggles, pickers, segmented control, slider | `@expo/ui` SwiftUI components |
 | SF Symbols + symbol animations | `expo-symbols` |

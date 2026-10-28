@@ -5,7 +5,8 @@ Development runs as a small team of Claude agents. The main session is the **orc
 | Agent | Model | Does | Never does |
 |---|---|---|---|
 | Orchestrator (main session) | default | Plans slices from MILESTONES, writes briefs, merges results, commits, opens PRs | Long implementation work |
-| `builder` | Sonnet, medium effort | Implements one slice; runs typecheck, lint, tests and screenshots | Judges its own design; explores beyond the brief |
+| `builder` | Sonnet, medium effort | Implements one non-UI slice (backend, data layer, migrations, Edge Functions); runs typecheck, lint and tests | Explores beyond the brief |
+| `ui-designer` | Sonnet, high effort, with Expo's official UI skills (`expo-native-ui`, `expo-design-system`, `expo-animation`, `expo-ui`, `expo-router`) | Designs and builds screens: writes a design note first, builds native-first, self-critiques once from screenshots | Signs off its own work (the judge does) |
 | `runner` | Haiku, low effort | Mechanical commands (installs, checks, exports, screenshots, Supabase CLI) with compact reports | Edits code |
 | `judge` | Opus, high effort | Design review from screenshots, diff review, product decisions the docs leave open | Edits code; spends money; changes privacy rules |
 

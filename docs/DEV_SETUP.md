@@ -53,6 +53,8 @@ Release → `eas build --profile preview` + `eas submit` → TestFlight
 /plugin marketplace add forrestchang/andrej-karpathy-skills
 /plugin install andrej-karpathy-skills@karpathy-skills
 ```
+- **Expo skills** power the `ui-designer` agent: `expo-native-ui`, `expo-design-system`, `expo-animation`, `expo-ui` and `expo-router`. `mobile/.claude/settings.json` also enables them from Anthropic's official marketplace (`expo@claude-plugins-official`) when you run Claude from `mobile/`.
+- **Figma MCP (optional):** only if you start designing in Figma. Add Figma's official remote MCP server, then paste frame links to Claude.
 - **Expo skills** are official skills from the Expo team: native UI, Expo Router, native tabs, animations, EAS builds and deployment. They're tuned for Claude.
 - **Karpathy skills** are behavioral guardrails: think first, keep it simple, make surgical diffs.
 - **Supabase MCP:** add the hosted server, pinned to your `staging` project and read-only to start. Copy the Claude Code command from https://supabase.com/docs/guides/getting-started/mcp, then run `/mcp` to log in.

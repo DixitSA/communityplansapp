@@ -19,7 +19,7 @@ External: Ticketmaster / SeatGeek APIs (ingestion) · Expo Push Service → APNs
 Checked against Expo Go's manifest (`expo/expo` → `apps/expo-go/package.json`, 2026-10-27). Expo Go includes:
 - `expo-router` (which brings `expo-glass-effect` and `expo-symbols`), `@expo/ui`, `expo-maps`, `expo-mesh-gradient`, `expo-image`, `expo-haptics`
 - `expo-calendar`, `expo-contacts`, `expo-location`, `expo-apple-authentication`, `expo-notifications`, `expo-image-picker`, `expo-sqlite`
-- `react-native-reanimated`, `react-native-gesture-handler` (so `@gorhom/bottom-sheet` works)
+- `react-native-reanimated`, `react-native-gesture-handler`
 
 Not verified for Expo Go: `stream-chat-expo` (week 9) and `@sentry/react-native` (week 10). Both arrive after the week-8 dev build anyway.
 
@@ -81,7 +81,7 @@ Rules:
 | Native UI | `expo-glass-effect`, `@expo/ui` (SwiftUI-backed components), `expo-symbols` (SF Symbols), `expo-mesh-gradient`, `expo-image`, `expo-haptics` |
 | Data | `@supabase/supabase-js`, `@tanstack/react-query`, `zustand`, `expo-sqlite` (session + cache storage) |
 | Device | `expo-location`, `expo-calendar`, `expo-contacts`, `expo-notifications`, `expo-apple-authentication`, `expo-image-picker`, `expo-maps` (Apple Maps; was alpha in recent docs, so fall back to `react-native-maps` if it's not stable enough) |
-| Map sheet | `@gorhom/bottom-sheet` (persistent, non-modal sheet over the map) |
+| Sheets, pickers, sliders, menus | `@expo/ui` (native SwiftUI). Expo's official guidance prefers it over `@gorhom/bottom-sheet` |
 | Chat | `stream-chat-expo` |
 | Ops | `@sentry/react-native`, `posthog-react-native` |
 
