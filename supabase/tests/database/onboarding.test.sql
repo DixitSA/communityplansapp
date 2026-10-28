@@ -8,7 +8,8 @@ select no_plan();
 insert into auth.users (id) values
   ('00000000-0000-0000-0000-0000000000a1'),
   ('00000000-0000-0000-0000-0000000000b2'),
-  ('00000000-0000-0000-0000-0000000000c3');
+  ('00000000-0000-0000-0000-0000000000c3'),
+  ('00000000-0000-0000-0000-0000000000d4');
 
 insert into public.profiles (id, username, display_name) values
   ('00000000-0000-0000-0000-0000000000c3', 'taken_name', 'Taken');
@@ -93,6 +94,33 @@ select lives_ok($$ select public.complete_onboarding('bobby', 'Bob', date '1990-
 reset role;
 select is((select count(*) from public.profiles where id = '00000000-0000-0000-0000-0000000000b2' and username = 'bobby')::int, 1, 'row belongs to caller');
 select is((select username from public.profiles where id = '00000000-0000-0000-0000-0000000000a1'), 'alice_x', 'alice untouched by bob');
+
+
+-- Hardening ---------------------------------------------------------------------
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select is(public.username_available('...'), false, '"..." is invalid');
+select is(public.username_available('_ab'), false, 'leading underscore is invalid');
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-0000000000d4');
+select throws_ok($$ select public.complete_onboarding('_abc', 'Z', date '1990-01-01', (select ints from fx), (select city from fx)) $$,
+  null, 'username_invalid', 'RPC rejects leading underscore');
+select throws_ok($$ select public.complete_onboarding('dd1', 'D', date '1990-01-01', null, (select city from fx)) $$,
+  null, 'too_few_interests', 'null interests');
+select throws_ok($$ select public.complete_onboarding('dd1', 'D', null, (select ints from fx), (select city from fx)) $$,
+  null, 'must_be_18', 'null birthdate');
+select throws_ok($$ select public.complete_onboarding('dd1', 'D', date '1899-12-31', (select ints from fx), (select city from fx)) $$,
+  null, 'must_be_18', 'ancient birthdate');
+select throws_ok($$ select public.complete_onboarding('dd1', 'D', (current_date - interval '18 years')::date + 1, (select ints from fx), (select city from fx)) $$,
+  null, 'must_be_18', 'day before 18th birthday');
+select lives_ok($$ select public.complete_onboarding('dd1', 'D', (current_date - interval '18 years')::date, (select ints from fx), (select city from fx)) $$,
+  'exact 18th birthday passes');
+select throws_ok($$ insert into public.profiles (id, username, display_name) values ('00000000-0000-0000-0000-0000000000d4', 'sneaky', 'S') $$,
+  '42501', null, 'direct profiles insert denied');
+select throws_ok($$ insert into public.profiles_private (id, birthdate) values ('00000000-0000-0000-0000-0000000000d4', date '1990-01-01') $$,
+  '42501', null, 'direct profiles_private insert denied');
+select lives_ok($$ update public.profiles_private set discoverable_by_phone = false where id = '00000000-0000-0000-0000-0000000000d4' $$,
+  'own discoverable_by_phone still updatable');
+reset role;
 
 -- anon / no session ----------------------------------------------------------------------
 select pg_temp.logout();
