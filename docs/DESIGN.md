@@ -75,7 +75,7 @@ The yard palette, checked for **WCAG AA**: text ≥ 4.5:1, glyphs on solid pins 
 - Clamp it so text stays AA.
 
 **Plan states:**
-- **Interested:** ★ outline, turning to a filled star when chosen.
+- **Interested:** ♡ heart outline, filled when chosen (the same glyph on cards, the RSVP row and Profile "Saved").
 - **Down if friends go:** a two-person glyph, with an `accentSoft` fill when chosen.
 - **Going:** ✓ on a filled `accent` button.
 
@@ -111,7 +111,7 @@ These are what make the app feel exceptional rather than merely fine.
    - A "Today" pill appears when you scroll away.
 2. **Card → detail zoom.** The native iOS zoom transition: the card's image grows into the hero, and swiping down dismisses it interactively.
 3. **Long-press preview.** A native context menu with a live preview of the event and quick actions: Going, Interested, Share, Directions. Power users never need to open the detail page.
-4. **RSVP row (per the v2 mockup).** Three equal buttons pinned at the bottom of the event page: **★ Interested · 👥 Down if friends go · ✓ Going**.
+4. **RSVP row (per the v2 mockup).** Three equal buttons pinned at the bottom of the event page: **♡ Interested · 👥 Down if friends go · ✓ Going**.
    - Going is the filled `accent` button. The others are `surface` buttons with a hairline border.
    - The selected state fills in, with a symbol bounce and a haptic.
    - After you choose, a one-line privacy hint appears under the row ("Only you can see this" / "Friends and other attendees can see this").
