@@ -3,9 +3,23 @@ import { mapTicketmasterEvent, type EventRow, type TmEvent } from "./mapper.ts";
 
 const TM_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 const PAGE_SIZE = 200;
-const MAX_PAGES = 4; // Ticketmaster deep paging limit: size * page < 1000
+const MAX_PAGES = 5; // Ticketmaster deep paging limit: size * page < 1000
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z");
+const chunk = <T>(a: T[], n = 100): T[][] =>
+  Array.from({ length: Math.ceil(a.length / n) }, (_, k) => a.slice(k * n, (k + 1) * n));
+
+async function digest(s: string): Promise<Uint8Array> {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+}
+/** Constant-time compare of SHA-256 digests. */
+async function authorized(provided: string | null, secret: string | undefined): Promise<boolean> {
+  if (!secret || !provided) return false;
+  const [a, b] = await Promise.all([digest(provided), digest(`Bearer ${secret}`)]);
+  let diff = 0;
+  for (let k = 0; k < a.length; k++) diff |= a[k] ^ b[k];
+  return diff === 0;
+}
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
@@ -16,7 +30,7 @@ async function fetchPage(params: URLSearchParams): Promise<{ events: TmEvent[]; 
       await sleep(1000 * 2 ** attempt);
       continue;
     }
-    if (!res.ok) throw new Error(`Ticketmaster ${res.status}`);
+    if (!res.ok) throw new Error(`Ticketmaster HTTP ${res.status}`); // no URL: it contains the apikey
     const body = await res.json();
     return { events: body?._embedded?.events ?? [], totalPages: body?.page?.totalPages ?? 0 };
   }
@@ -25,7 +39,7 @@ async function fetchPage(params: URLSearchParams): Promise<{ events: TmEvent[]; 
 
 Deno.serve(async (req) => {
   const secret = Deno.env.get("INGEST_SECRET");
-  if (req.method !== "POST" || !secret || req.headers.get("Authorization") !== `Bearer ${secret}`) {
+  if (req.method !== "POST" || !(await authorized(req.headers.get("Authorization"), secret))) {
     return json({ error: "unauthorized" }, 401);
   }
 
@@ -50,7 +64,7 @@ Deno.serve(async (req) => {
       endDateTime: iso(new Date(now.getTime() + 30 * 86_400_000)),
     });
 
-    let fetched = 0, upserted = 0, skipped = 0, pages = 0;
+    let fetched = 0, upserted = 0, skipped = 0, pages = 0, truncated = false;
     for (let page = 0; page < MAX_PAGES; page++) {
       params.set("page", String(page));
       const { events, totalPages } = await fetchPage(params);
@@ -63,6 +77,20 @@ Deno.serve(async (req) => {
         const row = mapTicketmasterEvent(raw, { cityId: city.id, interestIds, timezone: city.timezone });
         if (row) rows.set(row.external_id, row);
         else skipped++;
+      }
+
+      // Never resurrect events an admin hid.
+      if (rows.size > 0) {
+        for (const ids of chunk([...rows.keys()])) {
+          const { data: hidden, error: hErr } = await db
+            .from("events").select("external_id")
+            .eq("source", "ticketmaster").eq("status", "hidden").in("external_id", ids);
+          if (hErr) throw hErr;
+          for (const h of hidden ?? []) {
+            rows.delete(h.external_id!);
+            skipped++;
+          }
+        }
       }
 
       if (rows.size > 0) {
@@ -78,8 +106,10 @@ Deno.serve(async (req) => {
         const links = list.flatMap((r) =>
           r.interest_ids.map((interest_id) => ({ event_id: idByExternal.get(r.external_id)!, interest_id }))
         );
-        const { error: delErr } = await db.from("event_interests").delete().in("event_id", eventIds);
-        if (delErr) throw delErr;
+        for (const ids of chunk(eventIds)) {
+          const { error: delErr } = await db.from("event_interests").delete().in("event_id", ids);
+          if (delErr) throw delErr;
+        }
         if (links.length) {
           const { error: insErr } = await db.from("event_interests").insert(links);
           if (insErr) throw insErr;
@@ -88,12 +118,17 @@ Deno.serve(async (req) => {
       }
 
       if (page + 1 >= totalPages) break;
+      if (page + 1 >= MAX_PAGES) {
+        truncated = totalPages > MAX_PAGES;
+        break;
+      }
       await sleep(250);
     }
 
-    return json({ fetched, upserted, skipped, pages });
+    return json({ fetched, upserted, skipped, pages, truncated });
   } catch (e) {
-    console.error(e);
-    return json({ error: e instanceof Error ? e.message : "ingest failed" }, 500);
+    // Log message only: fetch errors can embed the URL (and apikey).
+    console.error("ingest failed:", (e instanceof Error ? e.message : String(e)).replace(/apikey=[^&\s]+/g, "apikey=***"));
+    return json({ error: "ingest failed" }, 500);
   }
 });

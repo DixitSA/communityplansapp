@@ -81,13 +81,23 @@ export function localToUtcIso(localDate: string, localTime: string, tz: string):
 
 function startsAt(raw: TmEvent, tz: string): string | null {
   const s = raw.dates?.start;
-  if (!s || s.dateTBA || s.dateTBD) return null;
+  if (!s || s.dateTBA || s.dateTBD || s.timeTBA) return null;
+  if (!s.dateTime && !s.localTime) return null;
   if (s.dateTime) {
     const ms = Date.parse(s.dateTime);
     return Number.isNaN(ms) ? null : new Date(ms).toISOString();
   }
   if (!s.localDate) return null;
-  return localToUtcIso(s.localDate, s.localTime ?? "00:00:00", tz);
+  return localToUtcIso(s.localDate, s.localTime!, tz);
+}
+
+function httpsOnly(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 function pickImage(images: TmImage[] | undefined): string | null {
@@ -121,6 +131,7 @@ export function mapTicketmasterEvent(raw: TmEvent, ctx: MapContext): EventRow | 
   if (!venue?.location?.latitude || !venue.location.longitude || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return null;
   }
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) return null;
 
   const prices = raw.priceRanges ?? [];
   const mins = prices.map((p) => p.min).filter((n): n is number => typeof n === "number");
@@ -142,17 +153,17 @@ export function mapTicketmasterEvent(raw: TmEvent, ctx: MapContext): EventRow | 
     external_id: raw.id,
     city_id: ctx.cityId,
     title: raw.name,
-    description: desc ? desc.slice(0, 500) : null,
+    description: desc ? (desc.length > 500 ? desc.slice(0, 499) + "…" : desc) : null,
     starts_at,
     venue_name: venue.name ?? null,
     venue_address: addr || null,
     location: `SRID=4326;POINT(${lng} ${lat})`,
-    image_url: pickImage(raw.images),
+    image_url: httpsOnly(pickImage(raw.images)),
     is_free,
     price_min,
     price_max,
     currency: prices[0]?.currency ?? "USD",
-    ticket_url: raw.url ?? null,
+    ticket_url: httpsOnly(raw.url),
     attribution: "Tickets on Ticketmaster",
     status: code === "cancelled" || code === "canceled" ? "cancelled" : "active",
     interest_ids,

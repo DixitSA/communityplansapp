@@ -54,3 +54,26 @@ Deno.test("long description is truncated to 500", async () => {
   raw.info = "x".repeat(900);
   assertEquals(mapTicketmasterEvent(raw, ctx)!.description!.length, 500);
 });
+
+Deno.test("no-time event is skipped", async () => {
+  assertEquals(mapTicketmasterEvent(await load("no_time"), ctx), null);
+});
+
+Deno.test("bad venue coordinates are skipped", async () => {
+  assertEquals(mapTicketmasterEvent(await load("bad_venue"), ctx), null);
+  const raw = await load("concert");
+  raw._embedded!.venues![0].location = { latitude: "95", longitude: "-80" };
+  assertEquals(mapTicketmasterEvent(raw, ctx), null);
+  raw._embedded!.venues![0].location = { latitude: "35", longitude: "-200" };
+  assertEquals(mapTicketmasterEvent(raw, ctx), null);
+});
+
+Deno.test("non-https urls are dropped; truncation adds ellipsis", async () => {
+  const raw = await load("concert");
+  raw.url = "http://example.com/t";
+  raw.images = [{ ratio: "16_9", url: "http://example.com/i.jpg", width: 1 }];
+  raw.info = "y".repeat(600);
+  const r = mapTicketmasterEvent(raw, ctx)!;
+  assertEquals([r.ticket_url, r.image_url], [null, null]);
+  assert(r.description!.endsWith("…"));
+});
