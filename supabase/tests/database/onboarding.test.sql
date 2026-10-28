@@ -120,6 +120,10 @@ select throws_ok($$ insert into public.profiles_private (id, birthdate) values (
   '42501', null, 'direct profiles_private insert denied');
 select lives_ok($$ update public.profiles_private set discoverable_by_phone = false where id = '00000000-0000-0000-0000-0000000000d4' $$,
   'own discoverable_by_phone still updatable');
+select is((select discoverable_by_phone from public.profiles_private where id = '00000000-0000-0000-0000-0000000000d4'),
+  false, 'the discoverable_by_phone update actually landed');
+select throws_ok($$ update public.profiles_private set phone_hmac = 'x' where id = '00000000-0000-0000-0000-0000000000d4' $$,
+  '42501', null, 'phone_hmac is server-only');
 reset role;
 
 -- anon / no session ----------------------------------------------------------------------
