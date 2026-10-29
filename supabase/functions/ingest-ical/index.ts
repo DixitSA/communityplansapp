@@ -35,7 +35,8 @@ async function fetchFeed(url: string): Promise<string> {
     if (res.status < 300 || res.status >= 400) break;
     const loc = res.headers.get("location");
     await res.body?.cancel();
-    if (!loc || hop === MAX_REDIRECTS) throw new Error("too many redirects");
+    if (!loc) throw new Error("redirect without location");
+    if (hop === MAX_REDIRECTS) throw new Error("too many redirects");
     current = new URL(loc, current);
   }
   if (!res) throw new Error("feed fetch failed");
