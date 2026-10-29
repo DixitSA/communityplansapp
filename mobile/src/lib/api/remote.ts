@@ -343,6 +343,15 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error) fail(error);
     },
 
+    async reportUser(userId, reason) {
+      const uid = await myUserId();
+      const { error } = await supabase
+        .from('reports')
+        .insert({ reporter_id: uid, target_type: 'user', target_id: userId, reason });
+      // Reported before: same result the person wanted.
+      if (error && error.code !== '23505') fail(error);
+    },
+
     async blockUser(userId) {
       const uid = await myUserId();
       const { error } = await supabase.from('blocks').insert({ blocker_id: uid, blocked_id: userId });

@@ -119,12 +119,36 @@ export function parseIcs(text: string): VEvent[] {
   return events;
 }
 
+const WINDOWS_ZONES: Record<string, string> = {
+  "eastern standard time": "America/New_York",
+  "central standard time": "America/Chicago",
+  "mountain standard time": "America/Denver",
+  "pacific standard time": "America/Los_Angeles",
+  "utc": "UTC",
+};
+
+/** Clean a TZID: strip `/mozilla.org/20050126_1/` style prefixes and map common Windows names. */
+export function normalizeTzid(tzid: string): string {
+  const t = tzid.trim().replace(/^\/[^/]+\/[^/]+\//, "").replace(/^\//, "");
+  return WINDOWS_ZONES[t.toLowerCase()] ?? t;
+}
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+function formatterFor(tz: string): Intl.DateTimeFormat {
+  let f = formatters.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric",
+    });
+    formatters.set(tz, f);
+  }
+  return f;
+}
+
 /** Offset (ms) of `tz` from UTC at the given instant. Throws RangeError for unknown zones. */
 function tzOffsetMs(instant: number, tz: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
-    hour: "numeric", minute: "numeric", second: "numeric",
-  }).formatToParts(new Date(instant));
+  const parts = formatterFor(tz).formatToParts(new Date(instant));
   const g = (t: string) => Number(parts.find((p) => p.type === t)?.value);
   return Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second")) -
     Math.floor(instant / 1000) * 1000;
@@ -138,7 +162,7 @@ export function toUtcIso(d: IcsDate | null, fallbackTz: string): string | null {
   if (!m || !t) return null;
   try {
     const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +t[1], +t[2], +t[3]);
-    const tz = d.tzid ?? fallbackTz;
+    const tz = d.tzid ? normalizeTzid(d.tzid) : fallbackTz;
     let utc = wall - tzOffsetMs(wall, tz);
     utc = wall - tzOffsetMs(utc, tz); // second pass handles DST edges
     return new Date(utc).toISOString();

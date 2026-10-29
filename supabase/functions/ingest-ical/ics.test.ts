@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { parseIcs, toUtcIso, unfold } from "./ics.ts";
+import { normalizeTzid, parseIcs, toUtcIso, unfold } from "./ics.ts";
 
 const load = (n: string) => Deno.readTextFile(new URL(`./fixtures/${n}.ics`, import.meta.url));
 
@@ -37,4 +37,14 @@ Deno.test("cancelled, recurring and all-day flags", async () => {
 
 Deno.test("unknown time zone gives null instead of throwing", () => {
   assertEquals(toUtcIso({ kind: "local", date: "2026-11-01", time: "10:00:00", tzid: "Mars/Olympus" }, "UTC"), null);
+});
+
+Deno.test("TZID prefixes and Windows names are normalized", () => {
+  assertEquals(normalizeTzid("/mozilla.org/20050126_1/America/New_York"), "America/New_York");
+  assertEquals(normalizeTzid("Eastern Standard Time"), "America/New_York");
+  assertEquals(
+    toUtcIso({ kind: "local", date: "2026-11-21", time: "19:00:00", tzid: "Eastern Standard Time" }, "UTC"),
+    "2026-11-22T00:00:00.000Z",
+  );
+  assertEquals(toUtcIso({ kind: "local", date: "2026-11-21", time: "19:00:00", tzid: null }, "America/Chicago"), "2026-11-22T01:00:00.000Z");
 });

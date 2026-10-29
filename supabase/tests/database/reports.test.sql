@@ -30,7 +30,8 @@ values ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-0000000
 
 insert into public.event_messages (id, event_id, user_id, body) overriding system value values
   (9001, '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000b', 'bad words'),
-  (9002, '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'finn msg');
+  (9002, '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'finn msg'),
+  (9003, '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'finn msg 2');
 
 create function pg_temp.login(u uuid) returns void language plpgsql as $$
 begin
@@ -78,10 +79,23 @@ select throws_ok($$ select * from public.reports $$, '42501', null, 'clients can
 select throws_ok($$ select public.purge_old_reports() $$, '42501', null, 'clients cannot purge');
 reset role;
 
--- 4. Rate limit: 20 per day ----------------------------------------------------
+-- 4. Direct message reports are blocked; cap is 20 per day on every path -------------
 select pg_temp.login('00000000-0000-0000-0000-00000000000b');
-select lives_ok($$ select public.report_message(9002, 'r' || g) from generate_series(1, 20) g $$, '20 reports allowed');
-select throws_ok($$ select public.report_message(9002, 'one too many') $$, 'P0001', 'rate_limited', '21st report is rate limited');
+select throws_ok($$ insert into public.reports (reporter_id, target_type, target_id, reason)
+  values ('00000000-0000-0000-0000-00000000000b', 'message', '9002', 'x') $$,
+  '42501', null, 'direct message-type report is denied');
+select throws_ok($$ insert into public.reports (reporter_id, target_type, target_id, reason)
+  values ('00000000-0000-0000-0000-00000000000b', 'user', 'x', 'x'), ('00000000-0000-0000-0000-00000000000b', 'user', 'x', 'y') $$,
+  '23505', null, 'the same target is reported once');
+select lives_ok($$ select public.report_message(9002, 'once') $$, 'report via the RPC');
+select lives_ok($$ select public.report_message(9002, 'again') $$, 'duplicate message report is a no-op');
+select lives_ok($$ insert into public.reports (reporter_id, target_type, target_id, reason)
+  select '00000000-0000-0000-0000-00000000000b', 'user', 'u' || g, 'x' from generate_series(1, 19) g $$,
+  'direct reports up to 20 in total are allowed');
+select throws_ok($$ insert into public.reports (reporter_id, target_type, target_id, reason)
+  values ('00000000-0000-0000-0000-00000000000b', 'event', 'e', 'x') $$,
+  'P0001', 'rate_limited', '21st direct report is rate limited');
+select throws_ok($$ select public.report_message(9003, 'too many') $$, 'P0001', 'rate_limited', 'the RPC is capped too');
 reset role;
 
 -- 5. Purge ---------------------------------------------------------------------

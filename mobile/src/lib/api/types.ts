@@ -152,6 +152,8 @@ export type Api = {
   /** Live inserts and updates for one chat. Returns the unsubscribe function. */
   subscribeToEventChat(eventId: string, handlers: ChatSubscription): () => void;
   reportMessage(messageId: string, reason: ReportReason): Promise<void>;
+  /** For people whose message is gone (deleted): a plain user report. */
+  reportUser(userId: string, reason: ReportReason): Promise<void>;
   blockUser(userId: string): Promise<void>;
 };
 

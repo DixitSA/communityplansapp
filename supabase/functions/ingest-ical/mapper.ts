@@ -37,7 +37,9 @@ export interface EventRow {
   interest_ids: number[];
 }
 
-const DEFAULT_TZ = "America/New_York";
+const DEFAULT_TZ = "America/New_York"; // only when the caller passes no city time zone
+export const MAX_UID = 255;
+export const MAX_TEXT = 200;
 const DAY = 86_400_000;
 
 const validPoint = (lat: number, lng: number) =>
@@ -54,7 +56,7 @@ function httpsOnly(url: string | null | undefined): string | null {
 
 /** Returns null when the event is skipped (recurring, all-day, no time/location, outside the window). */
 export function mapIcalEvent(ev: VEvent, source: IcalSource, ctx: MapContext): EventRow | null {
-  if (!ev.uid || !ev.summary || ev.recurring) return null;
+  if (!ev.uid || ev.uid.length > MAX_UID || !ev.summary || ev.recurring) return null;
   const tz = ctx.timezone ?? DEFAULT_TZ;
   const starts_at = toUtcIso(ev.dtstart, tz);
   if (!starts_at) return null; // missing, unparseable or all-day
@@ -74,7 +76,7 @@ export function mapIcalEvent(ev: VEvent, source: IcalSource, ctx: MapContext): E
     return null;
   }
 
-  const venue = ev.location?.split(",")[0].trim() || source.default_venue_name || null;
+  const venue = (ev.location?.split(",")[0].trim() || source.default_venue_name || "").slice(0, MAX_TEXT) || null;
   const desc = (ev.description ?? "").trim();
   const interest_ids = [...new Set(source.default_interest_slugs ?? [])]
     .map((s) => ctx.interestIds[s])
@@ -84,7 +86,7 @@ export function mapIcalEvent(ev: VEvent, source: IcalSource, ctx: MapContext): E
     source: "ical",
     external_id: `${source.id}:${ev.uid}`,
     city_id: source.city_id,
-    title: ev.summary,
+    title: ev.summary.slice(0, MAX_TEXT),
     description: desc ? (desc.length > 500 ? desc.slice(0, 499) + "…" : desc) : null,
     starts_at,
     ends_at,

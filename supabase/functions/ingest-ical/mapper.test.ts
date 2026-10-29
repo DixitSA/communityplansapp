@@ -46,3 +46,11 @@ Deno.test("only the next 30 days", async () => {
   assertEquals(mapIcalEvent(e, source, { ...ctx, now: new Date("2026-12-01T00:00:00Z") }), null);
   assertEquals(mapIcalEvent(e, source, { ...ctx, now: new Date("2026-10-01T00:00:00Z") }), null);
 });
+
+Deno.test("caps: long UID skipped; title and venue sliced to 200", async () => {
+  const e = parseIcs(await load("luma"))[0];
+  assertEquals(mapIcalEvent({ ...e, uid: "x".repeat(256) }, source, ctx), null);
+  assertEquals(mapIcalEvent({ ...e, uid: "x".repeat(255) }, source, ctx)!.external_id.length, "src1:".length + 255);
+  const r = mapIcalEvent({ ...e, summary: "t".repeat(500), location: "v".repeat(500) }, source, ctx)!;
+  assertEquals([r.title.length, r.venue_name!.length], [200, 200]);
+});

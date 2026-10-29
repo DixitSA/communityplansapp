@@ -62,6 +62,7 @@ export function createDemoChat({ wait, now = () => new Date() }: {
   | 'markChatRead'
   | 'subscribeToEventChat'
   | 'reportMessage'
+  | 'reportUser'
   | 'blockUser'
 > {
   const rooms = new Map<string, Room>();
@@ -213,6 +214,10 @@ export function createDemoChat({ wait, now = () => new Date() }: {
     async reportMessage(messageId) {
       await wait();
       if (!findMessage(messageId)) throw new ApiError('not_found');
+    },
+
+    async reportUser() {
+      await wait();
     },
 
     async blockUser(userId) {

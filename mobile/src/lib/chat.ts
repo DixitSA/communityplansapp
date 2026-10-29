@@ -13,6 +13,7 @@ export type ChatService = Pick<
   | 'markChatRead'
   | 'subscribeToEventChat'
   | 'reportMessage'
+  | 'reportUser'
   | 'blockUser'
 >;
 
@@ -24,5 +25,6 @@ export const chatService: ChatService = {
   markChatRead: (eventId) => api.markChatRead(eventId),
   subscribeToEventChat: (eventId, handlers) => api.subscribeToEventChat(eventId, handlers),
   reportMessage: (messageId, reason) => api.reportMessage(messageId, reason),
+  reportUser: (userId, reason) => api.reportUser(userId, reason),
   blockUser: (userId) => api.blockUser(userId),
 };

@@ -19,7 +19,7 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 | `rsvps` | One plan per user per event | `status` ∈ interested, down_if_friends, going |
 | `notifications` | Activity feed + push source | friend_going, friend_request, friend_accepted, event_update |
 | `device_tokens` | Expo push tokens | Only `ExponentPushToken[...]` accepted; chat push tokens are registered with Stream instead |
-| `reports` | Moderation queue | Insert-only for clients |
+| `reports` | Moderation queue. Message reports keep a private snapshot (body, author, event) made by `report_message()`; deleted after 90 days (`purge_old_reports()`). 20 per person per day, one per target. Studio-only access; the snapshot author is set to null if that account is deleted | Insert-only for clients (user/event types; messages only via the RPC) |
 
 ## Privacy matrix (enforced by RLS)
 

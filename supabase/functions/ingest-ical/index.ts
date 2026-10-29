@@ -3,6 +3,9 @@ import { parseIcs } from "./ics.ts";
 import { mapIcalEvent, type EventRow, type IcalSource } from "./mapper.ts";
 
 const FETCH_TIMEOUT_MS = 10_000;
+const MAX_REDIRECTS = 3;
+const MAX_ROWS_PER_SOURCE = 1000;
+const BATCH = 200;
 const MAX_BYTES = 2 * 1024 * 1024;
 const chunk = <T>(a: T[], n = 100): T[][] =>
   Array.from({ length: Math.ceil(a.length / n) }, (_, k) => a.slice(k * n, (k + 1) * n));
@@ -23,7 +26,19 @@ const json = (body: unknown, status = 200) =>
 
 /** Fetch with a 10 s timeout and a 2 MB cap (streamed, so a lying Content-Length can't help). */
 async function fetchFeed(url: string): Promise<string> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { Accept: "text/calendar" } });
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS); // one budget for all hops
+  let current = new URL(url);
+  let res: Response | null = null;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (current.protocol !== "https:") throw new Error("feed redirected to a non-https URL");
+    res = await fetch(current, { signal, redirect: "manual", headers: { Accept: "text/calendar" } });
+    if (res.status < 300 || res.status >= 400) break;
+    const loc = res.headers.get("location");
+    await res.body?.cancel();
+    if (!loc || hop === MAX_REDIRECTS) throw new Error("too many redirects");
+    current = new URL(loc, current);
+  }
+  if (!res) throw new Error("feed fetch failed");
   if (!res.ok) throw new Error(`feed HTTP ${res.status}`);
   if (Number(res.headers.get("content-length") ?? 0) > MAX_BYTES) throw new Error("feed too large");
   const reader = res.body?.getReader();
@@ -57,6 +72,9 @@ Deno.serve(async (req) => {
     const { data: interests, error: intErr } = await db.from("interests").select("id, slug");
     if (intErr) throw intErr;
     const interestIds = Object.fromEntries((interests ?? []).map((i) => [i.slug, i.id]));
+    const { data: cities, error: cityErr } = await db.from("cities").select("id, timezone");
+    if (cityErr) throw cityErr;
+    const tzByCity = new Map((cities ?? []).map((c) => [c.id, c.timezone as string]));
     const { data: sources, error: srcErr } = await db.from("event_sources").select("*").eq("active", true);
     if (srcErr) throw srcErr;
 
@@ -67,40 +85,45 @@ Deno.serve(async (req) => {
         fetched += events.length;
         const rows = new Map<string, EventRow>();
         for (const ev of events) {
-          const row = mapIcalEvent(ev, source, { interestIds, now: new Date() });
+          const row = mapIcalEvent(ev, source, { interestIds, now: new Date(), timezone: tzByCity.get(source.city_id) });
           if (row) rows.set(row.external_id, row);
           else skipped++;
         }
 
         // Never resurrect events an admin hid.
-        for (const ids of chunk([...rows.keys()])) {
-          const { data: hidden, error: hErr } = await db
-            .from("events").select("external_id")
-            .eq("source", "ical").eq("status", "hidden").in("external_id", ids);
-          if (hErr) throw hErr;
-          for (const h of hidden ?? []) {
-            rows.delete(h.external_id!);
-            skipped++;
-          }
+        // One query per source: feed-controlled UIDs never go into a filter.
+        const { data: hidden, error: hErr } = await db
+          .from("events").select("external_id")
+          .eq("source", "ical").eq("status", "hidden").like("external_id", `${source.id}:%`);
+        if (hErr) throw hErr;
+        for (const h of hidden ?? []) {
+          if (rows.delete(h.external_id!)) skipped++;
+        }
+        for (const key of [...rows.keys()].slice(MAX_ROWS_PER_SOURCE)) {
+          rows.delete(key);
+          skipped++;
         }
 
         if (rows.size > 0) {
           const list = [...rows.values()];
-          const { data, error } = await db
-            .from("events")
-            .upsert(list.map(({ interest_ids: _i, ...r }) => r), { onConflict: "source,external_id" })
-            .select("id, external_id");
-          if (error) throw error;
-          const idByExternal = new Map((data ?? []).map((e) => [e.external_id, e.id]));
+          const idByExternal = new Map<string | null, string>();
+          for (const part of chunk(list, BATCH)) {
+            const { data, error } = await db
+              .from("events")
+              .upsert(part.map(({ interest_ids: _i, ...r }) => r), { onConflict: "source,external_id" })
+              .select("id, external_id");
+            if (error) throw error;
+            for (const e of data ?? []) idByExternal.set(e.external_id, e.id);
+          }
           const links = list.flatMap((r) =>
             r.interest_ids.map((interest_id) => ({ event_id: idByExternal.get(r.external_id)!, interest_id }))
           );
-          for (const ids of chunk([...idByExternal.values()])) {
+          for (const ids of chunk([...idByExternal.values()], BATCH)) {
             const { error: delErr } = await db.from("event_interests").delete().in("event_id", ids);
             if (delErr) throw delErr;
           }
-          if (links.length) {
-            const { error: insErr } = await db.from("event_interests").insert(links);
+          for (const part of chunk(links, BATCH)) {
+            const { error: insErr } = await db.from("event_interests").insert(part);
             if (insErr) throw insErr;
           }
           upserted += list.length;

@@ -48,14 +48,15 @@ function confirmDelete(onDelete: () => Promise<unknown>) {
 }
 
 function pickReason(message: ChatMessage) {
+  const file = (reason: ReportReason) =>
+    message.deleted ? chatService.reportUser(message.userId, reason) : chatService.reportMessage(message.id, reason);
   showMenu(
     'Why are you reporting this?',
     REASONS.map(({ reason, label }) => ({
       label,
       run: () => {
-        chatService
-          .reportMessage(message.id, reason)
-          .then(() => Alert.alert('Thanks for telling us', 'We’ll review this message.'))
+        file(reason)
+          .then(() => Alert.alert('Thanks for telling us', 'We’ll review this report.'))
           .catch(failed);
       },
     })),
@@ -85,13 +86,14 @@ export function openMessageMenu(
   message: ChatMessage,
   actions: { onDelete: (id: string) => Promise<unknown>; onBlocked: () => void },
 ): void {
-  if (message.sending || message.deleted) return;
+  if (message.sending) return;
+  if (message.deleted && message.isMine) return;
   if (message.isMine) {
     showMenu(undefined, [{ label: 'Delete message', destructive: true, run: () => confirmDelete(() => actions.onDelete(message.id)) }]);
     return;
   }
   showMenu(message.displayName, [
-    { label: 'Report message', destructive: true, run: () => pickReason(message) },
+    { label: message.deleted ? 'Report user' : 'Report message', destructive: true, run: () => pickReason(message) },
     { label: `Block ${message.displayName}`, destructive: true, run: () => confirmBlock(message, actions.onBlocked) },
   ]);
 }
