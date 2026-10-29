@@ -49,16 +49,16 @@ export type ChatListProps = {
 export function ChatList({ chats, now, onOpen }: ChatListProps) {
   const { space } = useTheme();
   const [showArchived, setShowArchived] = useState(false);
-  const { upcoming, archived } = sectionChats(chats);
+  const { active, archived } = sectionChats(chats);
 
   return (
     <View style={{ gap: space.xl }}>
-      {upcoming.length > 0 ? (
+      {active.length > 0 ? (
         <View style={{ gap: space.sm }}>
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingHorizontal: space.xs }}>
             Active
           </AppText>
-          <Card chats={upcoming} now={now} onOpen={onOpen} />
+          <Card chats={active} now={now} onOpen={onOpen} />
         </View>
       ) : null}
 

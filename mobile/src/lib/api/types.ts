@@ -2,6 +2,7 @@ import type { EventCardData } from '@/design';
 import type { EventDetail } from '@/features/event/types';
 
 import type { Tables } from '../database.types';
+import type { FriendEntry, FriendRequest, PersonSearchResult, UserProfile } from './friendTypes';
 
 /** A row of `interests` (the symbol is an SF Symbol name). */
 export type Interest = Pick<Tables<'interests'>, 'id' | 'slug' | 'label' | 'symbol'>;
@@ -119,6 +120,23 @@ export const CHAT_PAGE_SIZE = 50;
 /** The server refuses longer messages (and the composer stops typing at this length). */
 export const CHAT_MAX_LENGTH = 2000;
 
+/** What the "Suggest an event" form sends. Empty optional fields are fine; the server trims and nulls them. */
+export type SubmitEventInput = {
+  cityId: number;
+  title: string;
+  /** Already normalised to https:// (see `normalizeLink`), or empty. */
+  link: string;
+  startsAt: Date;
+  venue: string;
+  details: string;
+};
+
+/** Mirrors the `submission_status` enum. */
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
+
+/** One of the viewer's own suggestions. */
+export type MySubmission = { id: string; title: string; status: SubmissionStatus; createdAt: Date };
+
 export type Api = {
   sendEmailCode(email: string): Promise<void>;
   verifyEmailCode(email: string, code: string): Promise<void>;
@@ -155,6 +173,23 @@ export type Api = {
   /** For people whose message is gone (deleted): a plain user report. */
   reportUser(userId: string, reason: ReportReason): Promise<void>;
   blockUser(userId: string): Promise<void>;
+  /** People matching a name or @username. Under 2 characters answers an empty list. Blocked people never appear. */
+  searchProfiles(query: string, limit?: number): Promise<PersonSearchResult[]>;
+  /** Asks to be friends. Answers 'friends' when they had already asked you (it accepts theirs). */
+  sendFriendRequest(userId: string): Promise<'outgoing' | 'friends'>;
+  /** Accepts or declines a request someone sent you. */
+  respondFriendRequest(userId: string, accept: boolean): Promise<'friends' | 'none'>;
+  /** Unfriends, or cancels a request you sent. */
+  removeFriend(userId: string): Promise<void>;
+  listFriends(): Promise<FriendEntry[]>;
+  /** Pending requests both ways, newest first. */
+  listFriendRequests(): Promise<FriendRequest[]>;
+  /** Another person's page, or null when they don't exist or you can't see them (blocked looks the same). */
+  getUserProfile(userId: string): Promise<UserProfile | null>;
+  /** Suggests an event for admin review. Resolves with the submission id; rejects with the server's error code. */
+  submitEvent(input: SubmitEventInput): Promise<string>;
+  /** The viewer's own suggestions, newest first. */
+  getMySubmissions(): Promise<MySubmission[]>;
 };
 
 /** Charlotte's row in `cities`. It is the first seeded row of an identity column (see the init migration). */

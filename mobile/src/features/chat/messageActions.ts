@@ -1,41 +1,15 @@
-import { ActionSheetIOS, Alert } from 'react-native';
+import { Alert } from 'react-native';
 
 import { errorCode, mapChatError, type ChatMessage, type ReportReason } from '@/lib/api';
 import { chatService } from '@/lib/chat';
 import { warning } from '@/lib/haptics';
+import { showMenu } from '@/lib/menu';
 
 const REASONS: { reason: ReportReason; label: string }[] = [
   { reason: 'spam', label: 'Spam' },
   { reason: 'harassment', label: 'Harassment' },
   { reason: 'other', label: 'Something else' },
 ];
-
-type Option = { label: string; destructive?: boolean; run?: () => void };
-
-/** A native action sheet on iOS, an alert elsewhere. The last option is always Cancel. */
-function showMenu(title: string | undefined, options: Option[]) {
-  if (process.env.EXPO_OS === 'ios') {
-    const labels = [...options.map((o) => o.label), 'Cancel'];
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title,
-        options: labels,
-        cancelButtonIndex: labels.length - 1,
-        destructiveButtonIndex: options.flatMap((o, i) => (o.destructive ? [i] : [])),
-      },
-      (index) => options[index]?.run?.(),
-    );
-    return;
-  }
-  Alert.alert(title ?? '', undefined, [
-    ...options.map((o) => ({
-      text: o.label,
-      style: o.destructive ? ('destructive' as const) : ('default' as const),
-      onPress: o.run,
-    })),
-    { text: 'Cancel', style: 'cancel' as const },
-  ]);
-}
 
 const failed = (err: unknown) => Alert.alert('That didn’t work', mapChatError(errorCode(err)));
 

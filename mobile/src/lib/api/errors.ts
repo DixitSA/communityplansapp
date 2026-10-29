@@ -109,3 +109,55 @@ export function mapChatError(code: string | null | undefined): string {
   if (code && code in CHAT_COPY) return CHAT_COPY[code];
   return GENERIC_ERROR;
 }
+
+/** The friends RPCs' error codes (supabase/migrations/20261030010000_friends_rpcs.sql). */
+export const FRIEND_ERROR_CODES = [
+  'not_authenticated',
+  'not_onboarded',
+  'cannot_friend_self',
+  'user_not_found',
+  'already_friends',
+  'request_pending',
+  'request_not_found',
+  'rate_limited',
+  'query_invalid',
+] as const;
+
+const FRIEND_COPY: Record<string, string> = {
+  not_authenticated: 'Your session ended. Please sign in again.',
+  not_onboarded: 'Finish setting up your profile before adding friends.',
+  cannot_friend_self: 'That’s you! You can’t add yourself as a friend.',
+  // Also what a blocked person looks like, on purpose: the server never reveals blocks.
+  user_not_found: 'We couldn’t find that person.',
+  already_friends: 'You’re already friends.',
+  request_pending: 'You already sent a request. They’ll see it next time they open yard.',
+  request_not_found: 'That request is gone. It may have been canceled.',
+  rate_limited: 'You’re sending requests too fast. Wait a bit, then try again.',
+  query_invalid: 'That search is too long. Try a shorter name or @username.',
+  network: 'No connection. Check your internet and try again.',
+};
+
+/** Friendly copy for a friends error code (search, requests, profile, unfriend). */
+export function mapFriendError(code: string | null | undefined): string {
+  if (code && code in FRIEND_COPY) return FRIEND_COPY[code];
+  return GENERIC_ERROR;
+}
+
+const SUBMISSION_COPY: Record<string, string> = {
+  not_authenticated: 'Your session ended. Please sign in again.',
+  not_onboarded: 'Finish setting up your profile before suggesting events.',
+  title_invalid: 'Add a title between 1 and 120 characters.',
+  link_invalid: 'That link doesn’t work. Use a full https:// link with no spaces.',
+  starts_at_invalid: 'Pick a start time that is still ahead and within the next year.',
+  city_invalid: 'We couldn’t find that city. Try again from the feed.',
+  venue_invalid: 'Keep the venue under 120 characters.',
+  details_invalid: 'Keep the details under 1,000 characters.',
+  rate_limited: 'You’ve suggested a lot today. Try again tomorrow.',
+  network: 'No connection. Check your internet and try again.',
+};
+
+/** Friendly copy for a `submit_event` error code. */
+export function mapSubmissionError(code: string | null | undefined): string {
+  if (code && code in SUBMISSION_COPY) return SUBMISSION_COPY[code];
+  return GENERIC_ERROR;
+}

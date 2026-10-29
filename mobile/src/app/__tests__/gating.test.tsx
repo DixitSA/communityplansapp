@@ -10,6 +10,8 @@ jest.mock('@/features/onboarding/WelcomeBlob', () => ({ WelcomeBlob: () => null 
 const mockState: { session: AuthSession | null; profile: MyProfile | null } = { session: null, profile: null };
 jest.mock('@/lib/api', () => ({
   ...jest.requireActual('@/lib/api/errors'),
+  ...jest.requireActual('@/lib/api/friendTypes'),
+  ...jest.requireActual('@/lib/api/friendsMapping'),
   CHARLOTTE_CITY_ID: 1,
   api: {
     getSession: async () => mockState.session,
@@ -17,6 +19,9 @@ jest.mock('@/lib/api', () => ({
     getMyProfile: async () => mockState.profile,
     listInterests: async () => [],
     usernameAvailable: async () => true,
+    listFriends: async () => [],
+    listFriendRequests: async () => [],
+    searchProfiles: async () => [],
   },
 }));
 

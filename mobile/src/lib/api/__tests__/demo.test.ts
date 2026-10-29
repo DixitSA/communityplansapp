@@ -1,6 +1,6 @@
 import { ApiError } from '../errors';
 import { DEMO_BAD_CODE, DEMO_INTERESTS, DEMO_PROFILE, createDemoApi } from '../demo';
-import { CHARLOTTE_CITY_ID, type OnboardingInput } from '../types';
+import { CHARLOTTE_CITY_ID, type OnboardingInput, type SubmitEventInput } from '../types';
 
 const good: OnboardingInput = {
   username: 'Maya.C',
@@ -135,5 +135,49 @@ describe('demoFeedRange', () => {
     expect(repeat).toBeDefined();
     const { demoEvent } = jest.requireActual('../demo') as typeof import('../demo');
     expect(demoEvent(repeat!.id)?.id).toBe(repeat!.id);
+  });
+
+  describe('submitEvent', () => {
+    const at = new Date(2026, 10, 1, 12, 0);
+    const makeAt = () => createDemoApi({ delayMs: 0, now: () => at });
+    const input = (over: Partial<SubmitEventInput> = {}): SubmitEventInput => ({
+      cityId: CHARLOTTE_CITY_ID,
+      title: ' Night market ',
+      link: 'https://instagram.com/p/x',
+      startsAt: new Date(at.getTime() + 48 * 3_600_000),
+      venue: '',
+      details: '',
+      ...over,
+    });
+
+    it('stores a trimmed pending suggestion and lists it newest first', async () => {
+      const api = makeAt();
+      await api.submitEvent(input());
+      await api.submitEvent(input({ title: 'Second' }));
+      const mine = await api.getMySubmissions();
+      expect(mine.map((s) => s.title)).toEqual(['Second', 'Night market']);
+      expect(mine[0].status).toBe('pending');
+    });
+
+    it.each([
+      ['title_invalid', { title: '  ' }],
+      ['title_invalid', { title: 'a'.repeat(121) }],
+      ['link_invalid', { link: 'http://a.com' }],
+      ['link_invalid', { link: 'https://a.com/a b' }],
+      ['starts_at_invalid', { startsAt: new Date(at.getTime() - 3_600_000) }],
+      ['starts_at_invalid', { startsAt: new Date(at.getTime() + 366 * 24 * 3_600_000) }],
+      ['city_invalid', { cityId: 999 }],
+      ['venue_invalid', { venue: 'v'.repeat(121) }],
+      ['details_invalid', { details: 'd'.repeat(1001) }],
+    ] as const)('rejects with %s', async (code, over) => {
+      expect(await codeOf(makeAt().submitEvent(input(over)))).toBe(code);
+    });
+
+    it('allows 5 in 24 hours, then rate_limited', async () => {
+      const api = makeAt();
+      for (let i = 0; i < 5; i++) await api.submitEvent(input());
+      expect(await codeOf(api.submitEvent(input()))).toBe('rate_limited');
+      expect(await api.getMySubmissions()).toHaveLength(5);
+    });
   });
 });

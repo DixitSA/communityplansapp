@@ -53,3 +53,22 @@ describe('useFeedEvents when the interests lookup fails', () => {
     expect(listInterests).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('useFeedEvents scope', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useFiltersStore.setState({ interests: [], scope: 'nearby' });
+    getFeed.mockResolvedValue([]);
+  });
+  afterEach(() => useFiltersStore.setState({ scope: 'nearby' }));
+
+  it('asks the server for p_mode = friends when the Friends segment is selected', async () => {
+    const { result } = await renderHook(() => useFeedEvents(), { wrapper });
+    await waitFor(() => expect(getFeed).toHaveBeenCalled());
+    expect(getFeed.mock.calls[0][0]).toMatchObject({ mode: 'nearby' });
+
+    act(() => useFiltersStore.getState().setScope('friends'));
+    await waitFor(() => expect(getFeed.mock.calls.some(([p]) => p.mode === 'friends')).toBe(true));
+    expect(result.current.isError).toBe(false);
+  });
+});

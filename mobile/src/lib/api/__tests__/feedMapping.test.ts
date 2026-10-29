@@ -5,6 +5,7 @@ const row: FeedRow = {
   id: 'e1',
   title: 'Sunset Vinyl Hour',
   starts_at: '2026-10-29T22:30:00Z',
+  ends_at: null as unknown as string,
   venue_name: 'Haberdish',
   neighborhood: 'NoDa',
   image_url: null as unknown as string,

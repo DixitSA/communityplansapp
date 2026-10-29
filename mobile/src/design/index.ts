@@ -2,6 +2,20 @@ export { useTheme, type Theme } from './theme';
 export * from './tokens';
 export { AppText, type AppTextProps } from './components/AppText';
 export { Avatar, initialsOf, type AvatarProps } from './components/Avatar';
+export {
+  FriendButton,
+  friendButtonSpec,
+  friendButtonA11y,
+  type FriendButtonAction,
+  type FriendButtonProps,
+  type FriendButtonSpec,
+  type FriendButtonState,
+} from './components/FriendButton';
+export { PersonRow, PERSON_ROW_AVATAR, type PersonRowProps } from './components/PersonRow';
+export { PersonRowSkeleton } from './components/PersonRowSkeleton';
+export { NavRow, type NavRowProps } from './components/NavRow';
+export { UnreadDot } from './components/UnreadDot';
+export { SearchField, type SearchFieldProps } from './components/SearchField';
 export { Button, type ButtonProps } from './components/Button';
 export { Chip, type ChipProps, type ChipTone } from './components/Chip';
 export { DateStrip, getWeekDays, type DayMeta, type DateStripProps } from './components/DateStrip';
@@ -35,3 +49,4 @@ export { TextField, FieldStatusLine, type FieldStatus, type TextFieldProps } fro
 export { CodeField, type CodeFieldProps } from './components/CodeField';
 export { InterestTile, type InterestTileProps } from './components/InterestTile';
 export { StepProgress, type StepProgressProps } from './components/StepProgress';
+export { useLargeTitleHeader } from './useLargeTitleHeader';

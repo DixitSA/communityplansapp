@@ -12,15 +12,20 @@ import {
   EventCard,
   EventRow,
   Facepile,
+  FriendButton,
   GlassButton,
   GlassPill,
   GlassSurface,
   Icon,
   InterestTile,
   MeshArt,
+  NavRow,
+  PersonRow,
+  PersonRowSkeleton,
   PrimaryButton,
   RollingNumber,
   Screen,
+  SearchField,
   SegmentedControl,
   Skeleton,
   StepProgress,
@@ -70,6 +75,7 @@ export default function Gallery() {
   const [count, setCount] = useState(24);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [search, setSearch] = useState('');
   const [tiles, setTiles] = useState<Record<string, boolean>>({ music: true });
   const events = getFixtureEvents();
   const today = toISODate(new Date());
@@ -231,6 +237,43 @@ export default function Gallery() {
         </View>
       </Section>
 
+      <Section title="SearchField">
+        <SearchField value={search} onChangeText={setSearch} placeholder="Search people" />
+      </Section>
+
+      <Section title="FriendButton (regular: the profile's main button)">
+        <FriendButton state="none" name="Maya" onAction={() => undefined} />
+        <FriendButton state="outgoing" name="Maya" onAction={() => undefined} />
+        <FriendButton state="incoming" name="Maya" onAction={() => undefined} />
+        <FriendButton state="friends" name="Maya" onAction={() => undefined} />
+        <FriendButton state="none" name="Maya" busy onAction={() => undefined} />
+      </Section>
+
+      <Section title="PersonRow with compact FriendButton (Search, Friends)">
+        <View>
+          <PersonRow name="Maya Chen" username="maya.chen" onPress={() => undefined} trailing={<FriendButton size="compact" state="none" name="Maya Chen" onAction={() => undefined} />} />
+          <PersonRow name="Jordan Lee" username="jordan.lee" onPress={() => undefined} trailing={<FriendButton size="compact" state="outgoing" name="Jordan Lee" onAction={() => undefined} />} />
+          <PersonRow name="Priya Nair" username="priya.nair" onPress={() => undefined} trailing={<FriendButton size="compact" state="incoming" name="Priya Nair" onAction={() => undefined} />} />
+          <PersonRow name="Sam Ortiz" username="sam.ortiz" onPress={() => undefined} trailing={<FriendButton size="compact" state="friends" name="Sam Ortiz" onAction={() => undefined} />} />
+        </View>
+        <AppText variant="caption" color="inkSecondary">
+          A request, with Accept and Decline on their own line
+        </AppText>
+        <PersonRow name="Noah Kim" username="noah.kim" subtitle="@noah.kim · 2d ago" />
+        <View style={{ paddingLeft: 48 + space.md }}>
+          <FriendButton size="compact" state="incoming" showDecline name="Noah Kim" onAction={() => undefined} />
+        </View>
+      </Section>
+
+      <Section title="PersonRowSkeleton">
+        <PersonRowSkeleton count={2} />
+      </Section>
+
+      <Section title="NavRow (with and without the unread dot)">
+        <NavRow symbol="bell" label="Activity" unread onPress={() => undefined} />
+        <NavRow symbol="person.2" label="Friends and requests" onPress={() => undefined} />
+      </Section>
+
       <Section title="MeshArt">
         <View style={{ flexDirection: 'row', gap: space.md }}>
           {(['music', 'food_drinks', 'fitness', 'arts_culture', 'nightlife'] as const).map((k, i) => (
@@ -284,6 +327,8 @@ export default function Gallery() {
       <Section title="EventRow (agenda row; quick plan menu on the right)">
         <EventRow event={{ ...events[4], goingCount: 14 }} plan={rowPlan} onSetPlan={setRowPlan} />
         <EventRow event={events[1]} plan="interested" />
+        {/* Time line variants: past-midnight range above, no end time here. */}
+        <EventRow event={{ ...events[3], endsAt: undefined }} />
         <EventRow event={events[3]} plan="down_if_friends" />
         <EventRow event={{ ...events[2], title: 'Lunchtime Food Truck Rally with a very long title that wraps' }} plan="going" />
         {/* Opens the event page with the zoom transition; the plan menu shares the plans store. */}
