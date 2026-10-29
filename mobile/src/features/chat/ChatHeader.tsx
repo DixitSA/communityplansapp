@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppText, GlassSurface, Icon, MeshArt, interestColors, useTheme, type SymbolName } from '@/design';
+import { AppText, GlassSurface, Icon, MeshArt, categoryColors, isCategory, useTheme, type SymbolName } from '@/design';
 
 export const CHAT_HEADER_THUMB = 36;
 
@@ -50,7 +50,7 @@ export function ChatHeader({
   onDirections,
   onLayoutHeight,
 }: ChatHeaderProps) {
-  const { space, radius } = useTheme();
+  const { space, radius, scheme } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -60,8 +60,8 @@ export function ChatHeader({
     >
       <GlassSurface
         edge="bottom"
-        // The event's category color at about 18% opacity, so the header carries the event's mood (DESIGN.md 4.9).
-        tint={interestColors[interest] ? `${interestColors[interest]}2E` : undefined}
+        // The category's soft tag color, so the header carries the event's mood (DESIGN.md 4.9).
+        tint={isCategory(interest) ? categoryColors[interest].soft[scheme] : undefined}
         style={{
           paddingTop: insets.top + space.xs,
           paddingBottom: space.sm,

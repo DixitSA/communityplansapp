@@ -3,7 +3,7 @@ import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { formatTimeRange } from '@/lib/dates';
+import { formatEventTime } from '@/lib/dates';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
@@ -16,9 +16,9 @@ import { PlanMenu } from './PlanMenu';
 
 export const EVENT_ROW_THUMB = 64;
 
-/** "6:00 PM – 9:00 PM" (just the start without an end time). */
+/** "6:00 – 9:00 PM" (just the start without an end time). */
 export function eventRowTime(e: Pick<EventCardData, 'startsAt' | 'endsAt'>): string {
-  return formatTimeRange(e.startsAt, e.endsAt);
+  return formatEventTime(e.startsAt, e.endsAt);
 }
 
 /** "0.8 mi", shown after the venue so it never gets truncated with it. */

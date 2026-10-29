@@ -188,10 +188,10 @@ describe('Chats list', () => {
       chat({ eventId: 'c' }),
       chat({ eventId: 'd', isOpen: false }),
     ];
-    const { upcoming, archived } = sectionChats(chats);
-    expect(upcoming.map((c) => c.eventId)).toEqual(['a', 'c']);
+    const { active, archived } = sectionChats(chats);
+    expect(active.map((c) => c.eventId)).toEqual(['a', 'c']);
     expect(archived.map((c) => c.eventId)).toEqual(['b', 'd']);
-    expect(sectionChats([])).toEqual({ upcoming: [], archived: [] });
+    expect(sectionChats([])).toEqual({ active: [], archived: [] });
   });
 
   const now = at(12, 0); // Thu Oct 29, noon
@@ -238,6 +238,6 @@ describe('Chats list', () => {
     expect(chatSubtitle(upcoming, null, at(21, 30))).toBe('Happening now');
     expect(chatSubtitle(upcoming, 18, at(21, 30))).toBe('Happening now · 18 going');
     expect(chatSubtitle({ startsAt: at(18, 0, 28) }, 18, at(2, 0, 30))).toBe('Ended · chat closes in 22h');
-    expect(chatSubtitle({ startsAt: at(21, 0, 25) }, 18, NOW)).toBe('Sun · ended · 18 went');
+    expect(chatSubtitle({ startsAt: at(21, 0, 25) }, 18, NOW)).toBe('Ended Sun · 18 went');
   });
 });

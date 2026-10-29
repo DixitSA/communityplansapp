@@ -149,8 +149,8 @@ export function messageA11yLabel(message: ChatMessage): string {
 // ---------------------------------------------------------------------------------------------
 
 /** Open chats first, closed ones in Archived. Keeps the server's order inside each. */
-export function sectionChats(chats: ChatSummary[]): { upcoming: ChatSummary[]; archived: ChatSummary[] } {
-  return { upcoming: chats.filter((c) => c.isOpen), archived: chats.filter((c) => !c.isOpen) };
+export function sectionChats(chats: ChatSummary[]): { active: ChatSummary[]; archived: ChatSummary[] } {
+  return { active: chats.filter((c) => c.isOpen), archived: chats.filter((c) => !c.isOpen) };
 }
 
 const shortWeekday = (d: Date) => WEEKDAYS_LONG[d.getDay()].slice(0, 3);
@@ -202,7 +202,7 @@ export function unreadBadge(count: number): string | null {
 
 /**
  * The header's second line: "Tonight · in 3h · 18 going". Once the event is over it reads
- * "Wed · ended · 18 went".
+ * "Ended Wed · 18 went".
  */
 export function chatSubtitle(
   event: { startsAt: Date; endsAt?: Date },
@@ -219,7 +219,7 @@ export function chatSubtitle(
       const closes = closesInMin < 60 ? `${closesInMin}m` : `${Math.ceil(closesInMin / 60)}h`;
       return `Ended · chat closes in ${closes}`;
     }
-    parts.push(label === 'Now' ? 'Today' : label, 'ended');
+    parts.push(`Ended ${label === 'Now' ? 'today' : label === 'Today' || label === 'Yesterday' ? label.toLowerCase() : label}`);
   }
   else if (event.startsAt.getTime() <= now.getTime()) parts.push('Happening now');
   else {

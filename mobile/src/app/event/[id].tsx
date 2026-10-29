@@ -30,7 +30,7 @@ import { useEvent } from '@/features/event/useEvent';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { RsvpBar } from '@/features/event/RsvpBar';
 import { WhosGoing } from '@/features/event/WhosGoing';
-import { formatShortDate, formatTime } from '@/lib/dates';
+import { formatEventTime, formatShortDate } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 import { linearGradient } from '@/design/components/meshFallback';
@@ -137,7 +137,9 @@ export default function EventScreen() {
   const othersGoing =
     event.goingCount === null ? event.othersGoing : othersCount(event.goingCount, event.friendsGoing, status === 'going');
   const hasDistance = event.distanceMi > 0;
-  const dateLine = `${formatShortDate(event.startsAt)} · ${formatTime(event.startsAt)}`;
+  const timeText = formatEventTime(event.startsAt, event.endsAt, true);
+  // A multi-day event reads "Fri 7:00 PM – Sun 5:00 PM", which already says the days.
+  const dateLine = /^[A-Z][a-z]{2} \d/.test(timeText) ? timeText : `${formatShortDate(event.startsAt)} · ${timeText}`;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>

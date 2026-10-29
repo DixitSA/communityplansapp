@@ -19,7 +19,7 @@ export type EventCardData = {
   id: string;
   title: string;
   startsAt: Date;
-  /** When known. The server's feed doesn't send it yet, so rows fall back to the start time. */
+  /** When known; rows fall back to the start time without it. */
   endsAt?: Date;
   venue: string;
   distanceMi: number;

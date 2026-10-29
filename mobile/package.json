@@ -62,6 +62,7 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
+    "globalSetup": "<rootDir>/jest.global-setup.js",
     "setupFiles": [
       "<rootDir>/jest.setup.ts"
     ]

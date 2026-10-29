@@ -30,6 +30,7 @@ export function mapFeedRow(row: FeedRow | FeedRangeRow, interests: Interest[]): 
     id: row.id,
     title: row.title,
     startsAt: new Date(row.starts_at),
+    endsAt: row.ends_at ? new Date(row.ends_at) : undefined,
     venue: row.venue_name ?? row.neighborhood ?? '',
     distanceMi: row.distance_m / METERS_PER_MILE,
     imageUrl: row.image_url ?? undefined,

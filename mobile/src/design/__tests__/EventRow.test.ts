@@ -5,7 +5,7 @@ import { planMenuOptions, planPillSpec } from '../components/PlanPill';
 describe('EventRow text', () => {
   it('shows a time range when the end is known, else just the start', () => {
     const startsAt = new Date(2026, 9, 29, 18, 0);
-    expect(eventRowTime({ startsAt, endsAt: new Date(2026, 9, 29, 21, 0) })).toBe('6:00 PM – 9:00 PM');
+    expect(eventRowTime({ startsAt, endsAt: new Date(2026, 9, 29, 21, 0) })).toBe('6:00 – 9:00 PM');
     expect(eventRowTime({ startsAt })).toBe('6:00 PM');
   });
 

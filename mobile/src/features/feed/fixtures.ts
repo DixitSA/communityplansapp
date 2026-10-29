@@ -11,7 +11,7 @@ const P = {
   theo: { id: 'u-theo', name: 'Theo' },
 };
 
-type Seed = Omit<EventCardData, 'startsAt' | 'endsAt'> & { dayOffset: number; hour: number; minute?: number; hours?: number };
+type Seed = Omit<EventCardData, 'startsAt' | 'endsAt'> & { dayOffset: number; hour: number; minute?: number; hours?: number | null };
 
 const SEEDS: Seed[] = [
   {
@@ -35,7 +35,7 @@ const SEEDS: Seed[] = [
     friends: [P.priya], friendsGoing: 1,
   },
   {
-    id: 'ev-005', dayOffset: 2, hour: 21, title: 'Warehouse Party', venue: 'The District, South End',
+    id: 'ev-005', dayOffset: 2, hour: 21, hours: 5, title: 'Warehouse Party', venue: 'The District, South End',
     distanceMi: 2.1, interest: 'nightlife', symbol: 'moon.stars.fill', categoryLabel: 'Nightlife',
     friends: [P.maya, P.jordan, P.theo, P.sam, P.priya], friendsGoing: 5,
   },
@@ -45,7 +45,7 @@ const SEEDS: Seed[] = [
     friends: [P.theo], friendsGoing: 1,
   },
   {
-    id: 'ev-007', dayOffset: 4, hour: 17, minute: 30, title: 'Rooftop Happy Hour', venue: 'Skye Bar, Uptown',
+    id: 'ev-007', dayOffset: 4, hour: 17, minute: 30, hours: 3, title: 'Rooftop Happy Hour', venue: 'Skye Bar, Uptown',
     distanceMi: 0.9, interest: 'nightlife', symbol: 'moon.stars.fill', categoryLabel: 'Nightlife',
     friends: [P.sam, P.priya], friendsGoing: 4,
   },
@@ -60,7 +60,7 @@ const SEEDS: Seed[] = [
     friends: [P.maya, P.theo], friendsGoing: 2,
   },
   {
-    id: 'ev-010', dayOffset: 5, hour: 22, title: 'Late Night Ramen Pop-up', venue: 'NoDa Brewing',
+    id: 'ev-010', dayOffset: 5, hour: 22, hours: null, title: 'Late Night Ramen Pop-up', venue: 'NoDa Brewing',
     distanceMi: 2.7, interest: 'food_drinks', symbol: 'fork.knife', categoryLabel: 'Food & Drinks',
     friends: [], friendsGoing: 0,
   },
@@ -72,7 +72,11 @@ export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
   return SEEDS.map(({ dayOffset, hour, minute = 0, hours = 2, ...rest }) => {
     const day = addDays(monday, dayOffset);
     const startsAt = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
-    return { ...rest, startsAt, endsAt: new Date(startsAt.getTime() + hours * 3_600_000) };
+    return {
+      ...rest,
+      startsAt,
+      ...(hours === null ? null : { endsAt: new Date(startsAt.getTime() + hours * 3_600_000) }),
+    };
   });
 }
 
