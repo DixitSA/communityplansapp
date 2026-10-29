@@ -61,6 +61,8 @@ export function rsvpMutationOptions(
     onSettled: (_data: unknown, _err: unknown, v: RsvpVars) => {
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
       void queryClient.invalidateQueries({ queryKey: ['event', v.eventId] });
+      // Going adds or removes a chat.
+      void queryClient.invalidateQueries({ queryKey: ['chats'] });
     },
   };
 }

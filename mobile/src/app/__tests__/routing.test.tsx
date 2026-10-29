@@ -9,7 +9,7 @@ jest.mock('@/features/onboarding/WelcomeBlob', () => ({ WelcomeBlob: () => null 
 describe('app routing', () => {
   it('opens on the Feed', async () => {
     await renderRouter('./src/app', { initialUrl: '/' });
-    expect(await screen.findByText('Find your people.')).toBeTruthy();
+    expect(await screen.findByText('Nearby')).toBeTruthy();
   });
 
   // Demo mode (no Supabase keys in tests): every onboarding screen is open for screenshots.

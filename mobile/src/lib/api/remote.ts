@@ -2,9 +2,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '../database.types';
 import { createAppleNonce } from '../nonce';
+import { mapChatRow, mapMessageRow, mapTableRow, normalizeMessageBody } from './chatMapping';
 import { ApiError, errorCode } from './errors';
 import { mapFeedRow, parseFriends, primaryInterest, priceLabel } from './feedMapping';
-import type { Api, AuthSession, EventPage, Interest, MyProfile, RsvpStatus } from './types';
+import { CHAT_PAGE_SIZE, type Api, type AuthSession, type ChatMessage, type EventPage, type Interest, type MyProfile, type RsvpStatus } from './types';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -34,6 +35,25 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       throw err;
     });
     return interestsPromise;
+  };
+
+  // Chat helpers. Names and avatars of people who write while the chat is open are looked up once each.
+  const authors = new Map<string, { displayName: string; avatarPath: string | null }>();
+  const myUserId = async (): Promise<string> => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) fail(error);
+    const uid = data.session?.user.id;
+    if (!uid) throw new ApiError('not_authenticated');
+    return uid;
+  };
+  const authorOf = async (userId: string) => {
+    const known = authors.get(userId);
+    if (known) return known;
+    const { data } = await supabase.from('profiles').select('display_name, avatar_path').eq('id', userId).maybeSingle();
+    const author = { displayName: data?.display_name ?? 'Someone', avatarPath: data?.avatar_path ?? null };
+    // A failed lookup isn't cached, so the next message tries again.
+    if (data) authors.set(userId, author);
+    return author;
   };
 
   return {
@@ -182,7 +202,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         supabase
           .from('events')
           .select(
-            'id, title, description, starts_at, venue_name, venue_address, neighborhood, image_url, is_free, price_min, price_max, source, attribution, ticket_url, event_interests(interest_id)',
+            'id, title, description, starts_at, ends_at, venue_name, venue_address, neighborhood, image_url, is_free, price_min, price_max, source, attribution, ticket_url, event_interests(interest_id)',
           )
           .eq('id', id)
           .maybeSingle(),
@@ -201,6 +221,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         id: e.id,
         title: e.title,
         startsAt: new Date(e.starts_at),
+        endsAt: e.ends_at ? new Date(e.ends_at) : undefined,
         venue: e.venue_name ?? e.neighborhood ?? '',
         // The events table stores a geography column the client can't read; the feed card knows the distance.
         distanceMi: 0,
@@ -237,6 +258,94 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         p_status: status as RsvpStatus,
       });
       if (error) fail(error);
+    },
+
+    async getMyChats() {
+      const { data, error } = await supabase.rpc('get_my_chats');
+      if (error) fail(error);
+      return (data ?? []).map(mapChatRow);
+    },
+
+    async getChatMessages(eventId, beforeId) {
+      const { data, error } = await supabase.rpc('get_chat_messages', {
+        p_event_id: eventId,
+        p_before_id: beforeId === undefined ? undefined : Number(beforeId),
+        p_limit: CHAT_PAGE_SIZE,
+      });
+      if (error) fail(error);
+      return (data ?? []).map(mapMessageRow);
+    },
+
+    async sendMessage(eventId, text) {
+      const body = normalizeMessageBody(text);
+      const uid = await myUserId();
+      const { data, error } = await supabase
+        .from('event_messages')
+        .insert({ event_id: eventId, user_id: uid, body })
+        .select('id, user_id, body, created_at, deleted_at')
+        .single();
+      if (error) fail(error);
+      return mapTableRow(data as NonNullable<typeof data>, await authorOf(uid), uid);
+    },
+
+    async deleteMessage(messageId) {
+      // The only column clients may update; a trigger stamps the time and erases the text.
+      const { data, error } = await supabase
+        .from('event_messages')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', Number(messageId))
+        .select('id');
+      if (error) fail(error);
+      if (!data || data.length === 0) throw new ApiError('not_found');
+    },
+
+    async markChatRead(eventId) {
+      const { error } = await supabase.rpc('mark_chat_read', { p_event_id: eventId });
+      if (error) fail(error);
+    },
+
+    subscribeToEventChat(eventId, handlers) {
+      const channel = supabase.channel(`event-chat:${eventId}`);
+      const deliver = (row: Parameters<typeof mapTableRow>[0], handler: (m: ChatMessage) => void) => {
+        void (async () => {
+          try {
+            const [author, uid] = await Promise.all([authorOf(row.user_id), myUserId()]);
+            handler(mapTableRow(row, author, uid));
+          } catch {
+            // A message we can't resolve shows up on the next refetch instead.
+          }
+        })();
+      };
+      channel
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'event_messages', filter: `event_id=eq.${eventId}` },
+          (payload) => deliver(payload.new as Parameters<typeof mapTableRow>[0], handlers.onInsert),
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'event_messages', filter: `event_id=eq.${eventId}` },
+          (payload) => deliver(payload.new as Parameters<typeof mapTableRow>[0], handlers.onUpdate),
+        )
+        .subscribe();
+      return () => {
+        void supabase.removeChannel(channel);
+      };
+    },
+
+    async reportMessage(messageId, reason) {
+      const uid = await myUserId();
+      const { error } = await supabase
+        .from('reports')
+        .insert({ reporter_id: uid, target_type: 'message', target_id: messageId, reason });
+      if (error) fail(error);
+    },
+
+    async blockUser(userId) {
+      const uid = await myUserId();
+      const { error } = await supabase.from('blocks').insert({ blocker_id: uid, blocked_id: userId });
+      // Already blocked: same result the person wanted.
+      if (error && error.code !== '23505') fail(error);
     },
   };
 }

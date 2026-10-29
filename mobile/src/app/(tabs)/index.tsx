@@ -169,12 +169,12 @@ export default function FeedScreen() {
   );
 
   const filterRow = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.md, paddingBottom: space.sm, zIndex: 5 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 0, paddingTop: space.md, paddingBottom: space.sm, zIndex: 5 }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ flex: 1 }}
-        contentContainerStyle={{ gap: space.sm, paddingLeft: space.lg, paddingRight: space.sm, alignItems: 'center' }}
+        contentContainerStyle={{ gap: space.xs + 2, paddingLeft: space.lg, paddingRight: space.sm, alignItems: 'center' }}
       >
         <FilterMenuChip
           label={chips.time.label}
@@ -187,6 +187,8 @@ export default function FeedScreen() {
         <Chip
           label={chips.interests.label}
           symbol="square.grid.2x2"
+          trailingSymbol="chevron.down"
+          dense
           selected={chips.interests.active}
           filled
           onPress={() => router.push('/filters')}
@@ -230,13 +232,20 @@ export default function FeedScreen() {
     </View>
   );
 
+  // Same order in both views: wordmark row, Nearby/Friends, date strip, filters.
+  const pinned = (
+    <>
+      {topRow}
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{scopeControl}</View>
+      {strip}
+      {filterRow}
+    </>
+  );
+
   if (isMap) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top + space.md }}>
-        {topRow}
-        <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{scopeControl}</View>
-        {strip}
-        {filterRow}
+        {pinned}
         <View style={{ flex: 1, marginTop: space.xs }}>
           <EventMap events={dayEvents} day={selected} />
         </View>
@@ -249,7 +258,7 @@ export default function FeedScreen() {
     <View accessibilityLabel="Loading events" style={{ paddingHorizontal: space.lg, gap: space.sm, paddingTop: space.sm }}>
       <Skeleton width={160} height={24} />
       {[0, 1, 2].map((i) => (
-        <Skeleton key={i} height={104} radius={radius.card} />
+        <Skeleton key={i} height={94} radius={radius.card} />
       ))}
     </View>
   ) : isError ? (
@@ -283,12 +292,8 @@ export default function FeedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* The wordmark row, date strip and filters stay pinned; the headline and scope scroll away with the list. */}
-      <View style={{ paddingTop: insets.top + space.md, zIndex: 5 }}>
-        {topRow}
-        {strip}
-        {filterRow}
-      </View>
+      {/* The whole header stays pinned; the list scrolls underneath it. */}
+      <View style={{ paddingTop: insets.top + space.md, zIndex: 5 }}>{pinned}</View>
       <SectionList<FeedEvent, Section>
         ref={listRef}
         sections={sections}
@@ -307,14 +312,6 @@ export default function FeedScreen() {
           listRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: false });
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
-        ListHeaderComponent={
-          <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm, gap: space.md }}>
-            <AppText variant="largeTitle" style={{ letterSpacing: -0.8 }}>
-              Find your people.
-            </AppText>
-            {scopeControl}
-          </View>
-        }
         ListEmptyComponent={empty}
         renderSectionHeader={({ section }) => (
           <View style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}>

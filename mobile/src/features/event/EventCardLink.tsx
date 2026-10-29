@@ -19,7 +19,7 @@ function useEventLink(event: LinkableEvent) {
 
   const goingAction = () => {
     if (going) {
-      router.navigate('/chats');
+      router.push({ pathname: '/chat/[eventId]', params: { eventId: event.id } });
       return;
     }
     setStatus(event.id, 'going');

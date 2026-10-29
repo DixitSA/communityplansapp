@@ -56,7 +56,7 @@ export function Facepile({
 }: FacepileProps) {
   const { space } = useTheme();
   const names = people.map((p) => p.name);
-  const avatarSize = avatarSizeProp ?? (compact ? 22 : 26);
+  const avatarSize = avatarSizeProp ?? (compact ? 24 : 26);
   const faces = people.slice(0, MAX_FACES);
   const label = formatFriendsLabel(names, total);
   const compactText = formatAttendeeCount(people.length, total);
@@ -71,17 +71,17 @@ export function Facepile({
       {faces.length > 0 ? (
         <View style={{ flexDirection: 'row' }}>
           {faces.map((p, i) => (
-            <View key={p.id} style={{ marginLeft: i === 0 ? 0 : -avatarSize * 0.3 }}>
-              <Avatar name={p.name} size={avatarSize} ring />
+            <View key={p.id} style={{ marginLeft: i === 0 ? 0 : compact ? -8 : -avatarSize * 0.3 }}>
+              <Avatar name={p.name} size={avatarSize} ring ringColor={compact ? 'canvas' : 'surface'} />
             </View>
           ))}
         </View>
       ) : null}
       <AppText
-        variant={compact ? 'caption' : 'footnote'}
+        variant="footnote"
         color={labelColor}
         numberOfLines={labelLines}
-        style={{ flexShrink: 1, ...(compact ? { fontWeight: '600' } : null) }}
+        style={{ flexShrink: 1 }}
       >
         {compact ? compactText : label}
       </AppText>

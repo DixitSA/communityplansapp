@@ -77,7 +77,7 @@ export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
 }
 
 /** Ids of the repeats in following weeks: "ev-005" is this week's, "ev-005-w1" is the same event a week later. */
-const WEEK_SUFFIX = /^(.+)-w(\d+)$/;
+const WEEK_SUFFIX = /^(.+)-w(-?\d+)$/;
 
 /**
  * The sample week repeated for the weeks `[start, start + days)` touches, so the agenda has

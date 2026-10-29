@@ -67,6 +67,56 @@ export type EventPage = EventDetail & {
   myStatus: RsvpStatus | null;
 };
 
+/** One row of the chat list (`get_my_chats`). */
+export type ChatSummary = {
+  eventId: string;
+  title: string;
+  startsAt: Date;
+  imageUrl: string | null;
+  goingCount: number;
+  lastBody: string | null;
+  lastAuthorName: string | null;
+  lastAt: Date | null;
+  unreadCount: number;
+  /** False once the chat closed (48 h after the event). Read-only from then on. */
+  isOpen: boolean;
+  /** Demo mode only: lets the row draw the event's placeholder art. */
+  art?: { interest: string; symbol: string };
+};
+
+/**
+ * One chat message. `id` is the database id as a string; messages that haven't reached the server yet
+ * carry a temporary id (see `features/chat/messages.ts`).
+ */
+export type ChatMessage = {
+  id: string;
+  userId: string;
+  displayName: string;
+  avatarPath: string | null;
+  /** Null once the message was deleted (the server erases the text). */
+  body: string | null;
+  createdAt: Date;
+  isMine: boolean;
+  deleted: boolean;
+  /** Client-only: a message we sent that the server hasn't confirmed yet. */
+  sending?: boolean;
+};
+
+export type ChatSubscription = {
+  /** A message arrived (or one of ours was confirmed). */
+  onInsert: (message: ChatMessage) => void;
+  /** A message changed: today that means it was deleted. */
+  onUpdate: (message: ChatMessage) => void;
+};
+
+/** Why someone reports a message. Stored as the report's `reason` text. */
+export type ReportReason = 'spam' | 'harassment' | 'other';
+
+/** Messages per page of `get_chat_messages`. */
+export const CHAT_PAGE_SIZE = 50;
+/** The server refuses longer messages (and the composer stops typing at this length). */
+export const CHAT_MAX_LENGTH = 2000;
+
 export type Api = {
   sendEmailCode(email: string): Promise<void>;
   verifyEmailCode(email: string, code: string): Promise<void>;
@@ -88,6 +138,19 @@ export type Api = {
   getEvent(id: string): Promise<EventPage | null>;
   /** Sets the viewer's plan; null clears it. */
   setRsvp(eventId: string, status: RsvpStatus | null): Promise<void>;
+  /** The chats the viewer can read: every event they're Going to, open ones first. */
+  getMyChats(): Promise<ChatSummary[]>;
+  /** A page of messages, newest first. Pass the oldest id you have as `beforeId` for the next page. */
+  getChatMessages(eventId: string, beforeId?: string): Promise<ChatMessage[]>;
+  /** Trims the text, then posts it. Rejects with `rate_limited` or a closed-chat error. */
+  sendMessage(eventId: string, body: string): Promise<ChatMessage>;
+  /** Soft delete (own messages only): the text is erased and the row stays as "Message deleted". */
+  deleteMessage(messageId: string): Promise<void>;
+  markChatRead(eventId: string): Promise<void>;
+  /** Live inserts and updates for one chat. Returns the unsubscribe function. */
+  subscribeToEventChat(eventId: string, handlers: ChatSubscription): () => void;
+  reportMessage(messageId: string, reason: ReportReason): Promise<void>;
+  blockUser(userId: string): Promise<void>;
 };
 
 /** Charlotte's row in `cities`. It is the first seeded row of an identity column (see the init migration). */

@@ -2,6 +2,7 @@ import { usePlansStore } from '@/features/event/plansStore';
 import { applyFilters, type DistanceMi } from '@/features/feed/filters';
 import { getFixtureEvent, getFixtureEvents, getFixtureEventsInRange } from '@/features/feed/fixtures';
 
+import { createDemoChat } from './demoChat';
 import { ApiError } from './errors';
 import { toISODate } from '../dates';
 import { METERS_PER_MILE } from './feedMapping';
@@ -98,7 +99,7 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * In-memory stand-in for the real API, with the same signatures and the same error codes.
  * Demo mode uses it; tests create fresh instances with `delayMs: 0`.
  */
-export function createDemoApi({ delayMs = 250 }: { delayMs?: number } = {}): Api {
+export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: () => Date } = {}): Api {
   let session: AuthSession | null = null;
   let profile: MyProfile | null = null;
   const listeners = new Set<(s: AuthSession | null) => void>();
@@ -108,7 +109,10 @@ export function createDemoApi({ delayMs = 250 }: { delayMs?: number } = {}): Api
     listeners.forEach((l) => l(s));
   };
 
+  const chat = createDemoChat({ wait, now });
+
   return {
+    ...chat,
     async sendEmailCode(email) {
       await wait();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) throw new ApiError('validation_failed');

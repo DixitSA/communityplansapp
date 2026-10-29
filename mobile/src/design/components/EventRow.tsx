@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { formatTimeRange } from '@/lib/dates';
 
@@ -14,7 +14,7 @@ import { Icon } from './Icon';
 import { MeshArt } from './MeshArt';
 import { PlanMenu } from './PlanMenu';
 
-export const EVENT_ROW_THUMB = 88;
+export const EVENT_ROW_THUMB = 64;
 
 /** "6:00 PM – 9:00 PM" (just the start without an end time). */
 export function eventRowTime(e: Pick<EventCardData, 'startsAt' | 'endsAt'>): string {
@@ -43,7 +43,7 @@ export type EventRowProps = {
  * friends going and the quick plan button on the right.
  */
 export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuActions }: EventRowProps) {
-  const { colors, space, radius, scheme } = useTheme();
+  const { colors, space, radius } = useTheme();
 
   const thumb = (
     <View
@@ -63,7 +63,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
           accessibilityIgnoresInvertColors
         />
       ) : (
-        <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={48} />
+        <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={36} />
       )}
     </View>
   );
@@ -79,35 +79,48 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         {href ? <Link.AppleZoom>{thumb}</Link.AppleZoom> : thumb}
-        <View style={{ flex: 1, gap: 2 }}>
+        <View style={{ flex: 1, gap: 1 }}>
           <View style={{ alignSelf: 'flex-start' }}>
             <Chip label={event.categoryLabel} size="small" category={event.interest} />
           </View>
-          <AppText variant="headline" numberOfLines={2} style={{ fontWeight: '700' }}>
+          <AppText variant="headline" numberOfLines={1}>
             {event.title}
           </AppText>
-          <AppText variant="footnote" color="inkSecondary" numberOfLines={1} maxFontSizeMultiplier={1.4}>
+          <AppText
+            variant="footnote"
+            color="inkSecondary"
+            numberOfLines={1}
+            maxFontSizeMultiplier={1.4}
+            style={{ lineHeight: 16 }}
+          >
             {eventRowTime(event)}
           </AppText>
           <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              gap: space.xs,
+              gap: 0,
             }}
           >
-            <Icon name="mappin" size={11} color="inkSecondary" />
+            <View style={{ paddingRight: space.xs }}>
+              <Icon name="mappin" size={11} color="inkSecondary" />
+            </View>
             <AppText
               variant="footnote"
               color="inkSecondary"
               numberOfLines={1}
-              style={{ flexShrink: 1 }}
+              style={{ flexShrink: 1, lineHeight: 16 }}
               maxFontSizeMultiplier={1.4}
             >
               {event.venue}
             </AppText>
-            <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4} style={{ flexShrink: 0 }}>
-              {event.venue ? '· ' : ''}
+            <AppText
+              variant="footnote"
+              color="inkSecondary"
+              maxFontSizeMultiplier={1.4}
+              style={{ flexShrink: 0, lineHeight: 16 }}
+            >
+              {event.venue ? ' · ' : ''}
               {eventRowDistance(event)}
             </AppText>
           </View>
@@ -127,7 +140,6 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
         borderRadius: radius.card,
         borderCurve: 'continuous',
         backgroundColor: colors.surface,
-        ...(scheme === 'dark' ? { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line } : null),
       }}
     >
       {!href ? (

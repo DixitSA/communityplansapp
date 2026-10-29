@@ -34,7 +34,7 @@ export function FilterMenuChip<T extends string | number>({
   const [open, setOpen] = useState(false);
   return (
     <View style={{ zIndex: open ? 10 : 0 }}>
-      <Chip label={label} symbol={symbol} selected={active} filled onPress={() => setOpen((o) => !o)} />
+      <Chip label={label} symbol={symbol} trailingSymbol="chevron.down" dense selected={active} filled onPress={() => setOpen((o) => !o)} />
       {open ? (
         <View
           accessibilityRole="menu"

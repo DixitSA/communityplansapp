@@ -65,7 +65,7 @@ export default function GoingSheet() {
               variant="primary"
               symbol="message.fill"
               label="Open chat"
-              onPress={() => router.dismissTo('/chats')}
+              onPress={() => router.dismissTo({ pathname: '/chat/[eventId]', params: { eventId: event.id } })}
             />
             <Button
               symbol="calendar.badge.plus"

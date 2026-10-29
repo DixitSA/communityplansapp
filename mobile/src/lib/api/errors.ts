@@ -90,3 +90,19 @@ export function errorCode(err: unknown): string {
   }
   return 'unknown';
 }
+
+const CHAT_COPY: Record<string, string> = {
+  rate_limited: 'You’re sending messages too fast. Wait a moment, then try again.',
+  chat_closed: 'This chat is closed, so you can’t send messages.',
+  // Postgres "row violates row-level security": the chat closed, or the viewer is no longer Going.
+  '42501': 'This chat is closed, or you’re no longer going.',
+  empty_message: 'Write something first.',
+  message_too_long: 'That message is too long. Keep it under 2,000 characters.',
+  network: 'No connection. Check your internet and try again.',
+};
+
+/** Friendly copy for a chat error code (sending, deleting, reporting, blocking). */
+export function mapChatError(code: string | null | undefined): string {
+  if (code && code in CHAT_COPY) return CHAT_COPY[code];
+  return GENERIC_ERROR;
+}

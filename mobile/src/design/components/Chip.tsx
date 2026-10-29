@@ -21,6 +21,8 @@ export type ChipProps = {
   /** Interest slug: tints the chip with that category's tag colors. */
   category?: string;
   size?: 'regular' | 'small';
+  /** Tighter padding and gaps, for the filter row where three chips share one line with the map button. */
+  dense?: boolean;
   /**
    * Reserves a 2pt border so selection doesn't shift layout. `true` draws it in the category
    * (or accent) color, `false` keeps it transparent. Leave undefined for no border at all.
@@ -45,6 +47,7 @@ export function Chip({
   tone = 'accent',
   category,
   size = 'regular',
+  dense = false,
   ring,
   onPress,
 }: ChipProps) {
@@ -65,15 +68,15 @@ export function Chip({
     fg = 'ink';
     iconColor = 'ink';
   }
-  const iconSize = small ? 12 : 15;
+  const iconSize = small ? 12 : dense ? 14 : 15;
 
   const content = (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: space.xs,
-        paddingHorizontal: small ? space.sm : space.md,
+        gap: dense ? 3 : space.xs,
+        paddingHorizontal: small ? space.sm : dense ? space.sm : space.md,
         paddingVertical: small ? space.xs : space.sm,
         // Regular chips are 36pt tall (matches the map/List toggle in the filter row).
         minHeight: small ? undefined : 36,

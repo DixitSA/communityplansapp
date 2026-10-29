@@ -71,6 +71,9 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   laptopcomputer: 'laptop-outline',
   'tshirt.fill': 'shirt',
   'rectangle.portrait.and.arrow.right': 'log-out-outline',
+  'arrow.up': 'arrow-up',
+  'info.circle': 'information-circle-outline',
+  'bubble.left.fill': 'chatbubble',
 };
 
 /**

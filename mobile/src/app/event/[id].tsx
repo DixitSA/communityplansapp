@@ -123,7 +123,7 @@ export default function EventScreen() {
   };
   const onGoing = () => {
     if (status === 'going') {
-      router.dismissTo('/chats');
+      router.push({ pathname: '/chat/[eventId]', params: { eventId: event.id } });
       return;
     }
     // The Going sheet plays the success haptic and the burst as it appears.

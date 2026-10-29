@@ -9,7 +9,7 @@ import { usePlansStore } from './plansStore';
 
 /**
  * Dev-only, demo mode only: a screen opened with `?demoPlans=1` pre-sets one event Going, one Down if
- * and one Interested (and jumps the Feed to their day), so plan indicators and the Profile's
+ * and one Interested (and jumps the Feed to their day), plus a Going to last week's event whose chat is archived, so plan indicators and the Profile's
  * upcoming list can be screenshotted without tapping through.
  */
 export function useDemoPlans(param: string | undefined) {
@@ -20,6 +20,8 @@ export function useDemoPlans(param: string | undefined) {
     plans.setStatus('ev-005', 'going');
     plans.setStatus('ev-004', 'down_if_friends');
     plans.setStatus('ev-003', 'interested');
+    // Last week's event: its chat already closed, so the Chats tab has an Archived section to show.
+    plans.setStatus('ev-001-w-1', 'going');
     const day = getFixtureEvents(new Date()).find((e) => e.id === 'ev-005')?.startsAt;
     if (day) useFiltersStore.getState().setSelectedDay(startOfDay(day));
   }, [enabled]);

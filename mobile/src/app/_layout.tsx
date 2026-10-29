@@ -73,6 +73,7 @@ function GatedStack() {
         <Stack.Screen name="event/[id]/going" options={sheet('fitToContents')} />
         <Stack.Screen name="filters" options={sheet([0.6, 1])} />
         <Stack.Screen name="city" options={sheet('fitToContents')} />
+        <Stack.Screen name="chat/[eventId]" />
         <Stack.Screen name="activity" />
         <Stack.Screen name="settings" options={sheet([0.5, 1])} />
         <Stack.Screen name="(dev)/gallery" />
