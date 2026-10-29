@@ -1,4 +1,4 @@
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,23 +49,15 @@ export default function FiltersSheet() {
   const price = useFiltersStore((s) => s.price);
   const scope = useFiltersStore((s) => s.scope);
   const { toggleInterest, setDistance, setPrice, clearFilters } = useFiltersStore.getState();
-  const { dayEvents } = useFeedEvents();
+  const { filtered } = useFeedEvents();
 
   const isDefault = isDefaultFilters({ timeOfDay, interests, distanceMi, price, scope });
-  const count = dayEvents.length;
+  // The agenda lists every matching event in the next two weeks, so the button counts those.
+  const count = filtered.length;
   const distanceIndex = DISTANCES.indexOf(distanceMi);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <Stack.Screen
-        options={{
-          presentation: 'formSheet',
-          headerShown: false,
-          sheetGrabberVisible: true,
-          sheetAllowedDetents: [0.6, 1],
-          contentStyle: { backgroundColor: colors.canvas },
-        }}
-      />
       <View
         style={{
           flexDirection: 'row',

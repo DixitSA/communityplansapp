@@ -1,6 +1,6 @@
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
-import { ScrollView, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
 import {
   AppText,
@@ -15,6 +15,7 @@ import {
   asSymbol,
   useTheme,
 } from '@/design';
+import { getActivityItems } from '@/features/activity/fixtures';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { usePlansStore } from '@/features/event/plansStore';
 import { getFixtureEvents } from '@/features/feed/fixtures';
@@ -22,6 +23,38 @@ import { PlanTicket } from '@/features/profile/PlanTicket';
 import { deriveProfileStats, upcomingPlans } from '@/features/profile/stats';
 import { useMyProfile } from '@/features/profile/useMyProfile';
 import { isBackendConfigured } from '@/lib/env';
+
+/** The top row of Profile: opens Activity (friend requests, "who did you meet"), with a dot while there is something new. */
+function ActivityRow() {
+  const { colors, space, radius } = useTheme();
+  // Activity is sample data for now, so "unread" means there are items.
+  const unread = getActivityItems().length > 0;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={unread ? 'Activity, new updates' : 'Activity'}
+      onPress={() => router.push('/activity')}
+      style={({ pressed }) => ({
+        minHeight: 52,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.md,
+        paddingHorizontal: space.lg,
+        borderRadius: radius.card,
+        borderCurve: 'continuous',
+        backgroundColor: colors.surface,
+        opacity: pressed ? 0.85 : 1,
+      })}
+    >
+      <Icon name="bell" size={20} />
+      <AppText variant="body" style={{ flex: 1 }}>
+        Activity
+      </AppText>
+      {unread ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} /> : null}
+      <Icon name="chevron.right" size={14} color="inkSecondary" weight="semibold" />
+    </Pressable>
+  );
+}
 
 function Stat({ value, label }: { value: number; label: string }) {
   const { space } = useTheme();
@@ -106,6 +139,7 @@ export default function ProfileScreen() {
       {header}
 
       <View style={{ gap: space.xl, paddingTop: space.xl }}>
+        <ActivityRow />
         <View
           accessible
           accessibilityLabel={`${me.displayName}, @${me.username}`}

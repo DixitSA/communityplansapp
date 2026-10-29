@@ -19,6 +19,8 @@ export type EventCardData = {
   id: string;
   title: string;
   startsAt: Date;
+  /** When known. The server's feed doesn't send it yet, so rows fall back to the start time. */
+  endsAt?: Date;
   venue: string;
   distanceMi: number;
   imageUrl?: string;

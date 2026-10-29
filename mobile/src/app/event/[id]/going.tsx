@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -28,17 +28,9 @@ export default function GoingSheet() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          presentation: 'formSheet',
-          sheetAllowedDetents: 'fitToContents',
-          sheetGrabberVisible: true,
-          contentStyle: { backgroundColor: colors.canvas },
-        }}
-      />
       {event ? (
         <ScrollView
-          style={{ flex: 1, backgroundColor: colors.canvas }}
+          style={{ backgroundColor: colors.canvas }}
           contentContainerStyle={{ padding: space.lg, paddingTop: space.xxl, gap: space.xl }}
           showsVerticalScrollIndicator={false}
         >

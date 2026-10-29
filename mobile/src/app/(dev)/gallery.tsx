@@ -10,8 +10,10 @@ import {
   DateStrip,
   EmptyState,
   EventCard,
+  EventRow,
   Facepile,
   GlassButton,
+  GlassPill,
   GlassSurface,
   Icon,
   InterestTile,
@@ -24,11 +26,12 @@ import {
   StepProgress,
   TextField,
   useTheme,
+  type CardPlan,
   type DayMeta,
   type SymbolName,
   type TypeVariant,
 } from '@/design';
-import { EventCardLink } from '@/features/event/EventCardLink';
+import { EventCardLink, EventRowLink } from '@/features/event/EventCardLink';
 import { getFixtureEvents } from '@/features/feed/fixtures';
 import { startOfDay, toISODate } from '@/lib/dates';
 
@@ -63,6 +66,7 @@ export default function Gallery() {
   const [seg, setSeg] = useState('a');
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
   const [interested, setInterested] = useState(false);
+  const [rowPlan, setRowPlan] = useState<CardPlan>(null);
   const [count, setCount] = useState(24);
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -217,6 +221,14 @@ export default function Gallery() {
         <Facepile people={PEOPLE.slice(0, 1)} total={1} />
         <Facepile people={PEOPLE.slice(0, 2)} total={2} />
         <Facepile people={PEOPLE} total={5} />
+        <AppText variant="caption" color="inkSecondary">
+          Compact (list rows): friends&apos; faces and +N, or &ldquo;N going&rdquo; with no friends
+        </AppText>
+        <View style={row}>
+          <Facepile people={PEOPLE} total={12} compact />
+          <Facepile people={PEOPLE.slice(0, 1)} total={1} compact />
+          <Facepile people={[]} total={7} compact />
+        </View>
       </Section>
 
       <Section title="MeshArt">
@@ -267,6 +279,21 @@ export default function Gallery() {
 
       <Section title="EmptyState">
         <EmptyState symbol="sparkles" title="Nothing planned yet" message="Try another date." />
+      </Section>
+
+      <Section title="EventRow (agenda row; quick plan menu on the right)">
+        <EventRow event={{ ...events[4], goingCount: 14 }} plan={rowPlan} onSetPlan={setRowPlan} />
+        <EventRow event={events[1]} plan="interested" />
+        <EventRow event={events[3]} plan="down_if_friends" />
+        <EventRow event={{ ...events[2], title: 'Lunchtime Food Truck Rally with a very long title that wraps' }} plan="going" />
+        {/* Opens the event page with the zoom transition; the plan menu shares the plans store. */}
+        <EventRowLink event={events[5]} />
+      </Section>
+
+      <Section title="GlassPill (the agenda's Today button)">
+        <View style={row}>
+          <GlassPill label="Today" onPress={() => undefined} />
+        </View>
       </Section>
 
       <Section title="EventCard">

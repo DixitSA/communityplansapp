@@ -1,8 +1,9 @@
 import { usePlansStore } from '@/features/event/plansStore';
 import { applyFilters, type DistanceMi } from '@/features/feed/filters';
-import { getFixtureEvent, getFixtureEvents } from '@/features/feed/fixtures';
+import { getFixtureEvent, getFixtureEvents, getFixtureEventsInRange } from '@/features/feed/fixtures';
 
 import { ApiError } from './errors';
+import { toISODate } from '../dates';
 import { METERS_PER_MILE } from './feedMapping';
 import {
   CHARLOTTE_CITY_ID,
@@ -11,6 +12,7 @@ import {
   type EventPage,
   type FeedEvent,
   type FeedParams,
+  type FeedRangeParams,
   type Interest,
   type MyProfile,
   type OnboardingInput,
@@ -57,10 +59,11 @@ export const DEMO_BAD_CODE = '000000';
 
 const statusOf = (id: string) => usePlansStore.getState().statuses[id] ?? null;
 
-/** Sample feed, filtered like the server would. Ignores `day`: the Feed shows the whole sample week. */
-export function demoFeed(params: FeedParams): FeedEvent[] {
+type DemoFilterInput = Pick<FeedParams, 'interestIds' | 'radiusM' | 'price' | 'mode'>;
+
+function applyDemoFilters(events: ReturnType<typeof getFixtureEvents>, params: DemoFilterInput): FeedEvent[] {
   const slugs = (params.interestIds ?? []).flatMap((id) => DEMO_INTERESTS.find((i) => i.id === id)?.slug ?? []);
-  const matching = applyFilters(getFixtureEvents(new Date()), {
+  const matching = applyFilters(events, {
     timeOfDay: 'any',
     interests: slugs,
     // The distance chips only offer whole miles, so rounding recovers the chip value.
@@ -68,7 +71,19 @@ export function demoFeed(params: FeedParams): FeedEvent[] {
     price: params.price,
     scope: params.mode,
   });
-  return matching.map((e) => ({ ...e, goingCount: e.friendsGoing, myStatus: statusOf(e.id) }));
+  return matching.map((e) => ({ ...e, day: toISODate(e.startsAt), goingCount: e.friendsGoing, myStatus: statusOf(e.id) }));
+}
+
+/** Sample feed, filtered like the server would. Ignores `day`: the Feed shows the whole sample week. */
+export function demoFeed(params: FeedParams): FeedEvent[] {
+  return applyDemoFilters(getFixtureEvents(new Date()), params);
+}
+
+/** Sample agenda: the sample week repeated, cut to `days` from `start` and filtered like the server would. */
+export function demoFeedRange(params: FeedRangeParams): FeedEvent[] {
+  const start = parseDateOnly(params.start) ?? new Date();
+  const days = Math.max(1, Math.min(Math.round(params.days), 14));
+  return applyDemoFilters(getFixtureEventsInRange(start, days), params);
 }
 
 /** A sample event for the event page, or null for an unknown id. */
@@ -154,6 +169,9 @@ export function createDemoApi({ delayMs = 250 }: { delayMs?: number } = {}): Api
     },
     async getFeed(params) {
       return demoFeed(params);
+    },
+    async getFeedRange(params) {
+      return demoFeedRange(params);
     },
     async getEvent(id) {
       return demoEvent(id);

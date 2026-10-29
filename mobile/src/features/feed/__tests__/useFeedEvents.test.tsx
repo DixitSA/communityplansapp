@@ -17,11 +17,11 @@ jest.mock('@/lib/api', () => ({
   CHARLOTTE_CITY_ID: 1,
   METERS_PER_MILE: 1609.344,
   demoFeed: jest.fn(() => []),
-  api: { listInterests: jest.fn(), getFeed: jest.fn() },
+  api: { listInterests: jest.fn(), getFeedRange: jest.fn() },
 }));
 
 const listInterests = api.listInterests as jest.Mock;
-const getFeed = api.getFeed as jest.Mock;
+const getFeed = api.getFeedRange as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

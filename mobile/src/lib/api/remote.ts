@@ -156,6 +156,25 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       return (data ?? []).map((row) => mapFeedRow(row, interests));
     },
 
+    async getFeedRange(params) {
+      const [{ data, error }, interests] = await Promise.all([
+        supabase.rpc('get_feed_range', {
+          p_city_id: params.cityId,
+          p_start: params.start,
+          p_days: params.days,
+          p_lat: params.lat,
+          p_lng: params.lng,
+          p_radius_m: params.radiusM,
+          p_interest_ids: params.interestIds && params.interestIds.length > 0 ? params.interestIds : undefined,
+          p_price: params.price,
+          p_mode: params.mode,
+        }),
+        cachedInterests(),
+      ]);
+      if (error) fail(error);
+      return (data ?? []).map((row) => mapFeedRow(row, interests));
+    },
+
     async getEvent(id) {
       // Not a UUID, so it can't be an event here (and Postgres would reject it with a type error).
       if (!UUID.test(id)) return null;

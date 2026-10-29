@@ -93,3 +93,47 @@ describe('demo API fakes', () => {
     expect(await api.getMyProfile()).toBe(DEMO_PROFILE);
   });
 });
+
+describe('demoFeedRange', () => {
+  const { demoFeedRange } = jest.requireActual('../demo') as typeof import('../demo');
+  const base = { cityId: 1, lat: 35.2, lng: -80.8, radiusM: 50 * 1609.344, price: 'any', mode: 'nearby' } as const;
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  it('covers the 14 days from start, earliest first, every row carrying its local day', () => {
+    const start = new Date();
+    const rows = demoFeedRange({ ...base, start: iso(start), days: 14 });
+    expect(rows.length).toBeGreaterThan(10);
+    expect(rows.every((r) => r.day === iso(r.startsAt))).toBe(true);
+    expect(rows.map((r) => r.startsAt.getTime())).toEqual([...rows].map((r) => r.startsAt.getTime()).sort((a, b) => a - b));
+    const first = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const end = new Date(first.getFullYear(), first.getMonth(), first.getDate() + 14);
+    expect(rows.every((r) => r.startsAt >= first && r.startsAt < end)).toBe(true);
+    // Repeated weeks get distinct ids, so a list can key on them.
+    expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
+  });
+
+  it('applies the filters like the server (friends only, interests)', () => {
+    const start = iso(new Date());
+    const friends = demoFeedRange({ ...base, start, days: 14, mode: 'friends' });
+    expect(friends.length).toBeGreaterThan(0);
+    expect(friends.every((r) => r.friendsGoing > 0)).toBe(true);
+    const music = demoFeedRange({ ...base, start, days: 14, interestIds: [2] });
+    expect(music.every((r) => r.interest === 'music')).toBe(true);
+  });
+
+  it('clamps days to 1..14', () => {
+    const start = iso(new Date());
+    const one = demoFeedRange({ ...base, start, days: 1 });
+    expect(new Set(one.map((r) => r.day)).size).toBeLessThanOrEqual(1);
+    const many = demoFeedRange({ ...base, start, days: 99 });
+    expect(many).toEqual(demoFeedRange({ ...base, start, days: 14 }));
+  });
+
+  it('serves the repeated-week events to the event page too', () => {
+    const rows = demoFeedRange({ ...base, start: iso(new Date()), days: 14 });
+    const repeat = rows.find((r) => r.id.includes('-w'));
+    expect(repeat).toBeDefined();
+    const { demoEvent } = jest.requireActual('../demo') as typeof import('../demo');
+    expect(demoEvent(repeat!.id)?.id).toBe(repeat!.id);
+  });
+});

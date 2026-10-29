@@ -4,6 +4,7 @@ import type { Database, Tables } from '../database.types';
 import type { FeedEvent, Interest, RsvpStatus } from './types';
 
 export type FeedRow = Database['public']['Functions']['get_feed']['Returns'][number];
+export type FeedRangeRow = Database['public']['Functions']['get_feed_range']['Returns'][number];
 
 export const METERS_PER_MILE = 1609.344;
 
@@ -22,7 +23,7 @@ export function primaryInterest(ids: number[], interests: Interest[]): Interest 
   return interests.find((i) => ids.includes(i.id));
 }
 
-export function mapFeedRow(row: FeedRow, interests: Interest[]): FeedEvent {
+export function mapFeedRow(row: FeedRow | FeedRangeRow, interests: Interest[]): FeedEvent {
   const primary = primaryInterest(row.interest_ids ?? [], interests);
   const friends = parseFriends(row.friends_going);
   return {
@@ -43,6 +44,7 @@ export function mapFeedRow(row: FeedRow, interests: Interest[]): FeedEvent {
     neighborhood: row.neighborhood ?? undefined,
     goingCount: Number(row.going_count),
     myStatus: (row.my_status as RsvpStatus | null) ?? null,
+    ...('day' in row ? { day: row.day } : null),
   };
 }
 

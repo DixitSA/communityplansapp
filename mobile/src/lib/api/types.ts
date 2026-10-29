@@ -43,8 +43,17 @@ export type FeedParams = {
   mode: 'nearby' | 'friends';
 };
 
+/** Inputs of `get_feed_range`: the same filters over `days` (1 to 14) local days from `start`. */
+export type FeedRangeParams = Omit<FeedParams, 'day'> & {
+  /** "YYYY-MM-DD", the first day, in the city's time zone. */
+  start: string;
+  days: number;
+};
+
 /** A feed card plus what the map and the plan indicator need. */
 export type FeedEvent = EventCardData & {
+  /** The event's local day, "YYYY-MM-DD". Missing means "derive it from `startsAt`". */
+  day?: string;
   lat?: number;
   lng?: number;
   neighborhood?: string;
@@ -73,6 +82,8 @@ export type Api = {
   listInterests(): Promise<Interest[]>;
   /** Events for one day, ranked. Demo mode ignores `day` and returns the whole sample week. */
   getFeed(params: FeedParams): Promise<FeedEvent[]>;
+  /** Events over a range of days (the agenda feed), earliest first. Each carries its local `day`. */
+  getFeedRange(params: FeedRangeParams): Promise<FeedEvent[]>;
   /** One event, or null when it doesn't exist (or isn't visible). */
   getEvent(id: string): Promise<EventPage | null>;
   /** Sets the viewer's plan; null clears it. */

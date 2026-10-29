@@ -13,6 +13,7 @@ import type { FilterMenuChipProps } from './FilterMenuChip';
  */
 export function FilterMenuChip<T extends string | number>({
   label,
+  symbol,
   active,
   options,
   value,
@@ -24,7 +25,7 @@ export function FilterMenuChip<T extends string | number>({
         label={
           <RNHostView matchContents>
             <View pointerEvents="none">
-              <Chip label={label} trailingSymbol="chevron.down" selected={active} filled />
+              <Chip label={label} symbol={symbol} selected={active} filled />
             </View>
           </RNHostView>
         }

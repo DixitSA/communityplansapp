@@ -17,7 +17,7 @@ import { useHydrated } from '@/lib/useHydrated';
  * in or finishing onboarding needs no manual navigation.
  */
 function GatedStack() {
-  const { colors, space } = useTheme();
+  const { colors, space, radius } = useTheme();
   const { gate, profile } = useGate();
   const session = useSession();
 
@@ -54,16 +54,27 @@ function GatedStack() {
     return <LoadingScreen onRetry={() => session && profile.refetch()} />;
   }
 
+  // Sheet presentation is declared here, not inside the screens: native reads it when the screen is
+  // pushed, and options set from within a screen arrive too late (the sheet would open full-screen).
+  const sheet = (detents: 'fitToContents' | number[]) =>
+    ({
+      presentation: 'formSheet',
+      sheetAllowedDetents: detents,
+      sheetGrabberVisible: true,
+      sheetCornerRadius: radius.sheet,
+      contentStyle: { backgroundColor: colors.canvas },
+    }) as const;
+
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
       <Stack.Protected guard={gateAllows(gate, 'app')}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="event/[id]" />
-        <Stack.Screen name="event/[id]/going" />
-        <Stack.Screen name="filters" />
-        <Stack.Screen name="city" />
+        <Stack.Screen name="event/[id]/going" options={sheet('fitToContents')} />
+        <Stack.Screen name="filters" options={sheet([0.6, 1])} />
+        <Stack.Screen name="city" options={sheet('fitToContents')} />
         <Stack.Screen name="activity" />
-        <Stack.Screen name="settings" />
+        <Stack.Screen name="settings" options={sheet([0.5, 1])} />
         <Stack.Screen name="(dev)/gallery" />
       </Stack.Protected>
       <Stack.Protected guard={gateAllows(gate, 'onboarding')}>

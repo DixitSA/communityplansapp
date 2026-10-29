@@ -15,8 +15,12 @@ export {
   type PlanIndicator,
   type EventCardProps,
 } from './components/EventCard';
-export { Facepile, formatFriendsLabel, type FacepileProps } from './components/Facepile';
+export { PlanPill, planMenuOptions, planPillSpec, type PlanMenuOption } from './components/PlanPill';
+export { PlanMenu, type PlanMenuProps } from './components/PlanMenu';
+export { Facepile, formatFriendsLabel, formatAttendeeCount, type FacepileProps } from './components/Facepile';
+export { EventRow, eventRowTime, eventRowDistance, EVENT_ROW_THUMB, type EventRowProps } from './components/EventRow';
 export { GlassButton, type GlassButtonProps } from './components/GlassButton';
+export { GlassPill, type GlassPillProps } from './components/GlassPill';
 export { GlassSurface, type GlassSurfaceProps } from './components/GlassSurface';
 export { Icon, asSymbol, type IconProps, type SymbolName } from './components/Icon';
 export { MeshBackground, type MeshBackgroundProps } from './components/MeshBackground';

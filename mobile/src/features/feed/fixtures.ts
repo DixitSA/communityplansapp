@@ -1,6 +1,6 @@
 import type { EventCardData } from '@/design';
 import type { EventDetail } from '@/features/event/types';
-import { addDays, startOfWeekMonday } from '@/lib/dates';
+import { addDays, startOfDay, startOfWeekMonday } from '@/lib/dates';
 
 // Fictional sample data so the feed has something to show before the backend exists.
 const P = {
@@ -11,7 +11,7 @@ const P = {
   theo: { id: 'u-theo', name: 'Theo' },
 };
 
-type Seed = Omit<EventCardData, 'startsAt'> & { dayOffset: number; hour: number; minute?: number };
+type Seed = Omit<EventCardData, 'startsAt' | 'endsAt'> & { dayOffset: number; hour: number; minute?: number; hours?: number };
 
 const SEEDS: Seed[] = [
   {
@@ -69,10 +69,32 @@ const SEEDS: Seed[] = [
 /** Sample events spread across the current Mon-Sun week. Sunday is intentionally empty. */
 export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
   const monday = startOfWeekMonday(now);
-  return SEEDS.map(({ dayOffset, hour, minute = 0, ...rest }) => {
+  return SEEDS.map(({ dayOffset, hour, minute = 0, hours = 2, ...rest }) => {
     const day = addDays(monday, dayOffset);
-    return { ...rest, startsAt: new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute) };
+    const startsAt = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute);
+    return { ...rest, startsAt, endsAt: new Date(startsAt.getTime() + hours * 3_600_000) };
   });
+}
+
+/** Ids of the repeats in following weeks: "ev-005" is this week's, "ev-005-w1" is the same event a week later. */
+const WEEK_SUFFIX = /^(.+)-w(\d+)$/;
+
+/**
+ * The sample week repeated for the weeks `[start, start + days)` touches, so the agenda has
+ * more than one week to scroll. Events outside the range are dropped. Week 0 keeps the plain ids.
+ */
+export function getFixtureEventsInRange(start: Date, days: number): EventCardData[] {
+  const first = startOfDay(start);
+  const end = addDays(first, days);
+  const weeks = Math.ceil((days + 6) / 7) + 1;
+  const out: EventCardData[] = [];
+  for (let w = 0; w < weeks; w++) {
+    for (const e of getFixtureEvents(addDays(start, w * 7))) {
+      // Week 0 of `getFixtureEvents` is the Mon-Sun week of `start`, so later weeks are +7 days each.
+      if (e.startsAt >= first && e.startsAt < end) out.push(w === 0 ? e : { ...e, id: `${e.id}-w${w}` });
+    }
+  }
+  return out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
 
 type DetailSeed = Omit<EventDetail, keyof EventCardData | 'tags'> & {
@@ -199,12 +221,16 @@ const DETAILS: Record<string, DetailSeed> = {
 
 /** One fixture event with everything the event page needs, or undefined for an unknown id. */
 export function getFixtureEvent(id: string, now: Date = new Date()): EventDetail | undefined {
-  const card = getFixtureEvents(now).find((e) => e.id === id);
-  const detail = DETAILS[id];
+  const repeat = WEEK_SUFFIX.exec(id);
+  const baseId = repeat ? repeat[1] : id;
+  const card = getFixtureEvents(addDays(now, repeat ? Number(repeat[2]) * 7 : 0))
+    .find((e) => e.id === baseId);
+  const detail = DETAILS[baseId];
   if (!card || !detail) return undefined;
   const { moreTags = [], ...rest } = detail;
   return {
     ...card,
+    id,
     ...rest,
     tags: [{ label: card.categoryLabel, interest: card.interest }, ...moreTags],
   };

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { AppText, Chip, useTheme } from '@/design';
+import { AppText, Chip, useTheme, type SymbolName } from '@/design';
 import { selection } from '@/lib/haptics';
 
 export type MenuOption<T extends string | number> = { value: T; label: string };
@@ -9,6 +9,8 @@ export type MenuOption<T extends string | number> = { value: T; label: string };
 export type FilterMenuChipProps<T extends string | number> = {
   /** Chip text: the current choice. */
   label: string;
+  /** Leading SF Symbol. */
+  symbol?: SymbolName;
   /** Filled green when the filter isn't at its default. */
   active: boolean;
   options: MenuOption<T>[];
@@ -22,6 +24,7 @@ export type FilterMenuChipProps<T extends string | number> = {
  */
 export function FilterMenuChip<T extends string | number>({
   label,
+  symbol,
   active,
   options,
   value,
@@ -31,7 +34,7 @@ export function FilterMenuChip<T extends string | number>({
   const [open, setOpen] = useState(false);
   return (
     <View style={{ zIndex: open ? 10 : 0 }}>
-      <Chip label={label} trailingSymbol="chevron.down" selected={active} filled onPress={() => setOpen((o) => !o)} />
+      <Chip label={label} symbol={symbol} selected={active} filled onPress={() => setOpen((o) => !o)} />
       {open ? (
         <View
           accessibilityRole="menu"

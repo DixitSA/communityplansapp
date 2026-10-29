@@ -1,4 +1,4 @@
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { AppText, Icon, useTheme } from '@/design';
@@ -8,17 +8,8 @@ import { selection } from '@/lib/haptics';
 export default function CitySheet() {
   const { colors, space, radius } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas, padding: space.lg, gap: space.lg }}>
-      <Stack.Screen
-        options={{
-          presentation: 'formSheet',
-          headerShown: false,
-          sheetGrabberVisible: true,
-          sheetAllowedDetents: [0.36],
-          contentStyle: { backgroundColor: colors.canvas },
-        }}
-      />
-      <AppText variant="title2" accessibilityRole="header" style={{ paddingTop: space.md }}>
+    <View style={{ backgroundColor: colors.canvas, padding: space.lg, paddingTop: space.xxl, paddingBottom: space.xxxl, gap: space.lg }}>
+      <AppText variant="title2" accessibilityRole="header">
         Choose your city
       </AppText>
       <Pressable
@@ -39,7 +30,7 @@ export default function CitySheet() {
           backgroundColor: colors.surface,
         }}
       >
-        <Icon name="mappin" size={20} color="accent" />
+        <Icon name="mappin.circle.fill" size={24} color="accent" />
         <View style={{ flex: 1 }}>
           <AppText variant="headline">Charlotte, NC</AppText>
           <AppText variant="footnote" color="inkSecondary">

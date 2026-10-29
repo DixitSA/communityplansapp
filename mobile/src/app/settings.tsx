@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Alert, Pressable, View } from 'react-native';
 
 import { AppText, Icon, useTheme } from '@/design';
@@ -28,15 +28,6 @@ export default function SettingsSheet() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <Stack.Screen
-        options={{
-          presentation: 'formSheet',
-          headerShown: false,
-          sheetGrabberVisible: true,
-          sheetAllowedDetents: [0.5, 1],
-          contentStyle: { backgroundColor: colors.canvas },
-        }}
-      />
       <View
         style={{
           flexDirection: 'row',
