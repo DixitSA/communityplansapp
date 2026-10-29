@@ -215,9 +215,27 @@ end $$;
 select is((select count(*) from public.friendships where requested_by = '00000000-0000-0000-0000-000000000012')::int, 30, '30 requests allowed');
 select throws_ok($$ select public.send_friend_request('00000000-0000-0000-0000-000000000130') $$, 'P0001', 'rate_limited', '31st request in 24h is rate limited');
 reset role;
-update public.friendships set created_at = now() - interval '25 hours' where requested_by = '00000000-0000-0000-0000-000000000012' and user_b = '00000000-0000-0000-0000-000000000100';
+update public.notifications set created_at = now() - interval '25 hours' where actor_id = '00000000-0000-0000-0000-000000000012' and user_id = '00000000-0000-0000-0000-000000000100';
 select pg_temp.login('00000000-0000-0000-0000-000000000012');
 select is((select public.send_friend_request('00000000-0000-0000-0000-000000000130')), 'outgoing', 'window is rolling');
+
+-- repeated send/cancel to the same person: 3 per 7 days
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-000000000009');
+do $$ begin
+  for i in 1..3 loop
+    perform public.send_friend_request('00000000-0000-0000-0000-000000000011');
+    perform public.remove_friend('00000000-0000-0000-0000-000000000011');
+  end loop;
+end $$;
+select throws_ok($$ select public.send_friend_request('00000000-0000-0000-0000-000000000011') $$, 'P0001', 'rate_limited',
+  '4th send to the same user in 7 days is rate limited even after cancels');
+-- direct table insert past the cap is also limited (zed already sent 31 requests today)
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-000000000012');
+select throws_ok($$ insert into public.friendships (user_a, user_b, requested_by, status)
+  values ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000131', '00000000-0000-0000-0000-000000000012', 'pending') $$, 'P0001', 'rate_limited',
+  'direct insert past the daily cap is rate limited');
 
 -- 8. Not authenticated / anon ---------------------------------------------------------------------
 reset role;

@@ -6,6 +6,33 @@
 -- (Inlined in each function below; documented here once.)
 --   none | friends | outgoing (caller sent) | incoming (they sent) | self (get_profile only)
 
+-- Rate limits for new friend requests live in a trigger so direct table inserts are covered too.
+-- Counted from friend_request notifications (actor = requester, user = recipient), which survive
+-- cancel/decline deleting the friendship row.
+create index notifications_friend_request_actor_idx on public.notifications (actor_id, created_at)
+  where type = 'friend_request';
+
+create function public.friendships_rate_limit() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_other uuid := case when new.requested_by = new.user_a then new.user_b else new.user_a end;
+begin
+  if (select count(*) from public.notifications
+      where type = 'friend_request' and actor_id = new.requested_by
+        and created_at > now() - interval '24 hours') >= 30
+     or (select count(*) from public.notifications
+      where type = 'friend_request' and actor_id = new.requested_by and user_id = v_other
+        and created_at > now() - interval '7 days') >= 3 then
+    raise exception 'rate_limited';
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function public.friendships_rate_limit from public, anon, authenticated;
+
+create trigger friendships_rate_limit before insert on public.friendships
+  for each row execute function public.friendships_rate_limit();
+
 create function public.search_profiles(p_query text, p_limit integer default 20)
 returns table (id uuid, username text, display_name text, avatar_path text, friendship text)
 language plpgsql stable security definer set search_path = '' as $$
@@ -89,13 +116,20 @@ begin
     return 'friends';
   end if;
 
-  if (select count(*) from public.friendships
-      where requested_by = v_uid and created_at > now() - interval '24 hours') >= 30 then
-    raise exception 'rate_limited';
-  end if;
-
-  insert into public.friendships (user_a, user_b, requested_by, status)
-  values (v_a, v_b, v_uid, 'pending');
+  begin
+    insert into public.friendships (user_a, user_b, requested_by, status)
+    values (v_a, v_b, v_uid, 'pending');
+  exception when unique_violation then
+    -- Two users requested each other at the same moment: re-read and take the existing-row path.
+    select * into v_f from public.friendships where user_a = v_a and user_b = v_b;
+    if v_f.status = 'accepted' then
+      return 'friends';
+    elsif v_f.requested_by = v_uid then
+      return 'outgoing';
+    end if;
+    update public.friendships set status = 'accepted' where user_a = v_a and user_b = v_b;
+    return 'friends';
+  end;
   return 'outgoing';
 end;
 $$;
@@ -192,7 +226,8 @@ end;
 $$;
 
 -- Profile page: public profile fields plus counts and past events you both went to.
--- Friend lists are never returned, only counts.
+-- Friend lists are never returned, only counts. friend_count has no block filter on purpose:
+-- filtering would let a second account infer a block by comparing counts.
 create function public.get_profile(p_user uuid)
 returns table (
   id uuid,
@@ -229,7 +264,6 @@ begin
       select count(*)::integer
       from public.friendships ff
       where p.id in (ff.user_a, ff.user_b) and ff.status = 'accepted'
-        and not private.is_blocked_between(v_uid, case when ff.user_a = p.id then ff.user_b else ff.user_a end)
     ),
     case when p.id = v_uid then 0 else (
       select count(*)::integer
