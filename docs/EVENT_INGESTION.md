@@ -70,3 +70,11 @@ The `ingest-serpapi` function runs a fixed set of Google Events searches for Cha
 **Duplicates:** before saving, `find_duplicate_event` looks for an active event from another source in the same city starting within 60 minutes, with the same or a similar title (trigram similarity of at least 0.5), and within 400 m. If one exists the SerpApi copy is dropped and counted in `duplicates`, so Ticketmaster and curated events stay the canonical record. Copies SerpApi saved on an earlier run are set to `status = 'hidden'` when the canonical event appears later (hidden events are never resurrected).
 
 **Safety:** a preflight on SerpApi's free `account.json` skips the run (`skipped_run: low_quota`) when fewer than 8 searches are left. A failed search (including HTTP 429, which is not retried) stops searching but still processes what was fetched, and is counted in `errors`. Geocoding stops after 90 s so the run finishes inside the 150 s limit.
+
+**Geocoding order (updated):** (1) venues we already know from Ticketmaster/iCal/curated events (`find_venue_location`: same normalized venue name, or trigram similarity of at least 0.6; free, no external call), (2) Census for addresses with a street number, (3) Geoapify if `GEOAPIFY_KEY` is set, (4) Nominatim. Supabase's cloud IPs are sometimes blocked by Nominatim, so after 3 consecutive Nominatim errors it is skipped for the rest of the run. Misses where a geocoder failed (rather than answering "no result") are never cached.
+
+**Optional Geoapify key (recommended):** sign up at https://www.geoapify.com (free plan: 3,000 requests/day, no card), create a project and copy its API key, then in PowerShell from the repo root:
+`npx supabase secrets set GEOAPIFY_KEY="<your key>"`
+No redeploy is needed for the secret to take effect on the next run.
+
+**More response fields:** `venue_hits`, `census_hits`, `geoapify_hits`, `nominatim_hits` (hits by geocoder), and `geocode_error_samples` (up to 5 short labels such as `nominatim 403` or `census timeout`, never keys or URLs).

@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { addressKey, FALLBACK_CENTER, parseCensus, parseNominatim, parseEwkbPoint, withinCity } from "./geo.ts";
+import { addressKey, FALLBACK_CENTER, parseCensus, parseGeoapify, parseNominatim, parseEwkbPoint, withinCity } from "./geo.ts";
 import { mapSerpapiEvent, type SerpEvent, type SerpRow } from "./mapper.ts";
 
 const SERP_URL = "https://serpapi.com/search.json";
@@ -9,6 +9,8 @@ const GEOCODE_TIMEOUT_MS = 4_000;
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const NOMINATIM_UA = "yard-ingest/1.0 (+https://github.com/DixitSA/communityplansapp)";
 const NOMINATIM_GAP_MS = 1_100; // usage policy: max 1 request/second
+const GEOAPIFY_URL = "https://api.geoapify.com/v1/geocode/search";
+const NOMINATIM_MAX_ERRORS = 3; // circuit breaker
 const MISS_TTL_MS = 7 * 86_400_000;
 const MAX_FRESH_GEOCODES = 60; // per run; the rest are retried tomorrow
 const GEOCODE_BUDGET_MS = 90_000; // free plan wall clock is 150 s; stop geocoding early
@@ -29,7 +31,7 @@ const QUERY_PLAN: { q: string; chip: string; pages: number }[] = [
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const chunk = <T>(a: T[], n = 100): T[][] =>
   Array.from({ length: Math.ceil(a.length / n) }, (_, k) => a.slice(k * n, (k + 1) * n));
-const scrub = (m: string) => m.replace(/api_key=[^&\s]+/g, "api_key=***");
+const scrub = (m: string) => m.replace(/api_?key=[^&\s]+/gi, "api_key=***");
 
 async function digest(s: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
@@ -139,9 +141,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Geocode: cache, then Census (needs a street number), then Nominatim. Fresh misses are cached for 7 days.
+    // 3. Geocode: cache, then our own venues, Census (needs a street number), Geoapify (if keyed), Nominatim.
+    // Fresh misses are cached for 7 days; transient errors are not cached.
+    const geoapifyKey = Deno.env.get("GEOAPIFY_KEY");
     const hasStreet = new Map<string, boolean>();
-    for (const r of rows.values()) hasStreet.set(addressKey(r.geocode_query), r.geocode_has_street);
+    const venueOf = new Map<string, string>();
+    for (const r of rows.values()) {
+      const k = addressKey(r.geocode_query);
+      hasStreet.set(k, r.geocode_has_street);
+      if (r.venue_name && !venueOf.has(k)) venueOf.set(k, r.venue_name);
+    }
     const keys = [...hasStreet.keys()];
     const coords = new Map<string, { lat: number; lng: number } | null>();
     for (const part of chunk(keys, 50)) {
@@ -152,68 +161,106 @@ Deno.serve(async (req) => {
         else if (Date.now() - Date.parse(c.created_at) < MISS_TTL_MS) coords.set(c.address_key, null); // else: stale miss, retry
       }
     }
-    let geocode_attempted = 0, geocode_errors = 0, geocode_nomatch = 0, census_hits = 0, nominatim_hits = 0;
+    let geocode_attempted = 0, geocode_errors = 0, geocode_nomatch = 0;
+    let venue_hits = 0, census_hits = 0, geoapify_hits = 0, nominatim_hits = 0;
     const sample_misses: string[] = [];
-    let lastNominatim = 0;
-    /** One lookup. "error" = network/non-ok; "nomatch" = the geocoder answered with nothing. */
-    const lookup = async (url: string, headers: HeadersInit, parse: (b: unknown) => { lat: number; lng: number } | null) => {
+    const geocode_error_samples: string[] = [];
+    const noteError = (s: string) => {
+      if (geocode_error_samples.length < 5 && !geocode_error_samples.includes(s)) geocode_error_samples.push(s);
+    };
+    let lastNominatim = 0, nominatimErrors = 0;
+    type Hit = { lat: number; lng: number } | null;
+    /** One external lookup. Never throws; error text is a short label (no URL, headers or keys). */
+    const lookup = async (name: string, url: string, headers: HeadersInit, parse: (b: unknown) => Hit) => {
       try {
         const res = await fetch(url, { headers, signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS) });
         if (!res.ok) {
           await res.body?.cancel();
-          return { hit: null, state: "error" as const };
+          noteError(`${name} ${res.status}`);
+          return { hit: null as Hit, state: "error" as const };
         }
         const hit = parse(await res.json());
         return { hit, state: hit ? ("hit" as const) : ("nomatch" as const) };
-      } catch {
-        return { hit: null, state: "error" as const };
+      } catch (e) {
+        noteError(`${name} ${e instanceof Error && e.name === "TimeoutError" ? "timeout" : "network"}`);
+        return { hit: null as Hit, state: "error" as const };
       }
     };
+    const save = async (key: string, hit: Hit) => {
+      coords.set(key, hit);
+      const { error } = await db.from("geocode_cache").upsert(
+        { address_key: key, lat: hit?.lat ?? null, lng: hit?.lng ?? null, created_at: new Date().toISOString() },
+        { onConflict: "address_key" },
+      );
+      if (error) throw error;
+    };
+
+    // 3a. Free: venues we already know from other sources.
+    for (const key of keys) {
+      if (coords.has(key) && coords.get(key)) continue;
+      const venue = venueOf.get(key);
+      if (!venue || Date.now() - t0 > GEOCODE_BUDGET_MS) continue;
+      const { data, error } = await db.rpc("find_venue_location", { p_city_id: city.id, p_venue: venue });
+      if (error) throw error;
+      if (data?.[0]) {
+        venue_hits++;
+        coords.set(key, { lat: data[0].lat, lng: data[0].lng }); // memory only: cheap to recompute, SQL fixes apply next run
+      }
+    }
+
+    // 3b. External geocoders.
     let fresh = 0;
     for (const key of keys) {
       if (coords.has(key)) continue;
       if (fresh >= MAX_FRESH_GEOCODES || Date.now() - t0 > GEOCODE_BUDGET_MS) break;
       fresh++;
       geocode_attempted++;
-      let res: Awaited<ReturnType<typeof lookup>> = { hit: null, state: "nomatch" };
+      let hit: Hit = null, answered = false, failed = false;
       if (hasStreet.get(key)) {
-        res = await lookup(
-          `${CENSUS_URL}?${new URLSearchParams({ address: key, benchmark: "Public_AR_Current", format: "json" })}`, {}, parseCensus,
-        );
-        if (res.hit) census_hits++;
+        const r = await lookup("census", `${CENSUS_URL}?${new URLSearchParams({ address: key, benchmark: "Public_AR_Current", format: "json" })}`, {}, parseCensus);
+        if (r.hit) { hit = r.hit; census_hits++; }
+        else if (r.state === "nomatch") answered = true;
+        else failed = true;
       }
-      const censusFailed = res.state === "error";
-      if (!res.hit) {
-        const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
-        if (wait > 0) await sleep(wait);
-        res = await lookup(
-          `${NOMINATIM_URL}?${new URLSearchParams({
+      if (!hit && geoapifyKey) {
+        const q = new URLSearchParams({
+          text: key, filter: `circle:${center.lng},${center.lat},60000`, bias: `proximity:${center.lng},${center.lat}`,
+          limit: "1", format: "json", apiKey: geoapifyKey,
+        });
+        const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, parseGeoapify);
+        if (r.hit) { hit = r.hit; geoapify_hits++; }
+        else if (r.state === "nomatch") answered = true;
+        else failed = true;
+      }
+      if (!hit) {
+        if (nominatimErrors >= NOMINATIM_MAX_ERRORS) {
+          failed = true; // breaker tripped: skip Nominatim for the rest of the run
+        } else {
+          const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
+          if (wait > 0) await sleep(wait);
+          const q = new URLSearchParams({
             format: "jsonv2", limit: "1", countrycodes: "us", viewbox: "-81.25,35.55,-80.45,34.95", bounded: "1", q: key,
-          })}`,
-          { "User-Agent": NOMINATIM_UA }, parseNominatim,
-        );
-        lastNominatim = Date.now();
-        if (res.hit) nominatim_hits++;
-        // A Census outage plus a Nominatim no-match isn't a real miss: retry tomorrow instead of caching it for a week.
-        if (!res.hit && censusFailed) res = { hit: null, state: "error" };
+          });
+          const r = await lookup("nominatim", `${NOMINATIM_URL}?${q}`, { "User-Agent": NOMINATIM_UA }, parseNominatim);
+          lastNominatim = Date.now();
+          if (r.hit) { hit = r.hit; nominatim_hits++; nominatimErrors = 0; }
+          else if (r.state === "nomatch") { answered = true; nominatimErrors = 0; }
+          else { failed = true; nominatimErrors++; }
+        }
       }
-      if (res.state === "error") {
-        geocode_errors++; // transient: not cached, retried next run
+      if (hit && !withinCity(hit, center)) { hit = null; answered = true; } // far from the city: treat as no match
+      if (!hit && (failed || !answered)) {
+        geocode_errors++; // not cached, retried next run
         if (sample_misses.length < 5) sample_misses.push(key);
         continue;
       }
-      if (res.state === "nomatch") {
+      if (!hit) {
         geocode_nomatch++;
         if (sample_misses.length < 5) sample_misses.push(key);
       } else {
         geocoded++;
       }
-      coords.set(key, res.hit);
-      const { error } = await db.from("geocode_cache").upsert(
-        { address_key: key, lat: res.hit?.lat ?? null, lng: res.hit?.lng ?? null, created_at: new Date().toISOString() },
-        { onConflict: "address_key" },
-      );
-      if (error) throw error;
+      await save(key, hit);
     }
 
     // 4. Locate, drop cross-source duplicates.
@@ -273,7 +320,8 @@ Deno.serve(async (req) => {
     }
 
     return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses, errors,
-      geocode_attempted, geocode_errors, geocode_nomatch, census_hits, nominatim_hits, sample_misses });
+      geocode_attempted, geocode_errors, geocode_nomatch, venue_hits, census_hits, geoapify_hits, nominatim_hits, sample_misses,
+      geocode_error_samples });
   } catch (e) {
     // Log message only: fetch errors can embed the URL (and api_key).
     console.error("ingest-serpapi failed:", scrub(e instanceof Error ? e.message : String(e)));

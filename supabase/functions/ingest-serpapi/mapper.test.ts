@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertNotEquals } from "jsr:@std/assert@1";
 import { externalId, interestSlugs, mapSerpapiEvent, type MapContext, parseWhen, pickImage, type SerpEvent } from "./mapper.ts";
 import { geocodeQuery } from "./mapper.ts";
-import { addressKey, parseNominatim, haversineKm, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
+import { addressKey, parseGeoapify, parseNominatim, haversineKm, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
 
 // Thu 2026-10-29 12:00 EDT. Clocks fall back on Sun 2026-11-01, so Nov events are EST.
 const now = new Date("2026-10-29T16:00:00Z");
@@ -188,4 +188,11 @@ Deno.test("mapped row exposes geocode_has_street", async () => {
   const ev = (await load("timed"))[0];
   assertEquals((await mapSerpapiEvent(ev, ctx))!.geocode_has_street, true);
   assertEquals((await mapSerpapiEvent({ ...ev, address: ["Venue", "Charlotte, NC"] }, ctx))!.geocode_has_street, false);
+});
+
+Deno.test("parseGeoapify reads numeric lat/lon", () => {
+  assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8 }] }), { lat: 35.2, lng: -80.8 });
+  assertEquals(parseGeoapify({ results: [] }), null);
+  assertEquals(parseGeoapify({}), null);
+  assertEquals(parseGeoapify({ results: [{ lat: "35.2", lon: "-80.8" }] }), null);
 });

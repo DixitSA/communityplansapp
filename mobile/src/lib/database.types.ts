@@ -460,6 +460,11 @@ isOneToOne: false
 "find_duplicate_event":
 { Args: { "p_city_id": number,"p_exclude_source": Database["public"]['Enums']["event_source"],"p_lat": number,"p_lng": number,"p_starts_at": string,"p_title": string }; Returns: string
                            },
+"find_venue_location":
+{ Args: { "p_city_id": number,"p_venue": string }; Returns: {
+              "lat": number,"lng": number
+            }[]
+                           },
 "get_chat_messages":
 { Args: { "p_before_id"?: number,"p_event_id": string,"p_limit"?: number }; Returns: {
               "avatar_path": string,"body": string,"created_at": string,"display_name": string,"id": number,"is_mine": boolean,"user_id": string

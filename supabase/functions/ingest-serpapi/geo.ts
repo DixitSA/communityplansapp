@@ -46,3 +46,10 @@ export function parseNominatim(body: unknown): { lat: number; lng: number } | nu
   if (first.lat === "" || first.lon === "" || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   return { lat, lng };
 }
+
+/** First result from a Geoapify geocode/search (format=json) response, or null. */
+export function parseGeoapify(body: unknown): { lat: number; lng: number } | null {
+  const first = (body as { results?: { lat?: unknown; lon?: unknown }[] })?.results?.[0];
+  if (typeof first?.lat !== "number" || typeof first.lon !== "number") return null;
+  return Number.isFinite(first.lat) && Number.isFinite(first.lon) ? { lat: first.lat, lng: first.lon } : null;
+}
