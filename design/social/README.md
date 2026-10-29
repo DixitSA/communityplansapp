@@ -1,5 +1,7 @@
 # yard. Instagram kit (@yard.irl)
 
+**Start with [PLAYBOOK.md](PLAYBOOK.md):** the content strategy, series, filming scripts and 30-day plan. This file covers the graphics tooling.
+
 Graphics are built from `kit.html` with the app's own palette and type (DESIGN.md §3).
 Render them all to `design/social/out/` (from the repo root):
 

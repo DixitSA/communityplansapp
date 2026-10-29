@@ -1,0 +1,164 @@
+<!doctype html>
+<!-- yard. carousels (1080x1350 slides). Render: node design/social/render.cjs carousels.html -->
+<html><head><meta charset="utf-8"><style>
+:root { --canvas:#F6F3EC; --surface:#FFFFFF; --muted:#ECE8DF; --ink:#16201A; --ink2:#5E665F; --accent:#2E5B45; --accentSoft:#DCE9E0; --accentDark:#7FC3A0; --night:#101411; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#888; font-family:'Inter Display','Inter',-apple-system,'SF Pro Display',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+.board { position:relative; overflow:hidden; margin:40px; width:1080px; height:1350px; background:var(--canvas); color:var(--ink); padding:88px 80px 72px; display:flex; flex-direction:column; }
+.over { font-weight:600; text-transform:uppercase; letter-spacing:0.14em; font-size:28px; color:var(--accent); }
+.foot { margin-top:auto; display:flex; justify-content:space-between; align-items:center; font-size:30px; font-weight:600; color:var(--ink2); }
+.wm { font-weight:800; letter-spacing:-0.055em; line-height:1; color:var(--accent); font-size:64px; }
+.page { font-variant-numeric:tabular-nums; }
+
+/* Your Weekend, Sorted */
+.ws-cover h1 { font-size:118px; font-weight:800; letter-spacing:-0.05em; line-height:0.98; margin-top:70px; }
+.ws-cover h1 em { font-style:normal; color:var(--accent); }
+.ws-cover .sub { font-size:42px; color:var(--ink2); font-weight:500; margin-top:44px; line-height:1.3; max-width:860px; }
+.ws-cover .swipe { margin-top:56px; font-size:38px; font-weight:700; color:var(--accent); }
+.ws .num { font-size:220px; font-weight:800; letter-spacing:-0.06em; line-height:0.85; color:var(--accentSoft); margin-top:30px; }
+.ws .when { display:inline-block; margin-top:28px; background:var(--accent); color:#fff; font-size:38px; font-weight:700; padding:18px 34px; border-radius:999px; align-self:flex-start; }
+.ws h2 { font-size:92px; font-weight:800; letter-spacing:-0.045em; line-height:1; margin-top:34px; }
+.ws .where { font-size:40px; font-weight:600; color:var(--ink2); margin-top:20px; }
+.ws .why { margin-top:48px; background:var(--surface); border-radius:40px; padding:40px 44px; }
+.ws .why b { display:block; font-size:28px; text-transform:uppercase; letter-spacing:0.12em; color:var(--accent); margin-bottom:14px; }
+.ws .why p { font-size:40px; line-height:1.32; font-weight:500; }
+.ws-end h2 { font-size:110px; font-weight:800; letter-spacing:-0.05em; line-height:0.98; margin-top:90px; }
+.ws-end p { font-size:42px; line-height:1.35; color:var(--ink2); margin-top:40px; font-weight:500; }
+.ws-end .cta { margin-top:56px; background:var(--accent); color:var(--canvas); border-radius:40px; padding:44px; font-size:40px; font-weight:600; line-height:1.35; }
+.ws-end .cta b { color:#fff; }
+
+/* Unfinished Plans Club */
+.up { background:#F2EFE8; }
+.up h1 { font-size:124px; font-weight:800; letter-spacing:-0.05em; line-height:0.95; margin-top:60px; }
+.up h2 { font-size:72px; font-weight:800; letter-spacing:-0.04em; line-height:1.02; margin-top:28px; }
+.chat { margin-top:56px; display:flex; flex-direction:column; gap:18px; }
+.b { max-width:760px; font-size:42px; line-height:1.25; padding:24px 34px; border-radius:44px; font-weight:500; }
+.b.me { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:14px; }
+.b.them { align-self:flex-start; background:var(--surface); color:var(--ink); border-bottom-left-radius:14px; }
+.b .who { display:block; font-size:26px; font-weight:700; color:var(--ink2); margin-bottom:4px; }
+.stamp { align-self:center; font-size:28px; font-weight:600; color:var(--ink2); margin:14px 0; text-transform:uppercase; letter-spacing:0.1em; }
+.read { align-self:flex-end; font-size:28px; color:var(--ink2); font-weight:600; margin-top:-8px; }
+.list { margin-top:52px; display:flex; flex-direction:column; gap:22px; }
+.list div { background:var(--surface); border-radius:32px; padding:30px 38px; font-size:44px; font-weight:600; display:flex; gap:26px; align-items:center; }
+.list div span { font-size:40px; width:56px; flex:none; text-align:center; }
+.status { margin-top:56px; background:var(--surface); border-radius:40px; padding:20px 44px; }
+.status div { display:flex; justify-content:space-between; align-items:center; font-size:46px; font-weight:700; padding:30px 0; border-bottom:2px solid var(--muted); }
+.status div:last-child { border-bottom:none; }
+.status .y { color:var(--accent); } .status .n { color:#C9567A; }
+.up-end h1 { font-size:112px; }
+.up-end p { font-size:42px; color:var(--ink2); line-height:1.35; margin-top:40px; font-weight:500; max-width:880px; }
+.up-end .tag { margin-top:auto; margin-bottom:40px; background:var(--accent); color:var(--canvas); border-radius:40px; padding:40px 44px; font-size:40px; line-height:1.35; font-weight:600; }
+</style></head><body>
+
+<!-- ============ YOUR WEEKEND, SORTED (7 slides) ============ -->
+<div class="board ws-cover" id="ws-1">
+  <div class="over">Your weekend, sorted · Oct 30 – Nov 1</div>
+  <h1>5 things to do in Charlotte this weekend you can <em>actually show up to alone.</em></h1>
+  <div class="sub">No group chat required. Each one has a built-in reason to talk to people, or none needed at all.</div>
+  <div class="swipe">Swipe →</div>
+  <div class="foot"><div class="wm">yard.</div><div>@yard.irl</div></div>
+</div>
+<div id="ws-picks"></div>
+<div class="board ws-end" id="ws-7">
+  <div class="over">Before you go</div>
+  <h2>Going alone isn't weird.</h2>
+  <p>Most people at these were new once. Stay for the second half, say hi to whoever's next to you, and come back next time. Repeat visits are where friends happen.</p>
+  <div class="cta"><b>Going to one?</b> Comment which, and someone else might be too.<br>Send this to the friend who keeps saying “we should hang soon.”</div>
+  <div class="foot"><div class="wm">yard.</div><div>New list every Thursday · @yard.irl</div></div>
+</div>
+
+<!-- ============ UNFINISHED PLANS CLUB (6 slides) ============ -->
+<div class="board up" id="up-1">
+  <div class="over">Unfinished Plans Club</div>
+  <h1>A plan,<br>in its natural habitat.</h1>
+  <div class="chat">
+    <div class="b me">we should hang soon!!</div>
+    <div class="b them">YES omg. next week?</div>
+    <div class="b me">100%</div>
+    <div class="read">Read · July 2</div>
+  </div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">1/6</div></div>
+</div>
+<div class="board up" id="up-2">
+  <div class="over">Unfinished Plans Club</div>
+  <h2>17 weeks later.</h2>
+  <div class="chat">
+    <div class="stamp">Today 9:41 PM</div>
+    <div class="b them">saw this and thought of u 😭</div>
+    <div class="b me">LMAO we need to hang</div>
+    <div class="b them">we really do</div>
+    <div class="b me">soon!!</div>
+  </div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">2/6</div></div>
+</div>
+<div class="board up" id="up-3">
+  <div class="over">Unfinished Plans Club</div>
+  <h2>The group chat, on a Friday.</h2>
+  <div class="chat">
+    <div class="b them"><span class="who">Maya</span>anyone doing anything tmrw</div>
+    <div class="b them"><span class="who">Jordan</span>down</div>
+    <div class="b them"><span class="who">Sam</span>down if everyone's down</div>
+    <div class="b me">i'm down</div>
+    <div class="stamp">Saturday, 11:58 PM</div>
+    <div class="b them"><span class="who">Maya</span>so are we doing something or</div>
+  </div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">3/6</div></div>
+</div>
+<div class="board up" id="up-4">
+  <div class="over">Unfinished Plans Club</div>
+  <h2>Phrases that mean it's not happening.</h2>
+  <div class="list">
+    <div><span>🫠</span>“let's play it by ear”</div>
+    <div><span>📆</span>“when things calm down”</div>
+    <div><span>🙃</span>“i'll text you”</div>
+    <div><span>🫶</span>“we should totally”</div>
+    <div><span>👀</span>“lmk!!”</div>
+  </div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">4/6</div></div>
+</div>
+<div class="board up" id="up-5">
+  <div class="over">Unfinished Plans Club</div>
+  <h2>Your plan, honestly.</h2>
+  <div class="status">
+    <div>Interested <span class="y">✓</span></div>
+    <div>Down if friends go <span class="y">✓</span></div>
+    <div>Told the group chat <span class="y">✓</span></div>
+    <div>Picked a day <span class="n">✗</span></div>
+    <div>Actually went <span class="n">✗</span></div>
+  </div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">5/6</div></div>
+</div>
+<div class="board up up-end" id="up-6">
+  <div class="over">Unfinished Plans Club</div>
+  <h1>Send this to the friend you owe a hang.</h1>
+  <p>Then pick a day. Literally any day.</p>
+  <div class="tag">We're building <b>yard.</b> for this exact problem: see what's on in Charlotte, mark “down if friends go,” and find out the moment someone commits. Coming soon.</div>
+  <div class="foot" style="margin-top:0"><div class="wm">yard.</div><div class="page">6/6 · @yard.irl</div></div>
+</div>
+
+<script>
+// "Your Weekend, Sorted" picks. Prices weren't in our data, so slides don't claim any; check each link.
+const picks = [
+  { when: 'Sat · 10:00 AM', title: 'Yoga on the Lawn', where: 'Mint Museum Randolph',
+    why: 'Everyone’s on their own mat, facing the same way. The class does the talking; stay after for coffee if you feel like it.' },
+  { when: 'Sat · from 8:00 AM', title: 'Regional Farmers Market', where: 'Charlotte Regional Farmers Market',
+    why: 'Browse at your own pace. Vendors love questions, so "what’s good this week?" is a full conversation.' },
+  { when: 'Sat · 1:30 PM', title: 'Mint on the Dot! Talk', where: 'Mint Museum Randolph',
+    why: 'Short, seated, everyone faces the speaker. Pairs with the yoga above if you want to make a morning of it.' },
+  { when: 'Sun · 12:00 PM', title: 'Write-A-Thon', where: 'That’s Novel Books',
+    why: 'Everyone came to write. "What are you working on?" is the easiest opener there is.' },
+  { when: 'Sun · 11:00 AM', title: 'Día de Muertos Festival', where: 'Camp North End',
+    why: 'A big, open festival: wander the ofrendas, grab food, leave whenever. Nobody notices who came with whom.' },
+];
+document.getElementById('ws-picks').outerHTML = picks.map((p, i) => `
+<div class="board ws" id="ws-${i + 2}">
+  <div class="over">Your weekend, sorted</div>
+  <div class="num">0${i + 1}</div>
+  <div class="when">${p.when}</div>
+  <h2>${p.title}</h2>
+  <div class="where">${p.where}</div>
+  <div class="why"><b>Why it works solo</b><p>${p.why}</p></div>
+  <div class="foot"><div class="wm">yard.</div><div class="page">${i + 2}/7</div></div>
+</div>`).join('');
+</script>
+</body></html>
