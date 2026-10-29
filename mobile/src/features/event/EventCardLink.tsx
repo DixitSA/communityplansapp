@@ -1,10 +1,7 @@
 import { Link, useRouter } from 'expo-router';
-import { useMemo } from 'react';
 
 import { EventCard, type EventCardData } from '@/design';
-import { getFixtureEvent } from '@/features/feed/fixtures';
 
-import { isBackendConfigured } from '@/lib/env';
 import type { RsvpStatus } from '@/lib/api';
 
 import { openDirections, shareEvent } from './actions';
@@ -14,7 +11,7 @@ import { usePlan, useSetRsvp } from './useRsvp';
  * An EventCard that opens the event page (zoom transition on iOS 18+) and shares the plans store,
  * so the corner indicator and the event page always agree. Long-press shows a preview and quick actions.
  */
-export function EventCardLink({ event }: { event: EventCardData & { myStatus?: RsvpStatus | null } }) {
+export function EventCardLink({ event }: { event: EventCardData & { myStatus?: RsvpStatus | null; neighborhood?: string } }) {
   const router = useRouter();
   const status = usePlan(event.id, event.myStatus);
   const { setStatus, toggleInterested } = useSetRsvp();
@@ -28,9 +25,6 @@ export function EventCardLink({ event }: { event: EventCardData & { myStatus?: R
     setStatus(event.id, 'going');
     router.push({ pathname: '/event/[id]/going', params: { id: event.id } });
   };
-
-  // Share and Directions need the full detail (address). Skip them if there is none.
-  const detail = useMemo(() => (isBackendConfigured ? undefined : getFixtureEvent(event.id)), [event.id]);
 
   return (
     <EventCard
@@ -49,10 +43,13 @@ export function EventCardLink({ event }: { event: EventCardData & { myStatus?: R
             onPress={() => toggleInterested(event.id, status)}
           />
         ) : null,
-        detail ? (
-          <Link.MenuAction key="share" title="Share" icon="square.and.arrow.up" onPress={() => shareEvent(detail, 'share')} />
-        ) : null,
-        detail ? <Link.MenuAction key="directions" title="Directions" icon="map" onPress={() => openDirections(detail)} /> : null,
+        <Link.MenuAction key="share" title="Share" icon="square.and.arrow.up" onPress={() => shareEvent(event, 'share')} />,
+        <Link.MenuAction
+          key="directions"
+          title="Directions"
+          icon="map"
+          onPress={() => openDirections({ venue: event.venue, address: event.neighborhood ?? 'Charlotte, NC' })}
+        />,
       ]}
     />
   );

@@ -135,7 +135,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
     },
 
     async listInterests() {
-      return loadInterests();
+      return cachedInterests();
     },
 
     async getFeed(params) {

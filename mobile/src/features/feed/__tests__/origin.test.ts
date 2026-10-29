@@ -35,3 +35,14 @@ describe('getOrigin', () => {
     expect(await getOrigin()).toEqual(CHARLOTTE_CENTER);
   });
 });
+
+describe('keepIfSameDay', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { keepIfSameDay } = require('../useFeedEvents');
+  const prevQuery = (day: string) => ({ queryKey: ['feed', 1, day] });
+
+  it('keeps previous data for the same day and drops it across days', () => {
+    expect(keepIfSameDay('2026-10-29')(['x'], prevQuery('2026-10-29'))).toEqual(['x']);
+    expect(keepIfSameDay('2026-10-30')(['x'], prevQuery('2026-10-29'))).toBeUndefined();
+  });
+});

@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import type { DayMeta } from '@/design';
@@ -9,6 +9,15 @@ import { isBackendConfigured } from '@/lib/env';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
 import { CHARLOTTE_CENTER, getOrigin } from './origin';
+
+/**
+ * Keeps the previous data on screen while a filter change loads, but never across a day change
+ * (the feed key holds the day at index 2), so switching days can't show the old day's events.
+ */
+export function keepIfSameDay(day: string) {
+  return <T,>(prev: T | undefined, prevQuery?: { queryKey: readonly unknown[] }): T | undefined =>
+    prevQuery?.queryKey[2] === day ? prev : undefined;
+}
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 const WIDEST_RADIUS_M = Math.round(Math.max(...DISTANCES) * METERS_PER_MILE);
@@ -65,7 +74,7 @@ export function useFeedEvents(): {
     queryKey: ['feed', params.cityId, params.day, params.lat, params.lng, params.radiusM, params.interestIds, params.price, params.mode],
     queryFn: () => api.getFeed(params),
     enabled: ready,
-    placeholderData: keepPreviousData,
+    placeholderData: keepIfSameDay(params.day),
     // Demo data is local, so it is there on the first frame.
     initialData: isBackendConfigured ? undefined : () => demoFeed(params),
   });
@@ -84,7 +93,7 @@ export function useFeedEvents(): {
     queryKey: ['feed', params.cityId, params.day, params.lat, params.lng, baselineParams.radiusM, [], 'any', 'nearby'],
     queryFn: () => api.getFeed(baselineParams),
     enabled: ready && filtersActive,
-    placeholderData: keepPreviousData,
+    placeholderData: keepIfSameDay(params.day),
     initialData: isBackendConfigured ? undefined : () => demoFeed(baselineParams),
   });
 
@@ -101,7 +110,8 @@ export function useFeedEvents(): {
     const totalSource = filtersActive ? (baselineData ?? all) : all;
     const dayTotal = totalSource.filter(onDay).length;
     const dayMeta: Record<string, DayMeta> = {};
-    for (const e of filtered) {
+    // Online, the data covers one day, so dots for other days would mislead.
+    for (const e of isBackendConfigured ? [] : filtered) {
       const key = toISODate(e.startsAt);
       const m = dayMeta[key] ?? { count: 0, friendsGoing: false };
       dayMeta[key] = { count: m.count + 1, friendsGoing: m.friendsGoing || e.friendsGoing > 0 };
@@ -112,9 +122,10 @@ export function useFeedEvents(): {
   return {
     ...derived,
     isLoading: feed.data === undefined && !feed.isError,
-    isError: feed.isError && feed.data === undefined,
+    isError: (feed.isError && feed.data === undefined) || interestList.isError,
     refetch: () => {
       void feed.refetch();
+      if (interestList.isError) void interestList.refetch();
     },
   };
 }
