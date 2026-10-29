@@ -4,18 +4,20 @@ import { useMemo } from 'react';
 import { EventCard, type EventCardData } from '@/design';
 import { getFixtureEvent } from '@/features/feed/fixtures';
 
+import { isBackendConfigured } from '@/lib/env';
+import type { RsvpStatus } from '@/lib/api';
+
 import { openDirections, shareEvent } from './actions';
-import { usePlanStatus, usePlansStore } from './plansStore';
+import { usePlan, useSetRsvp } from './useRsvp';
 
 /**
  * An EventCard that opens the event page (zoom transition on iOS 18+) and shares the plans store,
  * so the corner indicator and the event page always agree. Long-press shows a preview and quick actions.
  */
-export function EventCardLink({ event }: { event: EventCardData }) {
+export function EventCardLink({ event }: { event: EventCardData & { myStatus?: RsvpStatus | null } }) {
   const router = useRouter();
-  const status = usePlanStatus(event.id);
-  const setStatus = usePlansStore((s) => s.setStatus);
-  const toggleInterested = usePlansStore((s) => s.toggleInterested);
+  const status = usePlan(event.id, event.myStatus);
+  const { setStatus, toggleInterested } = useSetRsvp();
   const going = status === 'going';
 
   const goingAction = () => {
@@ -28,13 +30,13 @@ export function EventCardLink({ event }: { event: EventCardData }) {
   };
 
   // Share and Directions need the full detail (address). Skip them if there is none.
-  const detail = useMemo(() => getFixtureEvent(event.id), [event.id]);
+  const detail = useMemo(() => (isBackendConfigured ? undefined : getFixtureEvent(event.id)), [event.id]);
 
   return (
     <EventCard
       event={event}
       plan={status}
-      onToggleInterested={() => toggleInterested(event.id)}
+      onToggleInterested={() => toggleInterested(event.id, status)}
       onOpenPlan={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })}
       href={{ pathname: '/event/[id]', params: { id: event.id } }}
       menuActions={[
@@ -44,7 +46,7 @@ export function EventCardLink({ event }: { event: EventCardData }) {
             key="interested"
             title={status === 'interested' ? 'Remove Interested' : 'Interested'}
             icon={status === 'interested' ? 'heart.slash' : 'heart'}
-            onPress={() => toggleInterested(event.id)}
+            onPress={() => toggleInterested(event.id, status)}
           />
         ) : null,
         detail ? (

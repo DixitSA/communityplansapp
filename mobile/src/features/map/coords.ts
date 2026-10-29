@@ -31,7 +31,9 @@ export const JITTER_DEG = 0.0035;
  * Where to put an event's pin. The neighborhood center plus an offset that depends only on the
  * event id, so pins in the same neighborhood don't stack and never move between renders.
  */
-export function coordsForEvent(e: { id: string; venue: string }): LatLng {
+export function coordsForEvent(e: { id: string; venue: string; lat?: number; lng?: number }): LatLng {
+  // Real events carry their own coordinates; only sample events need a guess.
+  if (e.lat !== undefined && e.lng !== undefined) return { latitude: e.lat, longitude: e.lng };
   const { center } = neighborhoodFor(e.venue);
   return {
     latitude: center.latitude + (unitFrom(e.id, 'lat') - 0.5) * 2 * JITTER_DEG,

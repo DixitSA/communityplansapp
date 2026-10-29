@@ -1,8 +1,16 @@
+import { usePlansStore } from '@/features/event/plansStore';
+import { applyFilters, type DistanceMi } from '@/features/feed/filters';
+import { getFixtureEvent, getFixtureEvents } from '@/features/feed/fixtures';
+
 import { ApiError } from './errors';
+import { METERS_PER_MILE } from './feedMapping';
 import {
   CHARLOTTE_CITY_ID,
   type Api,
   type AuthSession,
+  type EventPage,
+  type FeedEvent,
+  type FeedParams,
   type Interest,
   type MyProfile,
   type OnboardingInput,
@@ -46,6 +54,28 @@ export const DEMO_TAKEN_USERNAMES = ['admin', 'yard', 'maya', 'jordan', 'taylor.
 
 /** The code the fake rejects, so the error state can be seen. Any other 6 digits works. */
 export const DEMO_BAD_CODE = '000000';
+
+const statusOf = (id: string) => usePlansStore.getState().statuses[id] ?? null;
+
+/** Sample feed, filtered like the server would. Ignores `day`: the Feed shows the whole sample week. */
+export function demoFeed(params: FeedParams): FeedEvent[] {
+  const slugs = (params.interestIds ?? []).flatMap((id) => DEMO_INTERESTS.find((i) => i.id === id)?.slug ?? []);
+  const matching = applyFilters(getFixtureEvents(new Date()), {
+    timeOfDay: 'any',
+    interests: slugs,
+    // The distance chips only offer whole miles, so rounding recovers the chip value.
+    distanceMi: Math.round(params.radiusM / METERS_PER_MILE) as DistanceMi,
+    price: params.price,
+    scope: params.mode,
+  });
+  return matching.map((e) => ({ ...e, goingCount: e.friendsGoing, myStatus: statusOf(e.id) }));
+}
+
+/** A sample event for the event page, or null for an unknown id. */
+export function demoEvent(id: string): EventPage | null {
+  const e = getFixtureEvent(id);
+  return e ? { ...e, goingCount: null, myStatus: statusOf(id) } : null;
+}
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -121,6 +151,15 @@ export function createDemoApi({ delayMs = 250 }: { delayMs?: number } = {}): Api
     async listInterests() {
       await wait();
       return DEMO_INTERESTS;
+    },
+    async getFeed(params) {
+      return demoFeed(params);
+    },
+    async getEvent(id) {
+      return demoEvent(id);
+    },
+    async setRsvp(eventId, status) {
+      usePlansStore.getState().setStatus(eventId, status);
     },
   };
 }

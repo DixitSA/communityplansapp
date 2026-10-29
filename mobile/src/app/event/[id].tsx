@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   interpolate,
@@ -14,6 +14,7 @@ import { GlassContainer } from 'expo-glass-effect';
 import {
   AppText,
   Avatar,
+  Button,
   Chip,
   EmptyState,
   Facepile,
@@ -23,11 +24,12 @@ import {
   useTheme,
 } from '@/design';
 import { openDirections, openEventMenu, shareEvent } from '@/features/event/actions';
-import { attributionLine, nextStatus, othersRevealed } from '@/features/event/plansLogic';
-import { usePlanStatus, usePlansStore, type PlanStatus } from '@/features/event/plansStore';
+import { attributionLine, nextStatus, othersCount, othersRevealed } from '@/features/event/plansLogic';
+import type { PlanStatus } from '@/features/event/plansStore';
+import { useEvent } from '@/features/event/useEvent';
+import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { RsvpBar } from '@/features/event/RsvpBar';
 import { WhosGoing } from '@/features/event/WhosGoing';
-import { getFixtureEvent } from '@/features/feed/fixtures';
 import { formatShortDate, formatTime } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
@@ -49,14 +51,14 @@ function Divider() {
 
 export default function EventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = useMemo(() => getFixtureEvent(id), [id]);
+  const { data: event, isPending, isError, refetch } = useEvent(id);
   const { colors, space, radius, type } = useTheme();
   const router = useRouter();
   const goBack = useGoBack();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const status = usePlanStatus(id);
-  const setStatus = usePlansStore((s) => s.setStatus);
+  const status = usePlan(id, event?.myStatus);
+  const { setStatus } = useSetRsvp();
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
   const [barHeight, setBarHeight] = useState(0);
@@ -87,19 +89,30 @@ export default function EventScreen() {
   if (!hydrated) return <View style={{ flex: 1 }} />;
 
   if (!event) {
+    const failed = !isPending && isError;
     return (
       <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top + space.sm }}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={{ paddingHorizontal: space.lg }}>
           <GlassButton symbol="chevron.left" accessibilityLabel="Back" onPress={goBack} />
         </View>
-        <View style={{ flex: 1, justifyContent: 'center' }}>
-          <EmptyState
-            symbol="sparkles"
-            title="We can't find that event"
-            message="It may have ended or been taken down. Head back to the feed to see what's on."
-          />
-        </View>
+        {isPending ? null : (
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            {failed ? (
+              <EmptyState symbol="wifi.slash" title="Couldn't load this event" message="Check your connection and try again.">
+                <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+                  <Button label="Retry" onPress={() => void refetch()} />
+                </View>
+              </EmptyState>
+            ) : (
+              <EmptyState
+                symbol="sparkles"
+                title="We can't find that event"
+                message="It may have ended or been taken down. Head back to the feed to see what's on."
+              />
+            )}
+          </View>
+        )}
       </View>
     );
   }
@@ -120,6 +133,10 @@ export default function EventScreen() {
 
   const revealed = othersRevealed(status);
   const hostLabel = event.host.kind === 'venue' ? 'Venue' : 'Hosted by';
+  // Online, the server only tells us how many are going; "others" is everyone who isn't a friend or you.
+  const othersGoing =
+    event.goingCount === null ? event.othersGoing : othersCount(event.goingCount, event.friendsGoing, status === 'going');
+  const hasDistance = event.distanceMi > 0;
   const dateLine = `${formatShortDate(event.startsAt)} · ${formatTime(event.startsAt)}`;
 
   return (
@@ -184,7 +201,7 @@ export default function EventScreen() {
             <Pressable
               onPress={() => openDirections(event)}
               accessibilityRole="link"
-              accessibilityLabel={`${event.venue}, ${event.distanceMi.toFixed(1)} miles away. Open directions.`}
+              accessibilityLabel={`${event.venue}${hasDistance ? `, ${event.distanceMi.toFixed(1)} miles away` : ''}. Open directions.`}
               style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}
             >
               <View style={{ paddingTop: 2 }}>
@@ -192,7 +209,7 @@ export default function EventScreen() {
               </View>
               <View style={{ flexShrink: 1 }}>
                 <AppText variant="body">
-                  {event.venue} · {event.distanceMi.toFixed(1)} mi away
+                  {hasDistance ? `${event.venue} · ${event.distanceMi.toFixed(1)} mi away` : event.venue}
                 </AppText>
                 <AppText variant="footnote" color="inkSecondary">
                   {event.address}
@@ -269,7 +286,7 @@ export default function EventScreen() {
               friends={event.friends}
               friendsGoing={event.friendsGoing}
               others={revealed ? event.otherAttendees : []}
-              othersGoing={event.othersGoing}
+              othersGoing={othersGoing}
               revealed={revealed}
             />
           </View>
@@ -329,11 +346,21 @@ export default function EventScreen() {
         </GlassContainer>
       </View>
 
+      {/* Soft fade so the description doesn't hard-cut behind the RSVP bar. */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.fade,
+          { bottom: barHeight, height: space.xxl },
+          linearGradient(`linear-gradient(to bottom, ${colors.canvas}00 0%, ${colors.canvas} 100%)`),
+        ]}
+      />
       <RsvpBar status={status} onChoose={choose} onGoing={onGoing} onLayoutHeight={setBarHeight} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fade: { position: 'absolute', left: 0, right: 0 },
   hero: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
 });

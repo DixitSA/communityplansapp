@@ -13,6 +13,7 @@ import {
   PrimaryButton,
   Screen,
   SegmentedControl,
+  Skeleton,
   useTheme,
 } from '@/design';
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
@@ -49,7 +50,7 @@ export default function FeedScreen() {
   const selected = useFiltersStore((s) => s.selectedDay);
   const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, clearFilters } = useFiltersStore.getState();
 
-  const { filtered, dayEvents, dayTotal, dayMeta } = useFeedEvents();
+  const { filtered, dayEvents, dayTotal, dayMeta, isLoading, isError, refetch } = useFeedEvents();
   const criteria = { timeOfDay, interests, distanceMi, price, scope };
   const chips = chipStates(criteria);
   const isMap = view === 'map';
@@ -189,7 +190,23 @@ export default function FeedScreen() {
         <AppText variant="overline" color="inkSecondary">
           {sectionLabel}
         </AppText>
-        {dayEvents.length === 0 ? (
+        {isLoading ? (
+          <View accessibilityLabel="Loading events" style={{ gap: space.lg }}>
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} height={240} radius={radius.card} />
+            ))}
+          </View>
+        ) : isError ? (
+          <EmptyState
+            symbol="wifi.slash"
+            title="Couldn't load events"
+            message="Check your connection and try again."
+          >
+            <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+              <Button label="Retry" onPress={refetch} />
+            </View>
+          </EmptyState>
+        ) : dayEvents.length === 0 ? (
           dayTotal === 0 ? (
             <EmptyState
               symbol="sparkles"

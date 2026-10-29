@@ -6,7 +6,8 @@ import type { Api } from './types';
 
 export * from './types';
 export * from './errors';
-export { DEMO_INTERESTS, DEMO_PROFILE, createDemoApi } from './demo';
+export { DEMO_INTERESTS, DEMO_PROFILE, createDemoApi, demoEvent, demoFeed } from './demo';
+export { METERS_PER_MILE } from './feedMapping';
 
 /**
  * The app's only door to the backend. Screens call feature hooks, hooks call this.

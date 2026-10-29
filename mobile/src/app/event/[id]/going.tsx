@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { AppText, Button, EmptyState, Icon, useTheme } from '@/design';
@@ -7,14 +7,14 @@ import { shareEvent } from '@/features/event/actions';
 import { addToCalendarWithAlert } from '@/features/event/calendar';
 import { GoingBurst } from '@/features/event/GoingBurst';
 import { TicketCard } from '@/features/event/TicketCard';
-import { getFixtureEvent } from '@/features/feed/fixtures';
+import { useEvent } from '@/features/event/useEvent';
 import { success } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 
 /** The Going moment (DESIGN.md 4.5): a celebratory sheet over the event page, not a new page. */
 export default function GoingSheet() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const event = useMemo(() => getFixtureEvent(id), [id]);
+  const { data: event } = useEvent(id);
   const { colors, space, radius } = useTheme();
   const router = useRouter();
   const hydrated = useHydrated();

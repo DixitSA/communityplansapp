@@ -33,3 +33,20 @@ export function nextStatus(current: PlanChoice, tapped: Exclude<PlanChoice, null
 export function attributionLine(source: { name: string; curated?: boolean }): string {
   return source.curated ? `Curated by ${source.name}` : `Listed via ${source.name}`;
 }
+
+/**
+ * "+N others" on the event page: everyone going who isn't a friend and isn't you.
+ * `goingCount` comes from the server and includes the viewer when they are Going.
+ */
+export function othersCount(goingCount: number, friendsGoing: number, viewerGoing: boolean): number {
+  return Math.max(goingCount - friendsGoing - (viewerGoing ? 1 : 0), 0);
+}
+
+/**
+ * The card's heart: no plan becomes Interested, Interested clears. Going and Down if friends go
+ * stay as they are, so a stray tap can't undo a stronger plan.
+ */
+export function toggleInterestedChoice(current: PlanChoice): PlanChoice {
+  if (current && current !== 'interested') return current;
+  return current === 'interested' ? null : 'interested';
+}

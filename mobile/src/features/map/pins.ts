@@ -18,13 +18,13 @@ export function pinColor(interest: string): string {
 }
 
 /** One pin per event, in the same order. */
-export function pinsFor(events: EventCardData[]): Pin[] {
+export function pinsFor(events: (EventCardData & { lat?: number; lng?: number; neighborhood?: string })[]): Pin[] {
   return events.map((e) => ({
     id: e.id,
     title: e.title,
     coordinate: coordsForEvent(e),
     color: pinColor(e.interest),
     symbol: e.symbol,
-    neighborhood: neighborhoodFor(e.venue).name,
+    neighborhood: e.neighborhood ?? neighborhoodFor(e.venue).name,
   }));
 }

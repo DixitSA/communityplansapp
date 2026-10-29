@@ -9,7 +9,7 @@ import { NativeMap } from './NativeMap';
 import { pinsFor } from './pins';
 
 /** The map half of the Feed: pins for the given events, a count pill, and a card for the tapped pin. */
-export function EventMap({ events, day }: { events: EventCardData[]; day: Date }) {
+export function EventMap({ events, day }: { events: (EventCardData & { lat?: number; lng?: number; neighborhood?: string })[]; day: Date }) {
   const { colors, space, radius, shadow } = useTheme();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const pins = useMemo(() => pinsFor(events), [events]);
