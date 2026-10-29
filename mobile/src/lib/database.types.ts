@@ -345,6 +345,11 @@ isOneToOne: false
               "distance_m": number,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
             }[]
                            },
+"get_feed_range":
+{ Args: { "p_city_id": number,"p_days": number,"p_interest_ids"?: (number)[],"p_lat": number,"p_lng": number,"p_mode"?: string,"p_price"?: string,"p_radius_m"?: number,"p_start": string }; Returns: {
+              "day": string,"distance_m": number,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
