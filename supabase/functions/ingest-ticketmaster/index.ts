@@ -42,6 +42,11 @@ Deno.serve(async (req) => {
   if (req.method !== "POST" || !(await authorized(req.headers.get("Authorization"), secret))) {
     return json({ error: "unauthorized" }, 401);
   }
+  // Fail fast with a setup hint instead of a confusing Ticketmaster 401 later. Only authorized callers see this.
+  const apiKey = Deno.env.get("TICKETMASTER_API_KEY");
+  if (!apiKey) {
+    return json({ error: "TICKETMASTER_API_KEY is not set. Run: npx supabase secrets set TICKETMASTER_API_KEY=<key>" }, 500);
+  }
 
   try {
     const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -54,7 +59,7 @@ Deno.serve(async (req) => {
 
     const now = new Date();
     const params = new URLSearchParams({
-      apikey: Deno.env.get("TICKETMASTER_API_KEY") ?? "",
+      apikey: apiKey,
       latlong: "35.2271,-80.8431",
       radius: "50",
       unit: "miles",
