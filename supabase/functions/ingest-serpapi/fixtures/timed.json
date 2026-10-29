@@ -1,0 +1,53 @@
+{
+  "search_metadata": { "status": "Success" },
+  "events_results": [
+    {
+      "title": "Tuesday Night Live Jazz",
+      "date": { "start_date": "Oct 30", "when": "Fri, Oct 30, 8 – 11 PM EDT" },
+      "address": ["The Evening Muse, 3227 N Davidson St", "Charlotte, NC"],
+      "link": "https://www.google.com/search?q=jazz&ibp=htl;events",
+      "description": "Live jazz quartet. Free entry, tips appreciated.",
+      "ticket_info": [
+        { "source": "The Evening Muse", "link": "https://www.theeveningmuse.com/jazz", "link_type": "more info" },
+        { "source": "Eventbrite", "link": "https://www.eventbrite.com/e/jazz-123", "link_type": "tickets" }
+      ],
+      "venue": { "name": "The Evening Muse", "rating": 4.7, "reviews": 812, "link": "https://www.google.com/maps/place/x" },
+      "thumbnail": "https://encrypted-tbn0.gstatic.com/images?q=tbn:AAA",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:BBB",
+      "event_location_map": { "image": "https://serpapi.com/map.png", "link": "https://www.google.com/maps", "serpapi_link": "https://serpapi.com/x" }
+    },
+    {
+      "title": "Fall Harvest Weekend Market",
+      "date": { "start_date": "Oct 31", "when": "Sat, Oct 31, 10 AM – Sun, Nov 1, 2 PM" },
+      "address": ["Camp North End, 1824 Statesville Ave", "Charlotte, NC"],
+      "link": "https://campnorthend.com/market",
+      "description": "Two-day makers market with food trucks and a pumpkin patch.",
+      "venue": { "name": "Camp North End" },
+      "thumbnail": "https://encrypted-tbn1.gstatic.com/images?q=tbn:CCC",
+      "image": "https://campnorthend.com/img/market.jpg"
+    },
+    {
+      "title": "Stand-Up Showcase",
+      "date": { "start_date": "Oct 30", "when": "Tomorrow, 7 – 10 PM" },
+      "address": ["Comedy Zone, 900 NC Music Factory Blvd", "Charlotte, NC"],
+      "link": "https://comedyzone.com/shows",
+      "description": "Five comedians, one night. No cover before 7:30.",
+      "venue": { "name": "Comedy Zone" }
+    },
+    {
+      "title": "Rooftop Sunset DJ Set",
+      "date": { "start_date": "Oct 29", "when": "Today, 9 PM" },
+      "address": ["Merchant & Trade, 102 W 5th St", "Charlotte, NC"],
+      "link": "https://merchantandtrade.com/events",
+      "description": "Sunset sounds above Uptown.",
+      "venue": { "name": "Merchant & Trade" }
+    },
+    {
+      "title": "Late Night Improv",
+      "date": { "start_date": "Nov 5", "when": "Thu, Nov 5, 7:30 PM – 12 AM EDT" },
+      "address": ["Unknown Brewing, 1327 S Mint St", "Charlotte, NC"],
+      "link": "https://example.com/improv",
+      "venue": { "name": "Unknown Brewing" }
+    }
+  ]
+}

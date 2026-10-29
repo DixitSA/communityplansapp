@@ -33,7 +33,7 @@ design/reference/     v1 mockups (tone reference only, see DESIGN.md)
 - Checks before saying anything is done: `npx tsc --noEmit`, `npx expo lint`, `npx jest`.
 - **Until week 8, everything must run in Expo Go.** Don't add packages Expo Go doesn't include, or config plugins that need a custom build. If a feature can't work in Expo Go, say so and ask before proceeding.
 - From week 8, a native change needs a new dev build: `eas build --profile development --platform ios`. Tell the user when a change needs one (a new native package, or a config plugin / `app.config.ts` change). JS-only changes never do.
-- Backend: `npx supabase db push`, `npx supabase gen types typescript --linked > src/lib/database.types.ts`, `npx supabase functions deploy <name>`.
+- Backend: `npx supabase db push`, `npx supabase gen types typescript --linked | Out-File -Encoding utf8 src/lib/database.types.ts` (not `>`: Windows PowerShell writes UTF-16), `npx supabase functions deploy <name>`.
 
 ## How to work
 1. **Plan first** for anything bigger than a one-file change. State assumptions, and ask when the PRD or DESIGN is ambiguous.

@@ -100,7 +100,7 @@ npx expo start                           # the dev build connects to this; edits
 npx supabase login
 npx supabase link --project-ref <staging-ref>
 npx supabase db push                     # apply migrations to staging
-npx supabase gen types typescript --linked > mobile/src/lib/database.types.ts
+npx supabase gen types typescript --linked | Out-File -Encoding utf8 mobile/src/lib/database.types.ts  # not ">": Windows PowerShell writes UTF-16
 npx supabase functions deploy <name>     # Edge Functions
 ```
 - **Database tests:** run automatically on every pull request (GitHub › Actions › "Database tests").

@@ -108,6 +108,39 @@ set local role anon;
 select throws_ok($$ select public.submit_event(1::smallint, 'T', null, now() + interval '1 day', null, null) $$, '42501', null, 'anon cannot submit');
 select throws_ok($$ select * from public.event_submissions $$, '42501', null, 'anon cannot read submissions');
 
+-- 7. Agent inbox ----------------------------------------------------------------------------
+reset role;
+insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, source_handle, address, ends_at, agent_fingerprint)
+values (null, 'agent', 1, 'Agent Event', now() + interval '2 days', 'venue.example', '1 Main St', now() + interval '2 days 2 hours', 'fp1');
+select is((select origin from public.event_submissions where title = 'Bob''s event'), 'user', 'submit_event sets origin user');
+
+select pg_temp.login('00000000-0000-0000-0000-00000000000b');
+select is((select count(*) from public.event_submissions where origin = 'agent')::int, 0, 'agent rows invisible to a normal user');
+select is((select count(*) from public.event_submissions where submitted_by is null)::int, 0, 'null-submitter rows invisible to a normal user');
+select throws_ok($$ insert into public.event_submissions (city_id, title, starts_at, origin) values (1, 'x', now() + interval '1 day', 'user') $$, '42501', null, 'user cannot insert origin');
+select throws_ok($$ update public.event_submissions set origin = 'agent', submitted_by = null $$, '42501', null, 'user cannot update origin');
+select throws_ok($$ update public.event_submissions set agent_fingerprint = 'zz' $$, '42501', null, 'user cannot update fingerprint');
+select throws_ok($$ update public.event_submissions set source_handle = 'zz' $$, '42501', null, 'user cannot update source_handle');
+select throws_ok($$ update public.event_submissions set address = 'zz', ends_at = now() $$, '42501', null, 'user cannot update address or ends_at');
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-00000000000c');
+select is((select count(*) from public.event_submissions where origin = 'agent')::int, 1, 'admin sees agent rows');
+update public.event_submissions set status = 'approved', reviewed_at = now() where origin = 'agent';
+select is((select status::text from public.event_submissions where origin = 'agent'), 'approved', 'admin can review agent rows');
+reset role;
+
+-- Constraints (as the owner role, like the service role would insert)
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at) values ('00000000-0000-0000-0000-00000000000a', 'agent', 1, 't', now()) $$, '23514', null, 'agent row must have no submitter');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at) values (null, 'user', 1, 't', now()) $$, '23514', null, 'user row needs a submitter');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at) values (null, 'bogus', 1, 't', now()) $$, '23514', null, 'origin must be known');
+select lives_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at) values (null, 'instagram', 1, 't', now()) $$, 'instagram origin without submitter is ok');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, ends_at) values (null, 'agent', 1, 't', now(), now()) $$, '23514', null, 'ends_at must be after starts_at');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, source_handle) values (null, 'agent', 1, 't', now(), repeat('h', 101)) $$, '23514', null, 'source_handle over 100');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, address) values (null, 'agent', 1, 't', now(), repeat('a', 201)) $$, '23514', null, 'address over 200');
+select throws_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, agent_fingerprint) values (null, 'agent', 1, 't', now(), 'fp1') $$, '23505', null, 'duplicate fingerprint rejected');
+select lives_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at, agent_fingerprint) values (null, 'agent', 1, 't', now(), 'fp1') on conflict (agent_fingerprint) do nothing $$, 'on conflict do nothing is idempotent');
+select lives_ok($$ insert into public.event_submissions (submitted_by, origin, city_id, title, starts_at) values (null, 'agent', 1, 'a', now()), (null, 'agent', 1, 'b', now()) $$, 'null fingerprints do not collide');
+
 reset role;
 select * from finish();
 rollback;
