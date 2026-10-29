@@ -18,8 +18,16 @@ free **Inter** font installed (rsms.me/inter); otherwise your system font is use
 | `private.png` | 1080×1350 | Post 3: privacy |
 | `weekend.png` | 1080×1350 | Weekly "This weekend in Charlotte" post |
 | `story.png` | 1080×1920 | Same, as a story |
+| `reel.mp4` + `reel-cover.png` | 1080×1920, ~18 s | Weekly "This weekend in Charlotte" reel |
 
-**Weekly post:** edit the `picks` list in `kit.html` (Thursday is a good day), re-render, post. Always
+**Every week:** edit `picks.js` (the posts, story and reel all read it), then render:
+
+```powershell
+node design/social/render.cjs        # posts + story
+node design/social/render-reel.cjs   # reel.mp4 + reel-cover.png (needs ffmpeg: winget install ffmpeg)
+```
+
+Each event can opt out of a format with `post: false`, `story: false` or `reel: false` (the post fits 5, the story 7, the reel about 6). Always
 check each event's date, time and venue on its own page before posting; the feed is scraped and can be wrong.
 
 ## Profile
@@ -62,8 +70,21 @@ Post in this order. Instagram shows newest first, so the intro should go up **la
 > Save this, send it to the group chat. 👻
 > #cltevents #charlotteevents #charlottenightlife #halloweenclt
 
+## Weekly reel
+- **Post Thursday evening** (people plan their weekend Thu–Fri). Same format every week, so it becomes a series.
+- **Audio:** the video is silent on purpose. In Instagram, add a trending sound (Reels → Audio); licensed audio plus trends gets reach, and music we embed could get muted.
+- **Cover:** upload `reel-cover.png` as the cover so the grid stays tidy.
+- **On-screen text** keeps clear of Instagram's buttons (right edge) and caption (bottom).
+- **Caption template:**
+  > This weekend in Charlotte 👇 [theme] edition
+  > Fri: … · Sat: … · Sun: …
+  > Save this and send it to whoever you're going with.
+  > yard. is coming soon: every Charlotte event and which friends are going. Follow @yard.irl so you never miss a weekend. ✦
+  > #cltevents #charlotteevents #thingstodoincharlotte #charlottenc #queencity
+- **Tag each venue** in the reel (Tag people), which drives reshares.
+
 ## Routine (≈30 min a week)
-- **Thursday:** weekend post + story.
+- **Thursday:** weekend reel (main), plus the post and story versions.
 - **Monday:** one story poll ("What did you get up to?") or a reshare of a venue's post (tag them).
 - Tag the venues in the weekend post; they often reshare, which is the cheapest growth there is.
 - Reply to every comment and DM in the first month.

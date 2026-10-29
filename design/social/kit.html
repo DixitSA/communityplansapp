@@ -99,28 +99,19 @@ body { background:#888; font-family:'Inter Display','Inter',-apple-system,'SF Pr
   <div class="foot" style="margin-top:96px"><div class="wm">yard<i>.</i></div><span>@yard.irl</span></div>
 </div>
 
+<script src="picks.js"></script>
 <script>
-// This weekend's picks (from yard's live feed, Oct 30 – Nov 1, 2026). Double-check before posting.
-const C = { music:'var(--music)', food:'var(--food)', arts:'var(--arts)', night:'var(--nightlife)', sports:'var(--sports)', fit:'var(--fitness)' };
-const picks = [
-  ['Fri', [['8:00 PM', 'The Renaissance Orchestra', 'The Fillmore', C.music],
-           ['9:00 PM', 'It’s a 2000s Halloween Party', 'The Underground', C.night]]],
-  ['Sat', [['11:00 AM', 'Sip Happens: Drag Brunch', 'NoDa Brewing Company', C.food],
-           ['1:00 PM', 'Charlotte FC vs. Orlando City', 'Bank of America Stadium', C.sports],
-           ['8:00 PM', 'Halloween Comedy Show', 'Art Factory', C.arts],
-           ['9:00 PM', 'sCarrie Prom', 'The Carolina', C.night]]],
-  ['Sun', [['11:00 AM', 'Día de Muertos Festival', 'Camp North End', C.arts],
-           ['7:00 PM', 'An Evening with David Sedaris', 'Ovens Auditorium', C.arts]]],
-];
-// The feed post fits 5; the story fits all 8.
-const postPicks = picks.map(([d, rows]) => [d, rows.filter((r) => !['The Renaissance Orchestra', 'sCarrie Prom', 'Halloween Comedy Show'].includes(r[1]))]);
-function fill(el, title, list = picks) {
-  el.innerHTML = `<div class="over">Halloween weekend · Oct 30 – Nov 1</div><h2>${title}</h2>` +
-    list.map(([d, rows]) => `<div class="day">${d}</div>` + rows.map(([t, n, v, c]) =>
-      `<div class="row"><div class="t">${t}</div><div class="dot" style="background:${c}"></div><div><div class="n">${n}</div><div class="v">${v}</div></div></div>`).join('')).join('') +
+// Posts read this week's picks from picks.js. `post: false` keeps an event out of the 4:5 post (it only fits 5);
+// `story: false` keeps it out of the story.
+const W = window.YARD_WEEK, CAT = window.YARD_CATS;
+const only = (key) => W.days.map(([d, rows]) => [d, rows.filter((r) => r[key] !== false)]).filter(([, rows]) => rows.length);
+function fill(el, title, list) {
+  el.innerHTML = `<div class="over">${W.label}</div><h2>${title}</h2>` +
+    list.map(([d, rows]) => `<div class="day">${d}</div>` + rows.map((r) =>
+      `<div class="row"><div class="t">${r.time}</div><div class="dot" style="background:${CAT[r.cat].solid}"></div><div><div class="n">${r.title}</div><div class="v">${r.venue}</div></div></div>`).join('')).join('') +
     `<div class="foot"><div class="wm">yard<i style="color:var(--accent)">.</i></div><div>@yard.irl</div></div>`;
 }
-fill(document.getElementById('weekend'), 'This weekend<br>in Charlotte', postPicks);
-fill(document.getElementById('story'), 'This weekend<br>in Charlotte', picks.map(([d, rows]) => [d, rows.filter((r) => r[1] !== 'The Renaissance Orchestra')]));
+fill(document.getElementById('weekend'), 'This weekend<br>in Charlotte', only('post'));
+fill(document.getElementById('story'), 'This weekend<br>in Charlotte', only('story'));
 </script>
 </body></html>

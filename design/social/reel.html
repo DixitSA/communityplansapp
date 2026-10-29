@@ -1,0 +1,119 @@
+<!doctype html>
+<!-- yard. weekly reel. Frames are computed from time by renderAt(t), so render-reel.cjs can capture them exactly. -->
+<html><head><meta charset="utf-8"><style>
+:root { --canvas:#F6F3EC; --ink:#16201A; --ink2:#5E665F; --accent:#2E5B45; --accentDark:#7FC3A0; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { width:1080px; height:1920px; overflow:hidden; background:var(--canvas); }
+body { font-family:'Inter Display','Inter',-apple-system,'SF Pro Display',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--ink); }
+.scene { position:absolute; inset:0; overflow:hidden; will-change:transform; }
+.wm { font-weight:800; letter-spacing:-0.055em; line-height:1; }
+.over { font-weight:600; text-transform:uppercase; letter-spacing:0.14em; font-size:34px; }
+/* Instagram covers roughly the bottom 380px and the right 140px with its UI: keep text above y≈1540 and left of x≈940. */
+#intro { padding:260px 80px 0; }
+#intro .top { position:absolute; top:150px; left:80px; font-size:64px; color:var(--accent); }
+#intro .over { color:var(--accent); margin-top:120px; }
+#intro h1 { font-size:190px; font-weight:800; letter-spacing:-0.055em; line-height:0.95; margin-top:36px; }
+#intro h1 span { display:inline-block; margin-right:0.18em; }
+#intro .spark { position:absolute; left:80px; top:1290px; font-size:120px; color:var(--accent); }
+#intro .hint { position:absolute; left:80px; top:1440px; font-size:44px; font-weight:600; color:var(--ink2); }
+.ev { padding:0 80px; }
+.ev .count { position:absolute; top:150px; right:150px; font-size:40px; font-weight:700; font-variant-numeric:tabular-nums; opacity:.55; }
+.ev .top { position:absolute; top:150px; left:80px; font-size:64px; }
+.ev .when { position:absolute; top:430px; left:80px; display:inline-flex; gap:22px; align-items:center; color:#fff; font-size:56px; font-weight:800; padding:26px 46px; border-radius:999px; letter-spacing:-0.01em; }
+.ev h2 { position:absolute; top:620px; left:80px; right:140px; font-size:136px; font-weight:800; letter-spacing:-0.05em; line-height:0.98; }
+.ev .venue { position:absolute; left:80px; right:140px; font-size:58px; font-weight:600; color:var(--ink2); display:flex; gap:18px; align-items:center; }
+.ev .bigday { position:absolute; left:50px; top:1010px; font-size:600px; font-weight:800; letter-spacing:-0.07em; line-height:1; opacity:.13; }
+.ev .tag { position:absolute; left:80px; font-size:40px; font-weight:700; padding:16px 32px; border-radius:999px; background:rgba(255,255,255,.7); }
+#outro { background:var(--accent); color:var(--canvas); padding:0 80px; }
+#outro h2 { position:absolute; top:360px; left:80px; font-size:200px; font-weight:800; letter-spacing:-0.055em; line-height:0.95; }
+#outro h2 span { display:inline-block; }
+#outro .wm { position:absolute; top:880px; left:72px; font-size:300px; color:var(--canvas); }
+#outro .wm i { font-style:normal; color:var(--accentDark); }
+#outro .line1 { position:absolute; top:1260px; left:80px; font-size:58px; font-weight:700; }
+#outro .line2 { position:absolute; top:1350px; left:80px; font-size:48px; font-weight:600; color:var(--accentDark); }
+#outro .line3 { position:absolute; top:1460px; left:80px; font-size:40px; font-weight:600; opacity:.75; }
+</style></head><body>
+<div id="stage"></div>
+<script src="picks.js"></script>
+<script>
+const W = window.YARD_WEEK, CAT = window.YARD_CATS;
+const events = W.days.flatMap(([day, rows]) => rows.filter((r) => r.reel !== false).map((r) => ({ ...r, day })));
+const INTRO = 2.6, PER = 2.0, OUTRO = 3.4;
+window.REEL_DURATION = INTRO + events.length * PER + OUTRO;
+
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const back = (x) => { x = clamp(x); const c = 1.5; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const pin = '<svg width="46" height="46" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5a7 7 0 0 0-7 7c0 5 7 12 7 12s7-7 7-12a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/></svg>';
+
+const stage = document.getElementById('stage');
+const intro = Object.assign(document.createElement('div'), { className: 'scene', id: 'intro' });
+intro.innerHTML = `<div class="top wm">yard.</div><div class="over">${W.label}</div>
+  <h1>${['This', 'weekend', 'in', 'Charlotte'].map((w) => `<span>${w}</span>`).join(' ')}</h1>
+  <div class="spark">✦</div><div class="hint">${events.length} picks for your weekend →</div>`;
+stage.append(intro);
+
+const evScenes = events.map((e, i) => {
+  const c = CAT[e.cat];
+  const el = Object.assign(document.createElement('div'), { className: 'scene ev' });
+  el.style.background = c.soft;
+  el.innerHTML = `<div class="top wm" style="color:${c.solid}">yard.</div><div class="count">${i + 1}/${events.length}</div>
+    <div class="when" style="background:${c.solid}">${e.day} · ${e.time}</div>
+    <h2>${e.title}</h2><div class="venue">${pin}<span>${e.venue}</span></div><div class="tag" style="color:${c.solid}">${c.label}</div><div class="bigday" style="color:${c.solid}">${e.day}</div>`;
+  stage.append(el);
+  return el;
+});
+
+const outro = Object.assign(document.createElement('div'), { className: 'scene', id: 'outro' });
+outro.innerHTML = `<h2><span>Find your</span><br><span>people.</span></h2><div class="wm">yard<i>.</i></div>
+  <div class="line1">The app is coming soon.</div><div class="line2">Follow @yard.irl for every weekend.</div>
+  <div class="line3">Save this for the weekend ✦</div>`;
+stage.append(outro);
+
+// Lay out each event's venue and tag under its title once fonts are ready (titles wrap to 1–3 lines).
+window.layout = () => evScenes.forEach((el) => {
+  const h2 = el.querySelector('h2'), v = el.querySelector('.venue'), tag = el.querySelector('.tag');
+  const bottom = h2.offsetTop + h2.offsetHeight;
+  v.style.top = `${bottom + 50}px`; tag.style.top = `${bottom + 160}px`;
+  el.querySelector('.bigday').style.top = `${Math.max(1010, bottom + 300)}px`; // decorative; may run under Instagram's UI
+});
+
+const rise = (node, p, dist = 60) => { node.style.opacity = clamp(p * 1.6); node.style.transform = `translateY(${(1 - easeOut(p)) * dist}px)`; };
+
+window.renderAt = (t) => {
+  // Intro
+  intro.style.display = t < INTRO + 0.5 ? 'block' : 'none';
+  rise(intro.querySelector('.over'), t / 0.5, 30);
+  intro.querySelectorAll('h1 span').forEach((s, k) => rise(s, (t - 0.25 - k * 0.14) / 0.5, 110));
+  const sp = intro.querySelector('.spark'); const ps = (t - 1.25) / 0.45;
+  sp.style.opacity = clamp(ps * 2); sp.style.transform = `scale(${0.4 + 0.6 * back(ps)}) rotate(${(1 - easeOut(ps)) * -40}deg)`;
+  rise(intro.querySelector('.hint'), (t - 1.55) / 0.5, 30);
+  // Events slide in from the right over the previous card
+  evScenes.forEach((el, i) => {
+    const s = INTRO + i * PER, p = (t - s) / 0.42;
+    const covered = t > s + PER + 0.5;
+    el.style.display = t >= s && !covered ? 'block' : 'none';
+    el.style.zIndex = 10 + i;
+    el.style.transform = `translateX(${(1 - easeOut(p)) * 1080}px)`;
+    rise(el.querySelector('.when'), (t - s - 0.2) / 0.4, 40);
+    rise(el.querySelector('h2'), (t - s - 0.3) / 0.45, 70);
+    rise(el.querySelector('.venue'), (t - s - 0.45) / 0.4, 40);
+    rise(el.querySelector('.tag'), (t - s - 0.55) / 0.4, 30);
+    const bd = el.querySelector('.bigday'); // drifts left slowly while the card is up
+    bd.style.transform = `translateX(${120 - easeOut((t - s) / PER) * 120}px)`;
+  });
+  // Outro rises from the bottom
+  const so = INTRO + events.length * PER, po = (t - so) / 0.5;
+  outro.style.display = t >= so ? 'block' : 'none';
+  outro.style.zIndex = 100;
+  outro.style.transform = `translateY(${(1 - easeOut(po)) * 1920}px)`;
+  outro.querySelectorAll('h2 span').forEach((s, k) => rise(s, (t - so - 0.3 - k * 0.16) / 0.5, 100));
+  const wm = outro.querySelector('.wm'), pw = (t - so - 0.75) / 0.5;
+  wm.style.opacity = clamp(pw * 2); wm.style.transform = `scale(${0.85 + 0.15 * back(pw)})`; wm.style.transformOrigin = 'left center';
+  rise(outro.querySelector('.line1'), (t - so - 1.15) / 0.45, 30);
+  rise(outro.querySelector('.line2'), (t - so - 1.35) / 0.45, 30);
+  rise(outro.querySelector('.line3'), (t - so - 1.6) / 0.45, 30);
+};
+document.fonts.ready.then(() => { window.layout(); window.renderAt(0); window.READY = true; });
+</script>
+</body></html>
