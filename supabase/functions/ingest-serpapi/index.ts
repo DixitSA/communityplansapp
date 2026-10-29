@@ -230,6 +230,7 @@ Deno.serve(async (req) => {
           text: key, filter: `circle:${center.lng},${center.lat},60000`, bias: `proximity:${center.lng},${center.lat}`,
           limit: "1", format: "json", apiKey: geoapifyKey,
         });
+        if (!hasStreet.get(key)) q.set("type", "amenity"); // venue-name queries: look for a place, not the city
         const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, parseGeoapify, GEOAPIFY_TIMEOUT_MS);
         if (r.hit) { hit = r.hit; geoapify_hits++; }
         else if (r.state === "nomatch") answered = true;

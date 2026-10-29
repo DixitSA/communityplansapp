@@ -120,7 +120,9 @@ async function main() {
   try {
     const session = live ? await liveSession() : null;
     await waitForServer(180000);
-    browser = await chromium.launch();
+    // Behind an HTTPS proxy (cloud sandboxes), route the page's backend calls through it. Local dev never sets this.
+    const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+    browser = await chromium.launch(proxy ? { proxy: { server: proxy, bypass: 'localhost,127.0.0.1' } } : {});
     for (const route of routes) {
       for (const scheme of SCHEMES) {
         const context = await browser.newContext({
@@ -129,6 +131,8 @@ async function main() {
           isMobile: true,
           hasTouch: true,
           colorScheme: scheme,
+          timezoneId: 'America/New_York', // the app formats times in device time; match Charlotte
+          ignoreHTTPSErrors: Boolean(proxy), // the sandbox proxy re-signs TLS with its own CA
         });
         if (session) {
           await context.addInitScript(([k, v]) => window.localStorage.setItem(k, v), session);
