@@ -187,14 +187,14 @@ isOneToOne: false
                   ]
                 },"event_submissions": {
                   Row: {
-                    "admin_note": string | null,"city_id": number,"created_at": string,"details": string | null,"event_id": string | null,"id": string,"link": string | null,"reviewed_at": string | null,"starts_at": string,"status": Database["public"]['Enums']["submission_status"],"submitted_by": string,"title": string,"venue": string | null
+                    "address": string | null,"admin_note": string | null,"agent_fingerprint": string | null,"city_id": number,"created_at": string,"details": string | null,"ends_at": string | null,"event_id": string | null,"id": string,"link": string | null,"origin": string,"reviewed_at": string | null,"source_handle": string | null,"starts_at": string,"status": Database["public"]['Enums']["submission_status"],"submitted_by": string | null,"title": string,"venue": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "admin_note"?: string | null,"city_id": number,"created_at"?: string,"details"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"reviewed_at"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string,"title": string,"venue"?: string | null
+                    "address"?: string | null,"admin_note"?: string | null,"agent_fingerprint"?: string | null,"city_id": number,"created_at"?: string,"details"?: string | null,"ends_at"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"origin"?: string,"reviewed_at"?: string | null,"source_handle"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string | null,"title": string,"venue"?: string | null
                   }
                   Update: {
-                    "admin_note"?: string | null,"city_id"?: number,"created_at"?: string,"details"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"reviewed_at"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string,"title"?: string,"venue"?: string | null
+                    "address"?: string | null,"admin_note"?: string | null,"agent_fingerprint"?: string | null,"city_id"?: number,"created_at"?: string,"details"?: string | null,"ends_at"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"origin"?: string,"reviewed_at"?: string | null,"source_handle"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string | null,"title"?: string,"venue"?: string | null
                   }
                   Relationships: [
                     {

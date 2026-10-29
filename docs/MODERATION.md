@@ -12,11 +12,18 @@ select public.purge_old_reports();
 
 # Moderation: suggested events
 
-Users can suggest an event (for example one they saw on Instagram) from the app. Nothing is published automatically. Submissions land in `public.event_submissions` with `status = 'pending'`; clients can only read their own rows, and each person is limited to 5 submissions per 24 hours.
+Users can suggest an event (for example one they saw on Instagram) from the app, and the owner's own agent can post events through the `agent-inbox` function (see `docs/EVENT_INGESTION.md`). Nothing is published automatically. Each row has an `origin` (`user`, `agent` or `instagram`); agent and instagram rows have no submitter and are visible to admins only. Submissions land in `public.event_submissions` with `status = 'pending'`; clients can only read their own rows, and each person is limited to 5 submissions per 24 hours.
 
 ## Review in Supabase Studio
 
-1. Open Table Editor > `event_submissions` and filter `status = 'pending'`, oldest first. Read the title, link, date, venue and details. Open the link yourself.
+1. Open Table Editor > `event_submissions` and filter `status = 'pending'`, oldest first. Read the title, link, date, venue and details. Open the link yourself. To list the queue with where each row came from:
+
+```sql
+select id, origin, source_handle, title, starts_at, ends_at, venue, address, link, details, created_at
+from public.event_submissions
+where status = 'pending'
+order by created_at;
+```
 2. To reject, run (replace the id):
 
 ```sql
@@ -31,8 +38,8 @@ where id = '<submission id>';
 with s as (
   select * from public.event_submissions where id = '<submission id>' and status = 'pending'
 ), new_event as (
-  insert into public.events (source, city_id, title, starts_at, venue_name, ticket_url, description, location)
-  select 'curated', s.city_id, s.title, s.starts_at, s.venue, s.link, s.details,
+  insert into public.events (source, city_id, title, starts_at, ends_at, venue_name, venue_address, ticket_url, description, location)
+  select 'curated', s.city_id, s.title, s.starts_at, s.ends_at, s.venue, s.address, s.link, s.details,
          extensions.st_setsrid(extensions.st_makepoint(<lng>, <lat>), 4326)::extensions.geography
   from s
   returning id
@@ -42,6 +49,6 @@ set status = 'approved', event_id = (select id from new_event), reviewed_at = no
 where id = '<submission id>' and status = 'pending';
 ```
 
-Note the order is longitude first, then latitude. Edit the title, add an image, interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
+This works the same for `user` and `agent` rows (`ends_at` and `address` are null for most user rows). Agent rows are unverified: open the link and check the date and venue before publishing. Note the order is longitude first, then latitude. Edit the title, add an image, interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
 
 Submitters are not notified in this version. If a link looks abusive, reject it and consider a report against the user.

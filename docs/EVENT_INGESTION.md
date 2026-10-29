@@ -78,3 +78,24 @@ The `ingest-serpapi` function runs a fixed set of Google Events searches for Cha
 No redeploy is needed for the secret to take effect on the next run.
 
 **More response fields:** `venue_hits`, `census_hits`, `geoapify_hits`, `nominatim_hits` (hits by geocoder), and `geocode_error_samples` (up to 5 short labels such as `nominatim 403` or `census timeout`, never keys or URLs).
+
+## Agent inbox: events found by your own Codex or Claude
+
+You run Codex or Claude on your own computer, under your own subscription. The agent browses public venue sites and search results, then posts structured events to the `agent-inbox` function. They land as **pending** rows in `event_submissions` (`origin = 'agent'`, no submitter) and are visible only to admins. Nothing is published until you approve it in Studio (see `docs/MODERATION.md`). The function validates with the same rules as `submit_event`, always uses Charlotte, and de-duplicates with a fingerprint (title + start minute + venue), so posting the same file twice is safe.
+
+**One-time setup (PowerShell, from the repo root).** This generates a new secret, stores it in Supabase, and saves it as a user environment variable named `YARD_AGENT_SECRET` (it is separate from `INGEST_SECRET`):
+
+```powershell
+$a = [guid]::NewGuid().ToString(); npx supabase secrets set AGENT_INBOX_SECRET=$a; [Environment]::SetEnvironmentVariable('YARD_AGENT_SECRET', $a, 'User')
+```
+
+Then apply the migration and deploy:
+
+```powershell
+npx supabase db push
+npx supabase functions deploy agent-inbox --no-verify-jwt
+```
+
+Open a new PowerShell window afterwards so `$env:YARD_AGENT_SECRET` is available. Never paste the secret into an agent chat or a file.
+
+**Running the playbook.** The instructions are in `agent-playbooks/event-scout.md`, and the sites to visit are in `agent-playbooks/sources.md`. In a PowerShell window at the repo root, start Codex (`codex`) or Claude (`claude`) and say: "Follow agent-playbooks/event-scout.md and write events.json." The agent only writes the file; it must not post it or touch the secret (web pages are treated as untrusted). You review `events.json`, then post it yourself with the command at the end of the playbook. The response is `{ received, inserted, duplicates, rejected: [{ index, reason }] }`; fix rejected items and post again (duplicates are skipped). Limits: 50 events and 256 KB per request. A rejected event with `unknown_keys` means the agent added a field the schema does not have.
