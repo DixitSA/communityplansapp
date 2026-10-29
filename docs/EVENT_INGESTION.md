@@ -23,3 +23,21 @@ The `ingest-ticketmaster` Edge Function pulls the next 30 days of events within 
 - [ ] Images: use only the provided image URLs, unaltered and not re-hosted, per their terms.
 - [ ] Freshness: data refreshes daily; don't show stale events (hide past `starts_at`) and respect the API limit (5000 calls/day, 5 req/s).
 - [ ] Re-read the current Discovery API terms before launch.
+
+## Calendar feeds (iCal): Luma, venues, breweries
+
+The `ingest-ical` function reads every active row in `public.event_sources` and upserts the feed's events (`source = 'ical'`, `external_id = <source id>:<VEVENT UID>`).
+
+**Add a source:** in Supabase Studio, insert a row into `event_sources`: `name` (shown as the event attribution), `url` (https only), `city_id`, `default_interest_slugs` (for example `{community,nightlife}`), and `default_lat` / `default_lng` / `default_venue_name` for feeds whose events have no GEO. On Luma, any calendar or city page has an "Add iCal Subscription" link; copy that URL. Set `active = false` to pause a source. `last_run_at` and `last_error` show how the last run went.
+
+**What is imported:** events starting in the next 30 days with a timed start (UTC, or `TZID`, or floating time read as Charlotte time). `STATUS:CANCELLED` events are stored as cancelled. All-day events and recurring events (`RRULE`, `RDATE`, `RECURRENCE-ID`) are skipped in v1 and counted in `skipped`. Location is the event's `GEO`, else the source default; with neither, the event is skipped. Events an admin hid stay hidden.
+
+**Limits:** 10 s timeout and 2 MB per feed. One failing feed records `last_error` and does not stop the others.
+
+**Deploy and schedule** (same secrets as Ticketmaster; schedule it the same way, daily, with the `Authorization: Bearer <INGEST_SECRET>` header):
+
+```powershell
+npx supabase functions deploy ingest-ical --no-verify-jwt
+```
+
+Response: `{ sources, fetched, upserted, skipped }`.

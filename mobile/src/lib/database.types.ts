@@ -165,6 +165,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"event_sources": {
+                  Row: {
+                    "active": boolean,"city_id": number,"created_at": string,"default_interest_slugs": (string)[],"default_lat": number | null,"default_lng": number | null,"default_venue_name": string | null,"id": string,"kind": string,"last_error": string | null,"last_run_at": string | null,"name": string,"url": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"city_id": number,"created_at"?: string,"default_interest_slugs"?: (string)[],"default_lat"?: number | null,"default_lng"?: number | null,"default_venue_name"?: string | null,"id"?: string,"kind"?: string,"last_error"?: string | null,"last_run_at"?: string | null,"name": string,"url": string
+                  }
+                  Update: {
+                    "active"?: boolean,"city_id"?: number,"created_at"?: string,"default_interest_slugs"?: (string)[],"default_lat"?: number | null,"default_lng"?: number | null,"default_venue_name"?: string | null,"id"?: string,"kind"?: string,"last_error"?: string | null,"last_run_at"?: string | null,"name"?: string,"url"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_sources_city_id_fkey"
+      columns: ["city_id"]
+isOneToOne: false
+      referencedRelation: "cities"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"events": {
                   Row: {
                     "attribution": string | null,"city_id": number,"created_at": string,"created_by": string | null,"currency": string,"description": string | null,"ends_at": string | null,"external_id": string | null,"id": string,"image_url": string | null,"is_free": boolean,"location": unknown,"neighborhood": string | null,"price_max": number | null,"price_min": number | null,"source": Database["public"]['Enums']["event_source"],"starts_at": string,"status": string,"ticket_url": string | null,"title": string,"updated_at": string,"venue_address": string | null,"venue_name": string | null
@@ -331,19 +351,25 @@ isOneToOne: true
                   ]
                 },"reports": {
                   Row: {
-                    "created_at": string,"id": number,"reason": string,"reporter_id": string,"resolved_at": string | null,"target_id": string,"target_type": string
+                    "created_at": string,"id": number,"reason": string,"reporter_id": string,"resolved_at": string | null,"snapshot_author_id": string | null,"snapshot_body": string | null,"snapshot_event_id": string | null,"target_id": string,"target_type": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: never,"reason": string,"reporter_id": string,"resolved_at"?: string | null,"target_id": string,"target_type": string
+                    "created_at"?: string,"id"?: never,"reason": string,"reporter_id": string,"resolved_at"?: string | null,"snapshot_author_id"?: string | null,"snapshot_body"?: string | null,"snapshot_event_id"?: string | null,"target_id": string,"target_type": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: never,"reason"?: string,"reporter_id"?: string,"resolved_at"?: string | null,"target_id"?: string,"target_type"?: string
+                    "created_at"?: string,"id"?: never,"reason"?: string,"reporter_id"?: string,"resolved_at"?: string | null,"snapshot_author_id"?: string | null,"snapshot_body"?: string | null,"snapshot_event_id"?: string | null,"target_id"?: string,"target_type"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "reports_reporter_id_fkey"
       columns: ["reporter_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reports_snapshot_author_id_fkey"
+      columns: ["snapshot_author_id"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -415,6 +441,12 @@ isOneToOne: false
 "mark_chat_read":
 { Args: { "p_event_id": string }; Returns: undefined
                            },
+"purge_old_reports":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"report_message":
+{ Args: { "p_message_id": number,"p_reason": string }; Returns: undefined
+                           },
 "set_rsvp":
 { Args: { "p_event_id": string,"p_status": Database["public"]['Enums']["rsvp_status"] }; Returns: undefined
                            },
@@ -423,7 +455,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "event_source": "ticketmaster"|"seatgeek"|"curated","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going"
+            "event_source": "ticketmaster"|"seatgeek"|"curated"|"ical","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -539,7 +571,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "event_source": ["ticketmaster", "seatgeek", "curated"],"friendship_status": ["pending", "accepted"],"rsvp_status": ["interested", "down_if_friends", "going"]
+            "event_source": ["ticketmaster", "seatgeek", "curated", "ical"],"friendship_status": ["pending", "accepted"],"rsvp_status": ["interested", "down_if_friends", "going"]
           }
         }
 } as const

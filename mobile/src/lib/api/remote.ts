@@ -336,10 +336,10 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
     },
 
     async reportMessage(messageId, reason) {
-      const uid = await myUserId();
-      const { error } = await supabase
-        .from('reports')
-        .insert({ reporter_id: uid, target_type: 'message', target_id: messageId, reason });
+      const { error } = await supabase.rpc('report_message', {
+        p_message_id: Number(messageId),
+        p_reason: reason,
+      });
       if (error) fail(error);
     },
 
