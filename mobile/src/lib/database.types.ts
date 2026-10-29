@@ -185,6 +185,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"event_submissions": {
+                  Row: {
+                    "admin_note": string | null,"city_id": number,"created_at": string,"details": string | null,"event_id": string | null,"id": string,"link": string | null,"reviewed_at": string | null,"starts_at": string,"status": Database["public"]['Enums']["submission_status"],"submitted_by": string,"title": string,"venue": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_note"?: string | null,"city_id": number,"created_at"?: string,"details"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"reviewed_at"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string,"title": string,"venue"?: string | null
+                  }
+                  Update: {
+                    "admin_note"?: string | null,"city_id"?: number,"created_at"?: string,"details"?: string | null,"event_id"?: string | null,"id"?: string,"link"?: string | null,"reviewed_at"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["submission_status"],"submitted_by"?: string,"title"?: string,"venue"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_submissions_city_id_fkey"
+      columns: ["city_id"]
+isOneToOne: false
+      referencedRelation: "cities"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_submissions_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_submissions_submitted_by_fkey"
+      columns: ["submitted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"events": {
                   Row: {
                     "attribution": string | null,"city_id": number,"created_at": string,"created_by": string | null,"currency": string,"description": string | null,"ends_at": string | null,"external_id": string | null,"id": string,"image_url": string | null,"is_free": boolean,"location": unknown,"neighborhood": string | null,"price_max": number | null,"price_min": number | null,"source": Database["public"]['Enums']["event_source"],"starts_at": string,"status": string,"ticket_url": string | null,"title": string,"updated_at": string,"venue_address": string | null,"venue_name": string | null
@@ -425,17 +457,32 @@ isOneToOne: false
                            },
 "get_feed":
 { Args: { "p_city_id": number,"p_day": string,"p_interest_ids"?: (number)[],"p_lat": number,"p_lng": number,"p_mode"?: string,"p_price"?: string,"p_radius_m"?: number }; Returns: {
-              "distance_m": number,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
+              "distance_m": number,"ends_at": string,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
             }[]
                            },
 "get_feed_range":
 { Args: { "p_city_id": number,"p_days": number,"p_interest_ids"?: (number)[],"p_lat": number,"p_lng": number,"p_mode"?: string,"p_price"?: string,"p_radius_m"?: number,"p_start": string }; Returns: {
-              "day": string,"distance_m": number,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
+              "day": string,"distance_m": number,"ends_at": string,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
             }[]
                            },
 "get_my_chats":
 { Args: Record<PropertyKey, never>; Returns: {
               "event_id": string,"going_count": number,"image_url": string,"is_open": boolean,"last_at": string,"last_author_name": string,"last_body": string,"starts_at": string,"title": string,"unread_count": number
+            }[]
+                           },
+"get_profile":
+{ Args: { "p_user": string }; Returns: {
+              "avatar_path": string,"bio": string,"display_name": string,"friend_count": number,"friendship": string,"id": string,"mutual_friend_count": number,"shared_events": Json,"username": string
+            }[]
+                           },
+"list_friend_requests":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avatar_path": string,"created_at": string,"direction": string,"display_name": string,"id": string,"username": string
+            }[]
+                           },
+"list_friends":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avatar_path": string,"display_name": string,"id": string,"since": string,"username": string
             }[]
                            },
 "mark_chat_read":
@@ -444,18 +491,35 @@ isOneToOne: false
 "purge_old_reports":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"remove_friend":
+{ Args: { "p_user": string }; Returns: undefined
+                           },
 "report_message":
 { Args: { "p_message_id": number,"p_reason": string }; Returns: undefined
                            },
+"respond_friend_request":
+{ Args: { "p_accept": boolean,"p_user": string }; Returns: string
+                           },
+"search_profiles":
+{ Args: { "p_limit"?: number,"p_query": string }; Returns: {
+              "avatar_path": string,"display_name": string,"friendship": string,"id": string,"username": string
+            }[]
+                           },
+"send_friend_request":
+{ Args: { "p_user": string }; Returns: string
+                           },
 "set_rsvp":
 { Args: { "p_event_id": string,"p_status": Database["public"]['Enums']["rsvp_status"] }; Returns: undefined
+                           },
+"submit_event":
+{ Args: { "p_city_id": number,"p_details": string,"p_link": string,"p_starts_at": string,"p_title": string,"p_venue": string }; Returns: string
                            },
 "username_available":
 { Args: { "p_username": string }; Returns: boolean
                            }
           }
           Enums: {
-            "event_source": "ticketmaster"|"seatgeek"|"curated"|"ical","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going"
+            "event_source": "ticketmaster"|"seatgeek"|"curated"|"ical","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going","submission_status": "pending"|"approved"|"rejected"
           }
           CompositeTypes: {
             [_ in never]: never

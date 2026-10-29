@@ -37,6 +37,9 @@ insert into public.events (id, source, city_id, title, starts_at, is_free, locat
 insert into public.event_interests (event_id, interest_id)
   select '11111111-1111-1111-1111-111111111111', id from public.interests where slug = 'music';
 
+update public.events set ends_at = timestamptz '2026-10-29 01:00 America/New_York'
+  where id = '11111111-1111-1111-1111-111111111111';
+
 delete from public.notifications;
 
 create function pg_temp.login(u uuid) returns void language plpgsql as $$
@@ -129,6 +132,20 @@ select is((select jsonb_array_length(friends_going) from public.get_feed_range(
 select is((select my_status::text from public.get_feed_range(
     (select id from public.cities where slug = 'charlotte'), date '2026-10-29', 1, 35.2271, -80.8431)),
   null, 'my_status is null where the caller has no RSVP');
+
+-- 4b. ends_at comes through ------------------------------------------------------
+select is((select ends_at from public.get_feed_range(
+    (select id from public.cities where slug = 'charlotte'), date '2026-10-28', 4, 35.2271, -80.8431)
+    where title = 'Day One'), timestamptz '2026-10-29 01:00 America/New_York', 'get_feed_range returns ends_at');
+select is((select ends_at from public.get_feed_range(
+    (select id from public.cities where slug = 'charlotte'), date '2026-10-28', 4, 35.2271, -80.8431)
+    where title = 'Late Night'), null, 'ends_at is null when unset');
+select is((select ends_at from public.get_feed(
+    (select id from public.cities where slug = 'charlotte'), date '2026-10-28', 35.2271, -80.8431)
+    where title = 'Day One'), timestamptz '2026-10-29 01:00 America/New_York', 'get_feed returns ends_at');
+select is((select count(*) from public.get_feed(
+    (select id from public.cities where slug = 'charlotte'), date '2026-10-28', 35.2271, -80.8431)
+    where ends_at is null)::int, 0, 'get_feed: ends_at null only when unset');
 
 -- 5. Anonymous users get nothing ---------------------------------------------
 reset role;

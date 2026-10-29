@@ -19,6 +19,7 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 | `rsvps` | One plan per user per event | `status` ∈ interested, down_if_friends, going |
 | `notifications` | Activity feed + push source | friend_going, friend_request, friend_accepted, event_update |
 | `device_tokens` | Expo push tokens | Only `ExponentPushToken[...]` accepted; chat push tokens are registered with Stream instead |
+| `event_submissions` | "Suggest an event" queue (title, link, starts_at, venue, details, status pending/approved/rejected, `event_id` once published). 5 per person per day; no direct client writes, only `submit_event()` | Own rows readable by the submitter; admins read and update all; reviewed in Studio |
 | `reports` | Moderation queue. Message reports keep a private snapshot (body, author, event) made by `report_message()`; deleted after 90 days (`purge_old_reports()`). 20 per person per day, one per target. Studio-only access; the snapshot author is set to null if that account is deleted | Insert-only for clients (user/event types; messages only via the RPC) |
 
 ## Privacy matrix (enforced by RLS)
@@ -31,11 +32,15 @@ Source of truth: `supabase/migrations/20261027000000_init.sql`. Tests: `supabase
 | RSVP: Down if friends go | ✅ | ❌ | ❌ | ❌ | ❌ |
 | RSVP: Going | ✅ | ✅ | ✅ | ❌ (count only) | ❌ |
 | Friend list | ✅ (own rows) | ❌ (mutual friends computed by RPC later) | ❌ | ❌ | ❌ |
+| Friend search / profile (`search_profiles`, `get_profile`) | ✅ | ✅ (friend_count and mutual count only, never the list) | ✅ (plus past events you were both Going to) | ✅ | ❌ (looks like "not found") |
+| Suggested events (`event_submissions`) | ✅ (own) | ❌ | ❌ | ❌ | ❌ (admins see all) |
 | Event chat | members = Going users only (Supabase tables, see Chat) |
 
 ## How clients write
 - **Plans:** `rpc('set_rsvp', { p_event_id, p_status })`, where `p_status: null` clears the plan. Direct writes to `rsvps` are restricted to the `status` column, and `friend_alert_sent_at` is server-only.
-- **Friend request:** insert into `friendships` with `user_a`/`user_b` ordered (smaller UUID first), `requested_by = me`. Accept: update `status = 'accepted'` (only the recipient can). Decline/unfriend: delete.
+- **Friends (use these):** `rpc('search_profiles', { p_query, p_limit })`, `send_friend_request({ p_user })` (returns `outgoing`, or `friends` if they had already asked you), `respond_friend_request({ p_user, p_accept })`, `remove_friend({ p_user })` (unfriend or cancel), `list_friends()`, `list_friend_requests()`, `get_profile({ p_user })`. Errors: `cannot_friend_self`, `user_not_found` (also when blocked), `already_friends`, `request_pending`, `request_not_found`, `query_invalid`, `rate_limited` (30 new requests per 24 h), `not_onboarded`.
+- **Suggest an event:** `rpc('submit_event', { p_city_id, p_title, p_link, p_starts_at, p_venue, p_details })` returns the submission id. Errors: `title_invalid`, `link_invalid`, `starts_at_invalid`, `city_invalid`, `venue_invalid`, `details_invalid`, `rate_limited` (5 per 24 h), `not_onboarded`.
+- **Friend request (table-level, superseded by the RPCs above):** insert into `friendships` with `user_a`/`user_b` ordered (smaller UUID first), `requested_by = me`. Accept: update `status = 'accepted'` (only the recipient can). Decline/unfriend: delete.
 - **Feed and map:** `rpc('get_feed', { p_city_id, p_day, p_lat, p_lng, p_radius_m, p_interest_ids, p_price, p_mode })`. The day boundary uses the city's timezone.
 - **Detail social context:** `rpc('get_event_social', { p_event_id })`.
 - **Onboarding:** `rpc('username_available', { p_username })` returns a boolean (false when invalid or taken, case-insensitive). `rpc('complete_onboarding', { p_username, p_display_name, p_birthdate, p_interest_ids, p_home_city_id })` atomically creates `profiles`, `profiles_private` and `profile_interests` for `auth.uid()`; clients never insert `profiles` / `profiles_private` directly (insert is revoked), so onboarding goes only through this RPC. Usernames match `^[a-z0-9][a-z0-9_.]{2,19}$`.
