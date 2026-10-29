@@ -319,7 +319,7 @@ export default function FeedScreen() {
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
         ListEmptyComponent={empty}
         ListFooterComponent={
-          <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{total > 0 ? <SuggestRow /> : null}</View>
+          <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{sections.length > 0 ? <SuggestRow /> : null}</View>
         }
         renderSectionHeader={({ section }) => (
           <View style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}>

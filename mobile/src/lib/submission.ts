@@ -34,6 +34,11 @@ export function normalizeLink(raw: string): string {
   return `https://${t.replace(/^\/+/, '')}`;
 }
 
+/** The range the date wheels allow: just inside the server's window, so the picker can't land on a rejected time. */
+export function startsAtBounds(now: Date = new Date()): { min: Date; max: Date } {
+  return { min: new Date(now.getTime() - HOUR_MS + 60_000), max: new Date(now.getTime() + 365 * DAY_MS - DAY_MS) };
+}
+
 /** The earliest start the server accepts is one hour ago (events already under way), the latest is a year out. */
 export function startsAtProblem(d: Date | null, now: Date = new Date()): string | null {
   if (!d) return 'Pick when it starts.';

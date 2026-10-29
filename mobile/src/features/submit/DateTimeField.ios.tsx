@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 import { AppText, Button, FieldStatusLine, Icon, useTheme } from '@/design';
 import { formatShortDate, formatTime } from '@/lib/dates';
 import { selection } from '@/lib/haptics';
+import { startsAtBounds } from '@/lib/submission';
 
 import type { DateTimeFieldProps } from './DateTimeField';
 
@@ -19,6 +20,8 @@ export function DateTimeField({ label, value, onChange, status }: DateTimeFieldP
   const { colors, space, radius } = useTheme();
   const [open, setOpen] = useState(false);
   const [wheel, setWheel] = useState<Date>(() => value ?? defaultWheel());
+  // Computed once on mount; if the sheet stays open a long time, form validation still catches a stale minimum.
+  const [bounds] = useState(() => startsAtBounds());
   const error = status?.tone === 'error';
   const text = value ? `${formatShortDate(value)} · ${formatTime(value)}` : null;
 
@@ -66,6 +69,8 @@ export function DateTimeField({ label, value, onChange, status }: DateTimeFieldP
               value={wheel}
               mode="datetime"
               display="spinner"
+              minimumDate={bounds.min}
+              maximumDate={bounds.max}
               onChange={(_event, date) => {
                 if (!date) return;
                 setWheel(date);

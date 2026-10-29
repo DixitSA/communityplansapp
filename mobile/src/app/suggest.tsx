@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Icon, PrimaryButton, TextField, useTheme, type FieldStatus } from '@/design';
 import { DateTimeField } from '@/features/submit/DateTimeField';
@@ -20,6 +20,8 @@ import {
 
 /** Show a character counter once the text gets this close to the limit. */
 const COUNTER_FROM = 0.8;
+const SUCCESS_BADGE = 64;
+const SUCCESS_ICON = 28;
 
 const err = (text?: string): FieldStatus | null => (text ? { tone: 'error', text } : null);
 
@@ -65,8 +67,11 @@ export default function SuggestSheet() {
     }
   };
 
-  const counter = (value: string, max: number): FieldStatus | null =>
-    value.length >= max * COUNTER_FROM ? { tone: value.length > max ? 'error' : 'neutral', text: `${value.length}/${max}` } : null;
+  const counter = (value: string, max: number): FieldStatus | null => {
+    // Count what will be sent: the server trims, so trailing spaces shouldn't push the counter red.
+    const n = value.trim().length;
+    return n >= max * COUNTER_FROM ? { tone: n > max ? 'error' : 'neutral', text: `${n}/${max}` } : null;
+  };
 
   const header = (
     <View
@@ -83,16 +88,11 @@ export default function SuggestSheet() {
         Suggest an event
       </AppText>
       {isSuccess ? null : (
-        <AppText
-          variant="body"
-          color="accent"
-          accessibilityRole="button"
-          accessibilityLabel="Cancel"
-          onPress={() => router.back()}
-          style={{ fontWeight: '600' }}
-        >
-          Cancel
-        </AppText>
+        <Pressable accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={space.sm} onPress={() => router.back()}>
+          <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
+            Cancel
+          </AppText>
+        </Pressable>
       )}
     </View>
   );
@@ -104,22 +104,22 @@ export default function SuggestSheet() {
         <View style={{ paddingHorizontal: space.lg, paddingTop: space.xl, gap: space.xl, alignItems: 'center' }}>
           <View
             style={{
-              width: 64,
-              height: 64,
+              width: SUCCESS_BADGE,
+              height: SUCCESS_BADGE,
               borderRadius: radius.pill,
               backgroundColor: colors.accentSoft,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Icon name="checkmark" size={28} color="accent" weight="semibold" />
+            <Icon name="checkmark" size={SUCCESS_ICON} color="accent" weight="semibold" />
           </View>
           <AppText
             variant="body"
             style={{ textAlign: 'center' }}
             accessibilityLiveRegion="polite"
           >
-            Thanks — we&apos;ll take a look. If it&apos;s a fit, it&apos;ll show up in the feed.
+            Thanks, we’ll take a look. If it’s a fit, it’ll show up in the feed.
           </AppText>
           <View style={{ alignSelf: 'stretch' }}>
             <PrimaryButton label="Done" onPress={() => router.back()} />
