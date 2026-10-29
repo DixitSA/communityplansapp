@@ -191,7 +191,14 @@ Deno.test("mapped row exposes geocode_has_street", async () => {
 });
 
 Deno.test("parseGeoapify reads numeric lat/lon", () => {
-  assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8 }] }), { lat: 35.2, lng: -80.8 });
+  assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8, result_type: "amenity" }] }), { lat: 35.2, lng: -80.8 });
+  assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8, result_type: "building" }] }), { lat: 35.2, lng: -80.8 });
+});
+
+Deno.test("parseGeoapify rejects city-level fallbacks (they stack events on the city centre)", () => {
+  assertEquals(parseGeoapify({ results: [{ lat: 35.2272, lon: -80.8431, result_type: "city" }] }), null);
+  assertEquals(parseGeoapify({ results: [{ lat: 35.1, lon: -80.8, result_type: "suburb" }] }), null);
+  assertEquals(parseGeoapify({ results: [{ lat: 35.1, lon: -80.8 }] }), null);
   assertEquals(parseGeoapify({ results: [] }), null);
   assertEquals(parseGeoapify({}), null);
   assertEquals(parseGeoapify({ results: [{ lat: "35.2", lon: "-80.8" }] }), null);

@@ -48,8 +48,13 @@ export function parseNominatim(body: unknown): { lat: number; lng: number } | nu
 }
 
 /** First result from a Geoapify geocode/search (format=json) response, or null. */
+/** Result types precise enough to pin a venue. Anything coarser (city, suburb, postcode…) is Geoapify
+ *  falling back to the area's centre, which would stack unrelated events on one point. */
+const GEOAPIFY_PRECISE = new Set(["amenity", "building", "street"]);
+
 export function parseGeoapify(body: unknown): { lat: number; lng: number } | null {
-  const first = (body as { results?: { lat?: unknown; lon?: unknown }[] })?.results?.[0];
+  const first = (body as { results?: { lat?: unknown; lon?: unknown; result_type?: unknown }[] })?.results?.[0];
   if (typeof first?.lat !== "number" || typeof first.lon !== "number") return null;
+  if (typeof first.result_type !== "string" || !GEOAPIFY_PRECISE.has(first.result_type)) return null;
   return Number.isFinite(first.lat) && Number.isFinite(first.lon) ? { lat: first.lat, lng: first.lon } : null;
 }
