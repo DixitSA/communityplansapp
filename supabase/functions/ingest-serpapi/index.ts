@@ -6,6 +6,9 @@ const SERP_URL = "https://serpapi.com/search.json";
 const CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress";
 const PAGE_SIZE = 10;
 const GEOCODE_TIMEOUT_MS = 4_000;
+const GEOAPIFY_TIMEOUT_MS = 8_000; // live runs saw 4 s timeouts on hits that would have resolved
+// Nominatim returns 403 to Supabase Edge (shared cloud IPs), so it is off; kept for self-hosted runs.
+const NOMINATIM_ENABLED = false;
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const NOMINATIM_UA = "yard-ingest/1.0 (+https://github.com/DixitSA/communityplansapp)";
 const NOMINATIM_GAP_MS = 1_100; // usage policy: max 1 request/second
@@ -171,9 +174,9 @@ Deno.serve(async (req) => {
     let lastNominatim = 0, nominatimErrors = 0;
     type Hit = { lat: number; lng: number } | null;
     /** One external lookup. Never throws; error text is a short label (no URL, headers or keys). */
-    const lookup = async (name: string, url: string, headers: HeadersInit, parse: (b: unknown) => Hit) => {
+    const lookup = async (name: string, url: string, headers: HeadersInit, parse: (b: unknown) => Hit, timeoutMs = GEOCODE_TIMEOUT_MS) => {
       try {
-        const res = await fetch(url, { headers, signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS) });
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
         if (!res.ok) {
           await res.body?.cancel();
           noteError(`${name} ${res.status}`);
@@ -227,12 +230,12 @@ Deno.serve(async (req) => {
           text: key, filter: `circle:${center.lng},${center.lat},60000`, bias: `proximity:${center.lng},${center.lat}`,
           limit: "1", format: "json", apiKey: geoapifyKey,
         });
-        const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, parseGeoapify);
+        const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, parseGeoapify, GEOAPIFY_TIMEOUT_MS);
         if (r.hit) { hit = r.hit; geoapify_hits++; }
         else if (r.state === "nomatch") answered = true;
         else failed = true;
       }
-      if (!hit) {
+      if (!hit && NOMINATIM_ENABLED) {
         if (nominatimErrors >= NOMINATIM_MAX_ERRORS) {
           failed = true; // breaker tripped: skip Nominatim for the rest of the run
         } else {
