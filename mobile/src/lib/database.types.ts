@@ -87,6 +87,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"event_chat_reads": {
+                  Row: {
+                    "event_id": string,"last_read_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "event_id": string,"last_read_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "event_id"?: string,"last_read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_chat_reads_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_chat_reads_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"event_interests": {
                   Row: {
                     "event_id": string,"interest_id": number
@@ -110,6 +136,32 @@ isOneToOne: false
       columns: ["interest_id"]
 isOneToOne: false
       referencedRelation: "interests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"event_messages": {
+                  Row: {
+                    "body": string | null,"created_at": string,"deleted_at": string | null,"event_id": string,"id": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"event_id": string,"id"?: never,"user_id": string
+                  }
+                  Update: {
+                    "body"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"event_id"?: string,"id"?: never,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "event_messages_event_id_fkey"
+      columns: ["event_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "event_messages_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -332,8 +384,16 @@ isOneToOne: false
             "are_friends":
 { Args: { "a": string,"b": string }; Returns: boolean
                            },
+"chat_open":
+{ Args: { "e": string }; Returns: boolean
+                           },
 "complete_onboarding":
 { Args: { "p_birthdate": string,"p_display_name": string,"p_home_city_id": number,"p_interest_ids": (number)[],"p_username": string }; Returns: undefined
+                           },
+"get_chat_messages":
+{ Args: { "p_before"?: string,"p_event_id": string,"p_limit"?: number }; Returns: {
+              "avatar_path": string,"body": string,"created_at": string,"display_name": string,"id": number,"is_mine": boolean,"user_id": string
+            }[]
                            },
 "get_event_social":
 { Args: { "p_event_id": string }; Returns: {
@@ -350,6 +410,11 @@ isOneToOne: false
               "day": string,"distance_m": number,"friends_going": Json,"going_count": number,"id": string,"image_url": string,"interest_ids": (number)[],"is_free": boolean,"lat": number,"lng": number,"my_status": Database["public"]['Enums']["rsvp_status"],"neighborhood": string,"price_min": number,"score": number,"starts_at": string,"title": string,"venue_name": string
             }[]
                            },
+"get_my_chats":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "event_id": string,"going_count": number,"image_url": string,"is_open": boolean,"last_at": string,"last_author_name": string,"last_body": string,"starts_at": string,"title": string,"unread_count": number
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -358,6 +423,9 @@ isOneToOne: false
                            },
 "is_going":
 { Args: { "e": string,"u": string }; Returns: boolean
+                           },
+"mark_chat_read":
+{ Args: { "p_event_id": string }; Returns: undefined
                            },
 "set_rsvp":
 { Args: { "p_event_id": string,"p_status": Database["public"]['Enums']["rsvp_status"] }; Returns: undefined
