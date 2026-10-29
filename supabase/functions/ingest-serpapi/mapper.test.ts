@@ -36,6 +36,10 @@ Deno.test("ambiguous start meridiem picks the reading that ends after it starts"
   assertEquals(iso(parseWhen("Fri, Oct 30, 10 – 2 PM", now)), ["2026-10-30T14:00:00.000Z", "2026-10-30T18:00:00.000Z"]);
 });
 
+Deno.test("'9 – 1 AM' is 9 PM to 1 AM", () => {
+  assertEquals(iso(parseWhen("Fri, Oct 30, 9 – 1 AM", now)), ["2026-10-31T01:00:00.000Z", "2026-10-31T05:00:00.000Z"]);
+});
+
 Deno.test("unclear times are skipped: date only, range without times, missing, bare hour", () => {
   for (const w of ["Wed, Nov 4", "Nov 1 – 3", "Fri, Nov 6 – Sun, Nov 8", "", undefined, "Fri, Oct 30, 8", "Sometime soon"]) {
     assertEquals(parseWhen(w, now), null, String(w));
@@ -124,6 +128,7 @@ Deno.test("Google-hosted images are never used", () => {
   assertEquals(pickImage("https://encrypted-tbn0.gstatic.com/images?q=tbn:x"), null);
   assertEquals(pickImage("https://lh3.googleusercontent.com/abc"), null);
   assertEquals(pickImage("https://www.google.com/img.png"), null);
+  assertEquals(pickImage("https://serpapi.com/searches/abc/image.png"), null);
   assertEquals(pickImage("http://example.com/a.jpg"), null);
   assertEquals(pickImage(undefined), null);
   assertEquals(pickImage("https://cdn.example.com/a.jpg"), "https://cdn.example.com/a.jpg");
@@ -148,6 +153,7 @@ Deno.test("description is truncated to 500 characters", async () => {
 });
 
 Deno.test("geo: key normalization, distance rule, census and EWKB parsing", () => {
+  assertEquals(addressKey('1 "A" B\\C St'), "1 a bc st");
   assertEquals(addressKey("  123  Main St,\nCharlotte, NC "), "123 main st, charlotte, nc");
   assert(withinCity({ lat: 35.2251, lng: -80.8397 }));
   assert(!withinCity({ lat: 35.7796, lng: -78.6382 })); // Raleigh

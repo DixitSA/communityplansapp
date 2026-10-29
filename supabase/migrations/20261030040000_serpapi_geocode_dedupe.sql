@@ -11,8 +11,6 @@ create table public.geocode_cache (
 alter table public.geocode_cache enable row level security;
 revoke all on public.geocode_cache from anon, authenticated;
 
-create index events_title_trgm_idx on public.events using gin (title extensions.gin_trgm_ops);
-
 -- Id of an existing active event (other source, same city) that looks like the same happening.
 create function public.find_duplicate_event(
   p_city_id smallint,

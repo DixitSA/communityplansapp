@@ -185,7 +185,7 @@ export function parseWhen(when: string | undefined | null, now: Date, tz = DEFAU
       const other = endMer === "am" ? "pm" : "am";
       const endH = rt ? hour24(rt, endMer) * 60 + rt.min : 0;
       const fits = (m: "am" | "pm") => hour24(left.time!, m) * 60 + left.time!.min <= endH;
-      startMer = !sameDay || fits(endMer) ? endMer : fits(other) ? other : endMer;
+      startMer = !sameDay || fits(endMer) ? endMer : fits(other) ? other : endMer === "am" ? "pm" : endMer;
     } else if (left.time.h <= 12) {
       return null; // "Fri, Nov 1, 8" is ambiguous
     }
@@ -217,7 +217,7 @@ function httpsOnly(url: string | null | undefined): string | null {
   }
 }
 
-const GOOGLE_HOST = /(^|\.)(gstatic|googleusercontent|ggpht|google|googleapis)\.[a-z.]+$/i;
+const GOOGLE_HOST = /(^|\.)(gstatic|googleusercontent|ggpht|google|googleapis|serpapi)\.[a-z.]+$/i;
 /** https image that is not Google-hosted (we never hotlink Google thumbnails). */
 export function pickImage(image: string | undefined): string | null {
   const url = httpsOnly(image);

@@ -4,7 +4,7 @@ export const FALLBACK_CENTER = { lat: 35.2271, lng: -80.8431 };
 export const MAX_KM_FROM_CENTER = 60;
 
 /** Cache key: lowercased, whitespace-collapsed address. */
-export const addressKey = (a: string) => a.toLowerCase().replace(/\s+/g, " ").trim();
+export const addressKey = (a: string) => a.toLowerCase().replace(/["\\]/g, "").replace(/\s+/g, " ").trim();
 
 export function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const rad = (x: number) => (x * Math.PI) / 180;

@@ -6,7 +6,10 @@ const SERP_URL = "https://serpapi.com/search.json";
 const CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress";
 const PAGE_SIZE = 10;
 const GEOCODE_TIMEOUT_MS = 5_000;
-const MAX_FRESH_GEOCODES = 60; // per run; the rest are retried tomorrow
+const MAX_FRESH_GEOCODES = 30; // per run; the rest are retried tomorrow
+const GEOCODE_BUDGET_MS = 90_000; // free plan wall clock is 150 s; stop geocoding early
+const ACCOUNT_URL = "https://serpapi.com/account.json";
+const MIN_SEARCHES_LEFT = 8;
 
 // Free plan = 250 searches/month and every page is one search. 2+1+1+1+1+1+1 = 8 per run, daily = ~240/month.
 const QUERY_PLAN: { q: string; chip: string; pages: number }[] = [
@@ -39,26 +42,23 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 async function fetchPage(params: URLSearchParams): Promise<SerpEvent[]> {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const res = await fetch(`${SERP_URL}?${params}`);
-    if (res.status === 429) {
-      await res.body?.cancel();
-      await sleep(1000 * 2 ** attempt);
-      continue;
-    }
-    if (!res.ok) throw new Error(`SerpApi HTTP ${res.status}`); // no URL: it contains the api_key
-    const body = await res.json();
-    if (body?.error) {
-      // "Google hasn't returned any results for this query." is an empty page, not a failure.
-      if (/hasn't returned any results/i.test(String(body.error))) return [];
-      throw new Error(`SerpApi error: ${scrub(String(body.error)).slice(0, 200)}`);
-    }
-    return Array.isArray(body?.events_results) ? body.events_results : [];
+  const res = await fetch(`${SERP_URL}?${params}`, { signal: AbortSignal.timeout(20_000) }); // a hung page must not eat the run
+  if (res.status === 429) {
+    await res.body?.cancel();
+    throw new Error("SerpApi 429"); // fatal: retrying would burn more of the quota
   }
-  throw new Error("SerpApi rate limit: gave up after retries");
+  if (!res.ok) throw new Error(`SerpApi HTTP ${res.status}`); // no URL: it contains the api_key
+  const body = await res.json();
+  if (body?.error) {
+    // "Google hasn't returned any results for this query." is an empty page, not a failure.
+    if (/hasn't returned any results/i.test(String(body.error))) return [];
+    throw new Error(`SerpApi error: ${scrub(String(body.error)).slice(0, 200)}`);
+  }
+  return Array.isArray(body?.events_results) ? body.events_results : [];
 }
 
 Deno.serve(async (req) => {
+  const t0 = Date.now();
   const secret = Deno.env.get("INGEST_SECRET");
   if (req.method !== "POST" || !(await authorized(req.headers.get("Authorization"), secret))) {
     return json({ error: "unauthorized" }, 401);
@@ -78,18 +78,39 @@ Deno.serve(async (req) => {
     if (intErr) throw intErr;
     const interestIds = Object.fromEntries((interests ?? []).map((i) => [i.slug, i.id]));
 
+    // 0. Budget preflight (account.json is free and not counted). If it fails, search anyway.
+    try {
+      const res = await fetch(`${ACCOUNT_URL}?${new URLSearchParams({ api_key: apiKey })}`, { signal: AbortSignal.timeout(5_000) });
+      if (res.ok) {
+        const left = (await res.json())?.total_searches_left;
+        if (typeof left === "number" && left < MIN_SEARCHES_LEFT) return json({ skipped_run: "low_quota", searches_left: left });
+      } else {
+        await res.body?.cancel();
+      }
+    } catch {
+      // preflight is best-effort
+    }
+
     // 1. Search. Stop paging a query when a page is short or empty.
-    let searches = 0, fetched = 0, skipped = 0, duplicates = 0, geocoded = 0, geocode_misses = 0, upserted = 0;
+    let searches = 0, fetched = 0, skipped = 0, duplicates = 0, geocoded = 0, geocode_misses = 0, upserted = 0, errors = 0;
     const rows = new Map<string, SerpRow>();
     const now = new Date();
-    for (const plan of QUERY_PLAN) {
+    search: for (const plan of QUERY_PLAN) {
       for (let page = 0; page < plan.pages; page++) {
         const params = new URLSearchParams({
           engine: "google_events", q: plan.q, hl: "en", gl: "us",
           location: "Charlotte, North Carolina, United States",
           htichips: plan.chip, start: String(page * PAGE_SIZE), api_key: apiKey,
         });
-        const events = await fetchPage(params);
+        let events: SerpEvent[];
+        try {
+          events = await fetchPage(params);
+        } catch (e) {
+          // Stop searching but keep (and process) what we already paid for.
+          errors++;
+          console.error("search failed:", scrub(e instanceof Error ? e.message : String(e)));
+          break search;
+        }
         searches++;
         fetched += events.length;
         for (const raw of events) {
@@ -124,7 +145,7 @@ Deno.serve(async (req) => {
     }
     let fresh = 0;
     for (const key of keys) {
-      if (coords.has(key) || fresh >= MAX_FRESH_GEOCODES) continue;
+      if (coords.has(key) || fresh >= MAX_FRESH_GEOCODES || Date.now() - t0 > GEOCODE_BUDGET_MS) continue;
       fresh++;
       let hit: { lat: number; lng: number } | null;
       try {
@@ -146,6 +167,7 @@ Deno.serve(async (req) => {
     }
 
     // 4. Locate, drop cross-source duplicates.
+    const dupIds: string[] = [];
     const ready: (Omit<SerpRow, "geocode_query" | "interest_ids"> & { location: string; interest_ids: number[] })[] = [];
     for (const r of rows.values()) {
       const c = coords.get(addressKey(r.geocode_query));
@@ -161,10 +183,18 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (dup) {
         duplicates++;
+        dupIds.push(r.external_id);
         continue;
       }
       const { geocode_query: _g, ...rest } = r;
       ready.push({ ...rest, location: `SRID=4326;POINT(${c.lng} ${c.lat})` });
+    }
+
+    // Hide copies we saved on an earlier run, before the canonical source had the event.
+    for (const ids of chunk(dupIds)) {
+      const { error } = await db.from("events").update({ status: "hidden" })
+        .eq("source", "serpapi").eq("status", "active").in("external_id", ids);
+      if (error) throw error;
     }
 
     // 5. Upsert, then replace interests.
@@ -192,7 +222,7 @@ Deno.serve(async (req) => {
       upserted = ready.length;
     }
 
-    return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses });
+    return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses, errors });
   } catch (e) {
     // Log message only: fetch errors can embed the URL (and api_key).
     console.error("ingest-serpapi failed:", scrub(e instanceof Error ? e.message : String(e)));
