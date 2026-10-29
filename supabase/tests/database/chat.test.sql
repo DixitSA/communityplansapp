@@ -136,6 +136,8 @@ select throws_ok($$ update public.event_messages set body = 'edited' where body 
   '42501', null, 'cannot edit body');
 select lives_ok($$ update public.event_messages set deleted_at = now() where body = 'alice one' $$,
   'author can soft-delete');
+select is((select deleted_at from public.event_messages where user_id = '00000000-0000-0000-0000-00000000000a' and deleted_at is not null), now(),
+  'deleted_at is stamped server-side');
 select throws_ok($$ update public.event_messages set deleted_at = null where user_id = '00000000-0000-0000-0000-00000000000a' and deleted_at is not null $$,
   '42501', null, 'cannot un-delete');
 select is((select body from public.event_messages where user_id = '00000000-0000-0000-0000-00000000000a'
@@ -150,8 +152,8 @@ select is((select last_body from public.get_my_chats() where event_id = '1111111
 
 -- 5. Closed window -----------------------------------------------------------
 reset role;
-select is(public.chat_open('11111111-1111-1111-1111-111111111111'), true, 'chat_open true 47 h after end');
-select is(public.chat_open('22222222-2222-2222-2222-222222222222'), false, 'chat_open false 49 h after end');
+select is(private.chat_open('11111111-1111-1111-1111-111111111111'), true, 'chat_open true 47 h after end');
+select is(private.chat_open('22222222-2222-2222-2222-222222222222'), false, 'chat_open false 49 h after end');
 select pg_temp.login('00000000-0000-0000-0000-00000000000a');
 select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
   values ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-00000000000a', 'late') $$,
@@ -203,10 +205,48 @@ select is((select count(*) from public.get_chat_messages('11111111-1111-1111-111
 select is((select count(*) from public.get_chat_messages('11111111-1111-1111-1111-111111111111', null, 0))::int, 1,
   'limit is clamped up to 1');
 select is((select count(*) from public.get_chat_messages('11111111-1111-1111-1111-111111111111',
-    timestamptz '2026-01-01 11:30Z'))::int, 2, 'p_before pages backwards (bob one + alice tombstone)');
+    (select id from public.event_messages where user_id = '00000000-0000-0000-0000-00000000000f')))::int, 2,
+  'p_before_id pages backwards (bob one + alice tombstone, before finn''s message)');
 select is((select body from public.get_chat_messages('11111111-1111-1111-1111-111111111111', null, 1)), repeat('x', 2000),
   'newest first');
 
+select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
+  values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000b', E'\n\n') $$,
+  '23514', null, 'newline-only body rejected');
+select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
+  values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000b', 'x' || repeat(' ', 10000000)) $$,
+  '23514', null, 'padded oversized body rejected (no btrim bypass)');
+
+-- 7b. Flood throttle (finn: 30 per minute per event)
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-00000000000f');
+select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
+  select '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'spam ' || g
+  from generate_series(1, 40) g $$, 'P0001', 'rate_limited', 'more than 30 messages a minute is rate limited');
+select lives_ok($$ insert into public.event_messages (event_id, user_id, body)
+  select '11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'ok ' || g
+  from generate_series(1, 30) g $$, '30 messages in a minute are fine');
+select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
+  values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-00000000000f', 'one too many') $$,
+  'P0001', 'rate_limited', 'the 31st message in a minute is blocked');
+
+-- 7c. Helpers are not callable from the API roles
+reset role;
+select pg_temp.login('00000000-0000-0000-0000-00000000000b');
+select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'authenticated cannot call public.is_going');
+select throws_ok($$ select public.are_friends('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'authenticated cannot call public.are_friends');
+select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'authenticated cannot call public.is_blocked_between');
+select throws_ok($$ select public.is_admin() $$, '42501', null, 'authenticated cannot call public.is_admin');
+select throws_ok($$ select public.chat_open('11111111-1111-1111-1111-111111111111') $$, '42501', null, 'authenticated cannot call public.chat_open');
+reset role;
+set local role anon;
+select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'anon cannot call public.is_going');
+select throws_ok($$ select public.are_friends('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'anon cannot call public.are_friends');
+select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'anon cannot call public.is_blocked_between');
+select throws_ok($$ select public.is_admin() $$, '42501', null, 'anon cannot call public.is_admin');
+select throws_ok($$ select private.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'anon cannot call private.is_going');
+
+reset role;
 -- 8. Anon denied ---------------------------------------------------------------
 reset role;
 set local role anon;
@@ -220,7 +260,7 @@ select throws_ok($$ select * from public.get_chat_messages('11111111-1111-1111-1
 select throws_ok($$ select * from public.get_my_chats() $$, '42501', null, 'anon cannot call get_my_chats');
 select throws_ok($$ select public.mark_chat_read('11111111-1111-1111-1111-111111111111') $$,
   '42501', null, 'anon cannot call mark_chat_read');
-select throws_ok($$ select public.chat_open('11111111-1111-1111-1111-111111111111') $$,
+select throws_ok($$ select private.chat_open('11111111-1111-1111-1111-111111111111') $$,
   '42501', null, 'anon cannot call chat_open');
 
 select * from finish();

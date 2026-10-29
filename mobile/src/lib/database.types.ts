@@ -391,7 +391,7 @@ isOneToOne: false
 { Args: { "p_birthdate": string,"p_display_name": string,"p_home_city_id": number,"p_interest_ids": (number)[],"p_username": string }; Returns: undefined
                            },
 "get_chat_messages":
-{ Args: { "p_before"?: string,"p_event_id": string,"p_limit"?: number }; Returns: {
+{ Args: { "p_before_id"?: number,"p_event_id": string,"p_limit"?: number }; Returns: {
               "avatar_path": string,"body": string,"created_at": string,"display_name": string,"id": number,"is_mine": boolean,"user_id": string
             }[]
                            },

@@ -47,9 +47,12 @@ Event group chat v1 lives in Supabase (`event_messages`, `event_chat_reads`), no
 - **Blocks:** messages between users with a block in either direction are hidden both ways, including in last-message previews and unread counts.
 - **Window:** `chat_open(event)` is true while the event is active and until 48 h after it ends (`ends_at`, else `starts_at` + 6 h). Posting is refused after that; reading stays allowed.
 - **Delete:** authors soft-delete by setting `deleted_at` (the only updatable column). There are no client deletes. A trigger erases `body` on delete (it becomes null everywhere, including realtime payloads) and `deleted_at` can't be cleared.
-- **Read:** `rpc('get_chat_messages', { p_event_id, p_before, p_limit })` (newest first, limit 1..100) and `rpc('get_my_chats')` for the chat list (last message, unread count, `is_open`).
-- **Write:** insert `{ event_id, user_id: me, body }` (1..2000 chars after trim) into `event_messages`; `rpc('mark_chat_read', { p_event_id })` stamps the read marker.
+- **Read:** `rpc('get_chat_messages', { p_event_id, p_before_id, p_limit })` (newest first by id; pass the oldest id you have as `p_before_id`; limit 1..100) and `rpc('get_my_chats')` for the chat list (last message, unread count, `is_open`).
+- **Write:** insert `{ event_id, user_id: me, body }` (max 2000 chars, must contain a non-whitespace character; at most 30 messages per user per event per minute, otherwise `rate_limited`) into `event_messages`; `rpc('mark_chat_read', { p_event_id })` stamps the read marker.
 - **Live:** subscribe to `postgres_changes` on `event_messages` filtered by `event_id`. Realtime applies the select policy, so only members receive rows. Deleted rows arrive as updates with a null body.
+
+## Policy helpers live in `private`
+`is_going`, `are_friends`, `is_blocked_between`, `is_admin` and `chat_open` are `security definer` helpers used by RLS policies. They live in the `private` schema (usage granted to `authenticated` and `service_role` only) so they are not exposed through the API; the old `public.*` copies are revoked from `anon`/`authenticated`, because callable helpers would let anyone probe who is Going, who is friends, or who is blocked. New policy helpers go in `private`.
 
 ## Server-side behavior
 - **Down if friends go:** an `after insert/update of status` trigger on `rsvps`. When a user becomes Going, every friend who is `down_if_friends` on that event and hasn't been alerted gets one `friend_going` notification, and `friend_alert_sent_at` is stamped. Switching back to "Down if" re-arms the alert.
