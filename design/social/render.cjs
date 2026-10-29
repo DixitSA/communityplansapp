@@ -8,8 +8,9 @@ try { pw = require('playwright'); } catch { pw = require(path.join(execSync('npm
 (async () => {
   const out = path.join(__dirname, 'out');
   fs.mkdirSync(out, { recursive: true });
-  const browser = await pw.chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1200, height: 2100 }, deviceScaleFactor: 1 });
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy; // set only in cloud sandboxes
+  const browser = await pw.chromium.launch(proxy ? { proxy: { server: proxy } } : {});
+  const page = await browser.newPage({ viewport: { width: 1200, height: 2100 }, deviceScaleFactor: 1, ignoreHTTPSErrors: Boolean(proxy) });
   await page.goto('file://' + path.join(__dirname, 'kit.html'));
   await page.evaluate(() => document.fonts.ready);
   for (const el of await page.$$('.board')) {

@@ -9,8 +9,9 @@ const FPS = 30;
 (async () => {
   const out = path.join(__dirname, 'out');
   fs.mkdirSync(out, { recursive: true });
-  const browser = await pw.chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
+  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy; // set only in cloud sandboxes
+  const browser = await pw.chromium.launch(proxy ? { proxy: { server: proxy } } : {});
+  const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1, ignoreHTTPSErrors: Boolean(proxy) });
   await page.goto('file://' + path.join(__dirname, 'reel.html'));
   await page.waitForFunction(() => window.READY === true);
   const duration = await page.evaluate(() => window.REEL_DURATION);

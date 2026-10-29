@@ -27,6 +27,9 @@ node design/social/render.cjs        # posts + story
 node design/social/render-reel.cjs   # reel.mp4 + reel-cover.png (needs ffmpeg: winget install ffmpeg)
 ```
 
+**Photos:** give a pick `image: 'img/name.jpg'` (save the file in `design/social/img/`, which isn't committed) or an image URL, plus `credit: '…'`. The reel shows it full-width at the top of that event's card with a slow zoom, and the post shows it as a thumbnail. Picks without a photo keep the colour design.
+Only use photos you're allowed to repost: your own, a venue's or promoter's flyer with their OK (tag them and credit them), or free-licence stock. Ticketmaster's images are licensed for showing events in the app, not for social posts, so swap those for the venue's own flyer before posting publicly.
+
 Each event can opt out of a format with `post: false`, `story: false` or `reel: false` (the post fits 5, the story 7, the reel about 6). Always
 check each event's date, time and venue on its own page before posting; the feed is scraped and can be wrong.
 

@@ -24,6 +24,14 @@ body { font-family:'Inter Display','Inter',-apple-system,'SF Pro Display',system
 .ev .venue { position:absolute; left:80px; right:140px; font-size:58px; font-weight:600; color:var(--ink2); display:flex; gap:18px; align-items:center; }
 .ev .bigday { position:absolute; left:50px; top:1010px; font-size:600px; font-weight:800; letter-spacing:-0.07em; line-height:1; opacity:.13; }
 .ev .tag { position:absolute; left:80px; font-size:40px; font-weight:700; padding:16px 32px; border-radius:999px; background:rgba(255,255,255,.7); }
+/* Photo cards: the event photo fills the top, fading into the category colour. */
+.ev.photo .ph { position:absolute; left:0; top:0; width:1080px; height:1040px; overflow:hidden; }
+.ev.photo .ph img { width:100%; height:100%; object-fit:cover; transform-origin:50% 40%; }
+.ev.photo .ph .fade { position:absolute; inset:0; }
+.ev.photo .top, .ev.photo .count { color:#fff !important; opacity:1; text-shadow:0 2px 18px rgba(0,0,0,.35); }
+.ev.photo .credit { position:absolute; top:236px; left:82px; font-size:26px; font-weight:600; color:#fff; opacity:.8; text-shadow:0 1px 10px rgba(0,0,0,.5); }
+.ev.photo .when { top:900px; }
+.ev.photo h2 { top:1050px; font-size:116px; }
 #outro { background:var(--accent); color:var(--canvas); padding:0 80px; }
 #outro h2 { position:absolute; top:360px; left:80px; font-size:200px; font-weight:800; letter-spacing:-0.055em; line-height:0.95; }
 #outro h2 span { display:inline-block; }
@@ -55,11 +63,13 @@ stage.append(intro);
 
 const evScenes = events.map((e, i) => {
   const c = CAT[e.cat];
-  const el = Object.assign(document.createElement('div'), { className: 'scene ev' });
+  const el = Object.assign(document.createElement('div'), { className: e.image ? 'scene ev photo' : 'scene ev' });
   el.style.background = c.soft;
-  el.innerHTML = `<div class="top wm" style="color:${c.solid}">yard.</div><div class="count">${i + 1}/${events.length}</div>
+  const photo = e.image ? `<div class="ph"><img src="${e.image}" alt=""><div class="fade" style="background:linear-gradient(to bottom, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 26%, rgba(0,0,0,0) 55%, ${c.soft} 97%)"></div></div>` +
+    (e.credit ? `<div class="credit">Photo: ${e.credit}</div>` : '') : '';
+  el.innerHTML = photo + `<div class="top wm" style="color:${c.solid}">yard.</div><div class="count">${i + 1}/${events.length}</div>
     <div class="when" style="background:${c.solid}">${e.day} · ${e.time}</div>
-    <h2>${e.title}</h2><div class="venue">${pin}<span>${e.venue}</span></div><div class="tag" style="color:${c.solid}">${c.label}</div><div class="bigday" style="color:${c.solid}">${e.day}</div>`;
+    <h2>${e.title}</h2><div class="venue">${pin}<span>${e.venue}</span></div><div class="tag" style="color:${c.solid}">${c.label}</div>${e.image ? '' : `<div class="bigday" style="color:${c.solid}">${e.day}</div>`}`;
   stage.append(el);
   return el;
 });
@@ -74,8 +84,10 @@ stage.append(outro);
 window.layout = () => evScenes.forEach((el) => {
   const h2 = el.querySelector('h2'), v = el.querySelector('.venue'), tag = el.querySelector('.tag');
   const bottom = h2.offsetTop + h2.offsetHeight;
-  v.style.top = `${bottom + 50}px`; tag.style.top = `${bottom + 160}px`;
-  el.querySelector('.bigday').style.top = `${Math.max(1010, bottom + 300)}px`; // decorative; may run under Instagram's UI
+  const photo = el.classList.contains('photo');
+  v.style.top = `${bottom + (photo ? 36 : 50)}px`; tag.style.top = `${bottom + (photo ? 136 : 160)}px`;
+  const bd = el.querySelector('.bigday');
+  if (bd) bd.style.top = `${Math.max(1010, bottom + 300)}px`; // decorative; may run under Instagram's UI
 });
 
 const rise = (node, p, dist = 60) => { node.style.opacity = clamp(p * 1.6); node.style.transform = `translateY(${(1 - easeOut(p)) * dist}px)`; };
@@ -100,7 +112,9 @@ window.renderAt = (t) => {
     rise(el.querySelector('.venue'), (t - s - 0.45) / 0.4, 40);
     rise(el.querySelector('.tag'), (t - s - 0.55) / 0.4, 30);
     const bd = el.querySelector('.bigday'); // drifts left slowly while the card is up
-    bd.style.transform = `translateX(${120 - easeOut((t - s) / PER) * 120}px)`;
+    if (bd) bd.style.transform = `translateX(${120 - easeOut((t - s) / PER) * 120}px)`;
+    const img = el.querySelector('.ph img'); // slow zoom out on the photo
+    if (img) img.style.transform = `scale(${1.14 - 0.14 * clamp((t - s) / (PER + 0.4))})`;
   });
   // Outro rises from the bottom
   const so = INTRO + events.length * PER, po = (t - so) / 0.5;
@@ -114,6 +128,6 @@ window.renderAt = (t) => {
   rise(outro.querySelector('.line2'), (t - so - 1.35) / 0.45, 30);
   rise(outro.querySelector('.line3'), (t - so - 1.6) / 0.45, 30);
 };
-document.fonts.ready.then(() => { window.layout(); window.renderAt(0); window.READY = true; });
+Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => { i.closest('.ph').remove(); }))]).then(() => { window.layout(); window.renderAt(0); window.READY = true; });
 </script>
 </body></html>
