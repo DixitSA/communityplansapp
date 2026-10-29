@@ -121,7 +121,8 @@ export function useFeedEvents(): {
 
   return {
     ...derived,
-    isLoading: feed.data === undefined && !feed.isError,
+    // A failed interests lookup keeps the feed query disabled, so it must end loading too (else: endless spinner).
+    isLoading: feed.data === undefined && !feed.isError && !interestList.isError,
     isError: (feed.isError && feed.data === undefined) || interestList.isError,
     refetch: () => {
       void feed.refetch();
