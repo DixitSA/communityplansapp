@@ -3,6 +3,7 @@ import { applyFilters, type DistanceMi } from '@/features/feed/filters';
 import { getFixtureEvent, getFixtureEvents, getFixtureEventsInRange } from '@/features/feed/fixtures';
 
 import { createDemoChat } from './demoChat';
+import { createDemoFriends } from './demoFriends';
 import { ApiError } from './errors';
 import { toISODate } from '../dates';
 import { METERS_PER_MILE } from './feedMapping';
@@ -110,9 +111,16 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
   };
 
   const chat = createDemoChat({ wait, now });
+  const { hide, ...friends } = createDemoFriends({ wait, now });
 
   return {
     ...chat,
+    ...friends,
+    async blockUser(userId) {
+      await chat.blockUser(userId);
+      // A blocked person vanishes from search, friends and profiles, like on the server.
+      hide(userId);
+    },
     async sendEmailCode(email) {
       await wait();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) throw new ApiError('validation_failed');

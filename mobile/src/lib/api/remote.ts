@@ -4,7 +4,9 @@ import type { Database } from '../database.types';
 import { createAppleNonce } from '../nonce';
 import { mapChatRow, mapMessageRow, mapTableRow, normalizeMessageBody } from './chatMapping';
 import { ApiError, errorCode } from './errors';
+import { mapFriendRow, mapProfileRow, mapRequestRow, mapSearchRow, type AvatarUrl } from './friendsMapping';
 import { mapFeedRow, parseFriends, primaryInterest, priceLabel } from './feedMapping';
+import { SEARCH_LIMIT } from './friendTypes';
 import { CHAT_PAGE_SIZE, type Api, type AuthSession, type ChatMessage, type EventPage, type Interest, type MyProfile, type RsvpStatus } from './types';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -36,6 +38,10 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
     });
     return interestsPromise;
   };
+
+  // Avatars live in the public `avatars` bucket (docs/DATA_MODEL.md, Storage). Building the URL needs no request.
+  const avatarUrl: AvatarUrl = (path) =>
+    path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : null;
 
   // Chat helpers. Names and avatars of people who write while the chat is open are looked up once each.
   const authors = new Map<string, { displayName: string; avatarPath: string | null }>();
@@ -357,6 +363,50 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       const { error } = await supabase.from('blocks').insert({ blocker_id: uid, blocked_id: userId });
       // Already blocked: same result the person wanted.
       if (error && error.code !== '23505') fail(error);
+    },
+
+    async searchProfiles(query, limit = SEARCH_LIMIT) {
+      const { data, error } = await supabase.rpc('search_profiles', { p_query: query, p_limit: limit });
+      if (error) fail(error);
+      return (data ?? []).map((row) => mapSearchRow(row, avatarUrl));
+    },
+
+    async sendFriendRequest(userId) {
+      const { data, error } = await supabase.rpc('send_friend_request', { p_user: userId });
+      if (error) fail(error);
+      return data === 'friends' ? 'friends' : 'outgoing';
+    },
+
+    async respondFriendRequest(userId, accept) {
+      const { data, error } = await supabase.rpc('respond_friend_request', { p_user: userId, p_accept: accept });
+      if (error) fail(error);
+      return data === 'friends' ? 'friends' : 'none';
+    },
+
+    async removeFriend(userId) {
+      const { error } = await supabase.rpc('remove_friend', { p_user: userId });
+      if (error) fail(error);
+    },
+
+    async listFriends() {
+      const { data, error } = await supabase.rpc('list_friends');
+      if (error) fail(error);
+      return (data ?? []).map((row) => mapFriendRow(row, avatarUrl));
+    },
+
+    async listFriendRequests() {
+      const { data, error } = await supabase.rpc('list_friend_requests');
+      if (error) fail(error);
+      return (data ?? []).map((row) => mapRequestRow(row, avatarUrl));
+    },
+
+    async getUserProfile(userId) {
+      // Not a UUID, so it can't be a person here (and Postgres would reject it with a type error).
+      if (!UUID.test(userId)) return null;
+      const { data, error } = await supabase.rpc('get_profile', { p_user: userId });
+      if (error) fail(error);
+      const row = data?.[0];
+      return row ? mapProfileRow(row, avatarUrl) : null;
     },
   };
 }

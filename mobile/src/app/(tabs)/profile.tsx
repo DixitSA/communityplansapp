@@ -1,4 +1,4 @@
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { Link, router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
@@ -19,6 +19,8 @@ import { getActivityItems } from '@/features/activity/fixtures';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { usePlansStore } from '@/features/event/plansStore';
 import { getFixtureEvents } from '@/features/feed/fixtures';
+import { friendsHref } from '@/features/friends/routes';
+import { useFriendRequests, useFriends } from '@/features/friends/useFriends';
 import { PlanTicket } from '@/features/profile/PlanTicket';
 import { deriveProfileStats, upcomingPlans } from '@/features/profile/stats';
 import { useMyProfile } from '@/features/profile/useMyProfile';
@@ -27,8 +29,10 @@ import { isBackendConfigured } from '@/lib/env';
 /** The top row of Profile: opens Activity (friend requests, "who did you meet"), with a dot while there is something new. */
 function ActivityRow() {
   const { colors, space, radius } = useTheme();
-  // Activity is sample data for now, so "unread" means there are items.
-  const unread = getActivityItems().length > 0;
+  // With a backend, Activity shows real friend requests; in demo mode it is sample data. Either way "unread" means there are items.
+  const requests = useFriendRequests();
+  const incoming = (requests.data ?? []).filter((r) => r.direction === 'incoming').length;
+  const unread = isBackendConfigured ? incoming > 0 : incoming > 0 || getActivityItems().length > 0;
   return (
     <Pressable
       accessibilityRole="button"
@@ -56,21 +60,47 @@ function ActivityRow() {
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  const { space } = useTheme();
-  return (
+function Stat({
+  value,
+  label,
+  href,
+  badge = false,
+  a11yExtra,
+}: {
+  value: number;
+  label: string;
+  /** Makes the stat a link (the Friends stat opens the friends list). */
+  href?: Href;
+  /** A dot beside the label: something is waiting inside. */
+  badge?: boolean;
+  a11yExtra?: string;
+}) {
+  const { colors, space } = useTheme();
+  const body = (
     <View
       accessible
-      accessibilityLabel={`${value} ${label}`}
+      accessibilityLabel={`${value} ${label}${a11yExtra ? `, ${a11yExtra}` : ''}`}
+      accessibilityRole={href ? 'link' : undefined}
+      accessibilityHint={href ? 'Opens your friends' : undefined}
       style={{ flex: 1, alignItems: 'center', gap: space.xs }}
     >
       <AppText variant="title2" rounded maxFontSizeMultiplier={1.4}>
         {value}
       </AppText>
-      <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4}>
-        {label}
-      </AppText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+        <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4}>
+          {label}
+        </AppText>
+        {badge ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+        {href ? <Icon name="chevron.right" size={10} color="inkSecondary" weight="semibold" /> : null}
+      </View>
     </View>
+  );
+  if (!href) return body;
+  return (
+    <Link href={href} asChild>
+      <Pressable style={{ flex: 1 }}>{body}</Pressable>
+    </Link>
   );
 }
 
@@ -81,7 +111,12 @@ export default function ProfileScreen() {
   const profile = useMyProfile();
   const statuses = usePlansStore((s) => s.statuses);
   const plans = useMemo(() => upcomingPlans(statuses, getFixtureEvents(new Date())), [statuses]);
-  const stats = useMemo(() => deriveProfileStats(statuses, plans), [statuses, plans]);
+  const friends = useFriends();
+  const incomingRequests = (useFriendRequests().data ?? []).filter((r) => r.direction === 'incoming').length;
+  const stats = useMemo(
+    () => deriveProfileStats(statuses, plans, friends.data?.length ?? 0),
+    [statuses, plans, friends.data],
+  );
   const { width: windowWidth } = useWindowDimensions();
   // Leave a sliver of the next ticket showing so the row reads as scrollable.
   const ticketWidth = Math.min(windowWidth - space.lg * 2 - space.xxl, 320);
@@ -174,7 +209,13 @@ export default function ProfileScreen() {
           }}
         >
           <Stat value={stats.upcoming} label="Upcoming" />
-          <Stat value={stats.friends} label="Friends" />
+          <Stat
+            value={stats.friends}
+            label="Friends"
+            href={friendsHref}
+            badge={incomingRequests > 0}
+            a11yExtra={incomingRequests > 0 ? `${incomingRequests} new ${incomingRequests === 1 ? 'request' : 'requests'}` : undefined}
+          />
           <Stat value={stats.saved} label="Saved" />
         </View>
 

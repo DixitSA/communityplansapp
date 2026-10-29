@@ -271,21 +271,25 @@ export default function FeedScreen() {
     <EmptyState symbol="sparkles" title="Nothing planned yet" message="No events in the next two weeks. Check back soon.">
       <View />
     </EmptyState>
+  ) : friendsOnly ? (
+    <EmptyState
+      symbol="person.2"
+      title="None of your friends have plans yet"
+      message="When friends tap Going, their plans show up here. Add a few friends to get started."
+    >
+      <View style={{ alignSelf: 'stretch', gap: space.sm, paddingTop: space.md, paddingHorizontal: space.lg }}>
+        <PrimaryButton label="Find friends" onPress={() => router.navigate('/search')} />
+        <Button label="Show nearby" onPress={() => setScope('nearby')} />
+      </View>
+    </EmptyState>
   ) : (
     <EmptyState
       symbol="line.3.horizontal.decrease.circle"
-      title={friendsOnly ? 'No friends going yet' : 'No events match'}
-      message={
-        friendsOnly
-          ? 'None of your friends are going to anything in the next two weeks. See everything nearby instead.'
-          : 'Your filters leave nothing in the next two weeks. Loosen them to see more.'
-      }
+      title="No events match"
+      message="Your filters leave nothing in the next two weeks. Loosen them to see more."
     >
       <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
-        <PrimaryButton
-          label={friendsOnly ? 'Show nearby' : 'Clear filters'}
-          onPress={friendsOnly ? () => setScope('nearby') : clearFilters}
-        />
+        <PrimaryButton label="Clear filters" onPress={clearFilters} />
       </View>
     </EmptyState>
   );

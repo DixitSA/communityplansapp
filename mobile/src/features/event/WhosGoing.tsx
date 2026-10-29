@@ -1,8 +1,10 @@
-import { View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppText, Avatar, Icon, useTheme } from '@/design';
 
+import { userHref } from '../friends/routes';
 import { othersLabel } from './plansLogic';
 
 type Person = { id: string; name: string };
@@ -29,12 +31,18 @@ function firstName(name: string): string {
 function PersonTile({ person }: { person: Person }) {
   const { space } = useTheme();
   return (
-    <View style={{ width: FACE + space.md, alignItems: 'center', gap: space.xs }}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${person.name}`}
+      accessibilityHint="Opens profile"
+      onPress={() => router.push(userHref(person.id))}
+      style={({ pressed }) => ({ width: FACE + space.md, alignItems: 'center', gap: space.xs, opacity: pressed ? 0.7 : 1 })}
+    >
       <Avatar name={person.name} size={FACE} />
       <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={1.4}>
         {firstName(person.name)}
       </AppText>
-    </View>
+    </Pressable>
   );
 }
 

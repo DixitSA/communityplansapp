@@ -1,9 +1,11 @@
 import {
   ApiError,
   GENERIC_ERROR,
+  FRIEND_ERROR_CODES,
   ONBOARDING_ERROR_CODES,
   errorCode,
   mapAuthError,
+  mapFriendError,
   mapOnboardingError,
   onboardingStepForError,
 } from '../errors';
@@ -82,5 +84,28 @@ describe('errorCode', () => {
     }
     expect(onboardingStepForError(errorCode(rpc('username_taken')))).toBe('profile');
     expect(onboardingStepForError(errorCode(rpc('city_invalid')))).toBe('location');
+  });
+});
+
+describe('mapFriendError', () => {
+  it('has friendly copy for every friends error code', () => {
+    for (const code of FRIEND_ERROR_CODES) {
+      const copy = mapFriendError(code);
+      expect(copy).not.toBe(GENERIC_ERROR);
+      expect(copy).not.toContain('_');
+    }
+  });
+
+  it('reads the code off a PostgREST P0001 error', () => {
+    expect(mapFriendError(errorCode({ code: 'P0001', message: 'rate_limited' }))).toMatch(/too fast/);
+  });
+
+  it('never says "blocked" for user_not_found', () => {
+    expect(mapFriendError('user_not_found')).not.toMatch(/block/i);
+  });
+
+  it('falls back to a generic message', () => {
+    expect(mapFriendError('boom')).toBe(GENERIC_ERROR);
+    expect(mapFriendError(undefined)).toBe(GENERIC_ERROR);
   });
 });

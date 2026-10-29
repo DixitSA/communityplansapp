@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { useTheme } from '../theme';
@@ -27,6 +28,8 @@ export function initialsOf(name: string): string {
 
 export type AvatarProps = {
   name: string;
+  /** A photo. Initials show underneath while it loads and when there is none. */
+  uri?: string | null;
   size?: number;
   /** Draws a canvas-colored ring so overlapping avatars stay separated. */
   ring?: boolean;
@@ -34,7 +37,7 @@ export type AvatarProps = {
   ringColor?: 'surface' | 'canvas';
 };
 
-export function Avatar({ name, size = 28, ring = false, ringColor = 'surface' }: AvatarProps) {
+export function Avatar({ name, uri, size = 28, ring = false, ringColor = 'surface' }: AvatarProps) {
   const { colors } = useTheme();
   const tint = tintFor(name);
   return (
@@ -51,6 +54,7 @@ export function Avatar({ name, size = 28, ring = false, ringColor = 'surface' }:
         justifyContent: 'center',
         borderWidth: ring ? 2 : 0,
         borderColor: colors[ringColor],
+        overflow: 'hidden',
       }}
     >
       <AppText
@@ -61,6 +65,15 @@ export function Avatar({ name, size = 28, ring = false, ringColor = 'surface' }:
       >
         {initialsOf(name)}
       </AppText>
+      {uri ? (
+        <Image
+          source={{ uri }}
+          contentFit="cover"
+          transition={150}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          accessibilityIgnoresInvertColors
+        />
+      ) : null}
     </View>
   );
 }

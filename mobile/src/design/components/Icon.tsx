@@ -74,6 +74,9 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'arrow.up': 'arrow-up',
   'info.circle': 'information-circle-outline',
   'bubble.left.fill': 'chatbubble',
+  'person.crop.circle.badge.questionmark': 'help-circle-outline',
+  'person.crop.circle.badge.xmark': 'person-remove-outline',
+  'wifi.slash': 'cloud-offline-outline',
 };
 
 /**
