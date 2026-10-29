@@ -1,5 +1,5 @@
 import { Stack, router } from 'expo-router';
-import { RefreshControl, SectionList, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, SectionList, View } from 'react-native';
 
 import {
   AppText,
@@ -7,8 +7,9 @@ import {
   EmptyState,
   FriendButton,
   Icon,
+  PERSON_ROW_AVATAR,
   PersonRow,
-  Skeleton,
+  PersonRowSkeleton,
   useLargeTitleHeader,
   useTheme,
 } from '@/design';
@@ -30,7 +31,22 @@ const minutesSince = (d: Date, now: Date) => Math.max(0, (now.getTime() - d.getT
 
 export default function FriendsScreen() {
   const { colors, space } = useTheme();
-  const header = useLargeTitleHeader('Friends');
+  const baseHeader = useLargeTitleHeader('Friends');
+  const header = {
+    ...baseHeader,
+    headerRight: () => (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Find friends"
+        hitSlop={space.md}
+        // The web header has no inset on the right, so the glyph would clip.
+        style={Platform.OS === 'web' ? { paddingRight: space.lg } : undefined}
+        onPress={() => router.navigate('/search')}
+      >
+        <Icon name="person.badge.plus" size={22} color="accent" />
+      </Pressable>
+    ),
+  };
   const friends = useFriends();
   const requests = useFriendRequests();
   const { onAction, busyId } = useFriendButton();
@@ -65,16 +81,8 @@ export default function FriendsScreen() {
   let state: React.ReactElement | undefined;
   if (loading) {
     state = (
-      <View accessibilityLabel="Loading friends" style={{ gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md }}>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 64 }}>
-            <Skeleton width={48} height={48} radius={24} />
-            <View style={{ flex: 1, gap: space.sm }}>
-              <Skeleton width="45%" height={16} />
-              <Skeleton width="30%" height={12} />
-            </View>
-          </View>
-        ))}
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>
+        <PersonRowSkeleton count={5} />
       </View>
     );
   } else if (failed) {
@@ -174,7 +182,7 @@ export default function FriendsScreen() {
                 subtitle={`@${r.username} · ${formatAgo(minutesSince(r.createdAt, now))} ago`}
                 onPress={() => router.push(userHref(r.id))}
               />
-              <View style={{ paddingLeft: 48 + space.md }}>
+              <View style={{ paddingLeft: PERSON_ROW_AVATAR + space.md }}>
                 <FriendButton
                   size="compact"
                   state="incoming"

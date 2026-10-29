@@ -10,8 +10,10 @@ import {
   EmptyState,
   GlassButton,
   Icon,
+  NavRow,
   Screen,
   Skeleton,
+  UnreadDot,
   asSymbol,
   useTheme,
 } from '@/design';
@@ -28,35 +30,18 @@ import { isBackendConfigured } from '@/lib/env';
 
 /** The top row of Profile: opens Activity (friend requests, "who did you meet"), with a dot while there is something new. */
 function ActivityRow() {
-  const { colors, space, radius } = useTheme();
   // With a backend, Activity shows real friend requests; in demo mode it is sample data. Either way "unread" means there are items.
   const requests = useFriendRequests();
   const incoming = (requests.data ?? []).filter((r) => r.direction === 'incoming').length;
   const unread = isBackendConfigured ? incoming > 0 : incoming > 0 || getActivityItems().length > 0;
   return (
-    <Pressable
-      accessibilityRole="button"
+    <NavRow
+      symbol="bell"
+      label="Activity"
+      unread={unread}
       accessibilityLabel={unread ? 'Activity, new updates' : 'Activity'}
       onPress={() => router.push('/activity')}
-      style={({ pressed }) => ({
-        minHeight: 52,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: space.md,
-        paddingHorizontal: space.lg,
-        borderRadius: radius.card,
-        borderCurve: 'continuous',
-        backgroundColor: colors.surface,
-        opacity: pressed ? 0.85 : 1,
-      })}
-    >
-      <Icon name="bell" size={20} />
-      <AppText variant="body" style={{ flex: 1 }}>
-        Activity
-      </AppText>
-      {unread ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} /> : null}
-      <Icon name="chevron.right" size={14} color="inkSecondary" weight="semibold" />
-    </Pressable>
+    />
   );
 }
 
@@ -75,7 +60,7 @@ function Stat({
   badge?: boolean;
   a11yExtra?: string;
 }) {
-  const { colors, space } = useTheme();
+  const { space } = useTheme();
   const body = (
     <View
       accessible
@@ -91,7 +76,7 @@ function Stat({
         <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4}>
           {label}
         </AppText>
-        {badge ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent }} /> : null}
+        {badge ? <UnreadDot size={space.sm} /> : null}
         {href ? <Icon name="chevron.right" size={10} color="inkSecondary" weight="semibold" /> : null}
       </View>
     </View>

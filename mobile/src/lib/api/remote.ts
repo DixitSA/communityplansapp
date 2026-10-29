@@ -408,5 +408,29 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       const row = data?.[0];
       return row ? mapProfileRow(row, avatarUrl) : null;
     },
+
+    async submitEvent(input) {
+      const { data, error } = await supabase.rpc('submit_event', {
+        p_city_id: input.cityId,
+        p_title: input.title,
+        p_link: input.link,
+        p_starts_at: input.startsAt.toISOString(),
+        p_venue: input.venue,
+        p_details: input.details,
+      });
+      if (error) fail(error);
+      return data as string;
+    },
+
+    async getMySubmissions() {
+      // RLS limits this to the viewer's own rows.
+      const { data, error } = await supabase
+        .from('event_submissions')
+        .select('id, title, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) fail(error);
+      return (data ?? []).map((r) => ({ id: r.id, title: r.title, status: r.status, createdAt: new Date(r.created_at) }));
+    },
   };
 }

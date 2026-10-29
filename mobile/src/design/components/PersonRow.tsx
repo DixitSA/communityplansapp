@@ -5,6 +5,10 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Avatar } from './Avatar';
 
+/** Face size in a person row; also the indent for things that hang under the name. */
+export const PERSON_ROW_AVATAR = 48;
+export const PERSON_ROW_MIN_HEIGHT = 64;
+
 export type PersonRowProps = {
   name: string;
   username: string;
@@ -22,7 +26,7 @@ export function PersonRow({ name, username, avatarUri, onPress, subtitle, traili
   const { space } = useTheme();
   const info = (
     <>
-      <Avatar name={name} uri={avatarUri} size={48} />
+      <Avatar name={name} uri={avatarUri} size={PERSON_ROW_AVATAR} />
       <View style={{ flex: 1, gap: 1 }}>
         <AppText variant="headline" numberOfLines={1}>
           {name}
@@ -34,7 +38,7 @@ export function PersonRow({ name, username, avatarUri, onPress, subtitle, traili
     </>
   );
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 64, paddingVertical: space.sm }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: PERSON_ROW_MIN_HEIGHT, paddingVertical: space.sm }}>
       {onPress ? (
         <Pressable
           accessibilityRole="button"

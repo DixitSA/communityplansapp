@@ -11,7 +11,10 @@ export {
   type FriendButtonSpec,
   type FriendButtonState,
 } from './components/FriendButton';
-export { PersonRow, type PersonRowProps } from './components/PersonRow';
+export { PersonRow, PERSON_ROW_AVATAR, type PersonRowProps } from './components/PersonRow';
+export { PersonRowSkeleton } from './components/PersonRowSkeleton';
+export { NavRow, type NavRowProps } from './components/NavRow';
+export { UnreadDot } from './components/UnreadDot';
 export { SearchField, type SearchFieldProps } from './components/SearchField';
 export { Button, type ButtonProps } from './components/Button';
 export { Chip, type ChipProps, type ChipTone } from './components/Chip';

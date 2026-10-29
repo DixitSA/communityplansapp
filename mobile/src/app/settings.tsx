@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, View } from 'react-native';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Icon, useTheme } from '@/design';
+import { MySuggestions } from '@/features/submit/MySuggestions';
+import { SuggestRow } from '@/features/submit/SuggestRow';
 import { api } from '@/lib/api';
 import { isBackendConfigured } from '@/lib/env';
 import { warning } from '@/lib/haptics';
@@ -48,10 +50,13 @@ export default function SettingsSheet() {
         </Pressable>
       </View>
 
-      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, gap: space.xl }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl, gap: space.xl }}>
         <AppText variant="subheadline" color="inkSecondary">
           Privacy, notifications and blocked users are coming soon.
         </AppText>
+
+        <SuggestRow surface />
+        <MySuggestions />
 
         {isBackendConfigured ? (
           <Pressable
@@ -85,7 +90,7 @@ export default function SettingsSheet() {
             </AppText>
           </View>
         ) : null}
-      </View>
+      </ScrollView>
     </View>
   );
 }

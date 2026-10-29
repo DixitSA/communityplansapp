@@ -19,7 +19,9 @@ import {
   Icon,
   InterestTile,
   MeshArt,
+  NavRow,
   PersonRow,
+  PersonRowSkeleton,
   PrimaryButton,
   RollingNumber,
   Screen,
@@ -261,6 +263,15 @@ export default function Gallery() {
         <View style={{ paddingLeft: 48 + space.md }}>
           <FriendButton size="compact" state="incoming" showDecline name="Noah Kim" onAction={() => undefined} />
         </View>
+      </Section>
+
+      <Section title="PersonRowSkeleton">
+        <PersonRowSkeleton count={2} />
+      </Section>
+
+      <Section title="NavRow (with and without the unread dot)">
+        <NavRow symbol="bell" label="Activity" unread onPress={() => undefined} />
+        <NavRow symbol="person.2" label="Friends and requests" onPress={() => undefined} />
       </Section>
 
       <Section title="MeshArt">

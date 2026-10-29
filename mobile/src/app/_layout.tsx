@@ -77,6 +77,7 @@ function GatedStack() {
         <Stack.Screen name="activity" />
         <Stack.Screen name="friends" />
         <Stack.Screen name="user/[id]" />
+        <Stack.Screen name="suggest" options={sheet([0.9, 1])} />
         <Stack.Screen name="settings" options={sheet([0.5, 1])} />
         <Stack.Screen name="(dev)/gallery" />
       </Stack.Protected>

@@ -66,13 +66,15 @@ export function formatTime(d: Date, short = false): string {
 }
 
 const MAX_RANGE_MS = 12 * 3_600_000;
+/** From this long on, "Fri" could mean two different days, so ranges show dates. */
+const MIN_DATED_RANGE_MS = 6 * 24 * 3_600_000;
 
 function meridiem(d: Date): string {
   return d.getHours() < 12 ? 'AM' : 'PM';
 }
 
 /**
- * The time line for an event, in local (city) time.
+ * The time line for an event, in device-local time (v1 assumes the phone is in the city's zone).
  * - Same calendar day, or ending within 12 hours (even past midnight): "7:00 – 10:00 PM", "10:00 PM – 2:00 AM".
  *   The first AM/PM is dropped when both match.
  * - Anything longer on another date, no end, or an end that isn't after the start: just the start, "7:00 PM". With `long`
@@ -85,7 +87,7 @@ export function formatEventTime(start: Date, end?: Date | null, long = false): s
   if (!(span > 0)) return startText;
   if (span > MAX_RANGE_MS && !isSameDay(start, end)) {
     if (!long) return startText;
-    const day = (d: Date) => WEEKDAYS_LONG[d.getDay()].slice(0, 3);
+    const day = (d: Date) => (span >= MIN_DATED_RANGE_MS ? formatShortDate(d) : WEEKDAYS_LONG[d.getDay()].slice(0, 3));
     return `${day(start)} ${startText} – ${day(end)} ${formatTime(end)}`;
   }
   const first = meridiem(start) === meridiem(end) ? formatTime(start).replace(/ [AP]M$/, '') : startText;

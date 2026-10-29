@@ -12,8 +12,8 @@ import { useFriendRequests } from '@/features/friends/useFriends';
 import { isBackendConfigured } from '@/lib/env';
 import { selection } from '@/lib/haptics';
 
-/** A person from the sample activity, as the friends mutations want them (no username or photo there). */
-const summaryOf = (p: Person) => ({ id: p.id, username: '', displayName: p.name, avatarUrl: null });
+/** A person as the friends mutations want them. Real requests bring their username and photo; sample people don't have any. */
+const summaryOf = (p: Person) => ({ id: p.id, username: p.username ?? '', displayName: p.name, avatarUrl: p.avatarUrl ?? null });
 
 function Row({
   person,
@@ -43,7 +43,7 @@ function Row({
         hitSlop={space.xs}
         onPress={() => router.push(userHref(person.id))}
       >
-        <Avatar name={person.name} size={44} />
+        <Avatar name={person.name} uri={person.avatarUrl} size={44} />
       </Pressable>
       {/* A separate target from the avatar: nesting buttons breaks on web and confuses VoiceOver. */}
       {onPress ? (
@@ -144,7 +144,7 @@ export default function ActivityScreen() {
             kind: 'friend_request',
             id: `req-${r.id}`,
             minutesAgo: Math.max(0, (now.getTime() - r.createdAt.getTime()) / 60_000),
-            person: { id: r.id, name: r.displayName },
+            person: { id: r.id, name: r.displayName, username: r.username, avatarUrl: r.avatarUrl },
           }),
         ),
     [requests.data, now],

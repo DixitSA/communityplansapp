@@ -120,6 +120,23 @@ export const CHAT_PAGE_SIZE = 50;
 /** The server refuses longer messages (and the composer stops typing at this length). */
 export const CHAT_MAX_LENGTH = 2000;
 
+/** What the "Suggest an event" form sends. Empty optional fields are fine; the server trims and nulls them. */
+export type SubmitEventInput = {
+  cityId: number;
+  title: string;
+  /** Already normalised to https:// (see `normalizeLink`), or empty. */
+  link: string;
+  startsAt: Date;
+  venue: string;
+  details: string;
+};
+
+/** Mirrors the `submission_status` enum. */
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
+
+/** One of the viewer's own suggestions. */
+export type MySubmission = { id: string; title: string; status: SubmissionStatus; createdAt: Date };
+
 export type Api = {
   sendEmailCode(email: string): Promise<void>;
   verifyEmailCode(email: string, code: string): Promise<void>;
@@ -169,6 +186,10 @@ export type Api = {
   listFriendRequests(): Promise<FriendRequest[]>;
   /** Another person's page, or null when they don't exist or you can't see them (blocked looks the same). */
   getUserProfile(userId: string): Promise<UserProfile | null>;
+  /** Suggests an event for admin review. Resolves with the submission id; rejects with the server's error code. */
+  submitEvent(input: SubmitEventInput): Promise<string>;
+  /** The viewer's own suggestions, newest first. */
+  getMySubmissions(): Promise<MySubmission[]>;
 };
 
 /** Charlotte's row in `cities`. It is the first seeded row of an identity column (see the init migration). */

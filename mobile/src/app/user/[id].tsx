@@ -8,6 +8,11 @@ import { useProfileMenu } from '@/features/friends/useProfileMenu';
 import { useUserProfile } from '@/features/friends/useUserProfile';
 import { formatShortDate } from '@/lib/dates';
 
+/** Size of the big face at the top of the page. */
+const PROFILE_AVATAR = 112;
+const SHARED_ROW_MIN_HEIGHT = 56;
+const PRESSED_OPACITY = 0.7;
+
 function Count({ value, label }: { value: number; label: string }) {
   const { space } = useTheme();
   return (
@@ -25,7 +30,7 @@ function Count({ value, label }: { value: number; label: string }) {
 /** Another person's profile (DESIGN.md 6, row 14): who they are, what you share, and one clear friend button. */
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, space, radius } = useTheme();
+  const { colors, space, radius, type } = useTheme();
   const profile = useUserProfile(id);
   const { onAction, busyId } = useFriendButton();
   const openMenu = useProfileMenu(profile.data ?? null, () => router.back());
@@ -62,10 +67,10 @@ export default function UserProfileScreen() {
   if (profile.isPending) {
     content = (
       <View accessibilityLabel="Loading profile" style={{ alignItems: 'center', gap: space.md, paddingTop: space.xl }}>
-        <Skeleton width={112} height={112} radius={56} />
-        <Skeleton width={180} height={26} />
-        <Skeleton width={110} height={16} />
-        <Skeleton height={48} radius={24} />
+        <Skeleton width={PROFILE_AVATAR} height={PROFILE_AVATAR} radius={PROFILE_AVATAR / 2} />
+        <Skeleton width="55%" height={type.title.lineHeight} />
+        <Skeleton width="35%" height={type.subheadline.lineHeight} />
+        <Skeleton height={space.xxxl + space.lg} radius={radius.pill} />
       </View>
     );
   } else if (profile.isError) {
@@ -82,7 +87,7 @@ export default function UserProfileScreen() {
       <EmptyState
         symbol="person.crop.circle.badge.xmark"
         title="This profile isn’t available"
-        message="It may have been removed, or you may not be able to see it."
+        message="It may have been removed, or the link is out of date."
       >
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Go back" onPress={() => router.back()} />
@@ -95,7 +100,7 @@ export default function UserProfileScreen() {
     content = (
       <View style={{ gap: space.xl }}>
         <View style={{ alignItems: 'center', gap: space.md, paddingTop: space.md }}>
-          <Avatar name={me.displayName} uri={me.avatarUrl} size={112} />
+          <Avatar name={me.displayName} uri={me.avatarUrl} size={PROFILE_AVATAR} />
           <View
             accessible
             accessibilityRole="header"
@@ -152,7 +157,7 @@ export default function UserProfileScreen() {
                   accessibilityHint="Opens the event"
                   onPress={() => router.push(`/event/${e.id}` as Href)}
                   style={({ pressed }) => ({
-                    minHeight: 56,
+                    minHeight: SHARED_ROW_MIN_HEIGHT,
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: space.md,
@@ -160,10 +165,10 @@ export default function UserProfileScreen() {
                     paddingVertical: space.md,
                     borderTopWidth: i === 0 ? 0 : 1,
                     borderTopColor: colors.line,
-                    opacity: pressed ? 0.7 : 1,
+                    opacity: pressed ? PRESSED_OPACITY : 1,
                   })}
                 >
-                  <View style={{ flex: 1, gap: 1 }}>
+                  <View style={{ flex: 1, gap: space.xs / 2 }}>
                     <AppText variant="headline" numberOfLines={2}>
                       {e.title}
                     </AppText>

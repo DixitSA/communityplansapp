@@ -17,6 +17,7 @@ import {
   type FeedRangeParams,
   type Interest,
   type MyProfile,
+  type MySubmission,
   type OnboardingInput,
 } from './types';
 import {
@@ -27,6 +28,7 @@ import {
   isValidUsername,
   parseDateOnly,
 } from '../validation';
+import { DETAILS_MAX, LINK_MAX, SUBMISSIONS_PER_DAY, TITLE_MAX, VENUE_MAX, startsAtProblem } from '../submission';
 
 /** The seeded `interests` table, so demo mode shows the same tiles as the real thing. */
 export const DEMO_INTERESTS: Interest[] = [
@@ -110,6 +112,9 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
     listeners.forEach((l) => l(s));
   };
 
+  const submissions: MySubmission[] = [];
+  const clock = () => now?.() ?? new Date();
+
   const chat = createDemoChat({ wait, now });
   const { hide, ...friends } = createDemoFriends({ wait, now });
 
@@ -190,6 +195,27 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
     },
     async setRsvp(eventId, status) {
       usePlansStore.getState().setStatus(eventId, status);
+    },
+    async submitEvent(input) {
+      await wait();
+      const at = clock();
+      const title = input.title.trim();
+      const link = input.link.trim();
+      if (title.length < 1 || title.length > TITLE_MAX) throw new ApiError('title_invalid');
+      if (link !== '' && (!/^https:\/\/[^\s]+$/.test(link) || link.length > LINK_MAX)) throw new ApiError('link_invalid');
+      if (startsAtProblem(input.startsAt, at)) throw new ApiError('starts_at_invalid');
+      if (input.cityId !== CHARLOTTE_CITY_ID) throw new ApiError('city_invalid');
+      if (input.venue.trim().length > VENUE_MAX) throw new ApiError('venue_invalid');
+      if (input.details.trim().length > DETAILS_MAX) throw new ApiError('details_invalid');
+      const recent = submissions.filter((s) => s.createdAt.getTime() > at.getTime() - 24 * 3_600_000);
+      if (recent.length >= SUBMISSIONS_PER_DAY) throw new ApiError('rate_limited');
+      const row: MySubmission = { id: `demo-submission-${submissions.length + 1}`, title, status: 'pending', createdAt: at };
+      submissions.unshift(row);
+      return row.id;
+    },
+    async getMySubmissions() {
+      await wait();
+      return [...submissions];
     },
   };
 }

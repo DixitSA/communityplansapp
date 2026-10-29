@@ -142,3 +142,22 @@ export function mapFriendError(code: string | null | undefined): string {
   if (code && code in FRIEND_COPY) return FRIEND_COPY[code];
   return GENERIC_ERROR;
 }
+
+const SUBMISSION_COPY: Record<string, string> = {
+  not_authenticated: 'Your session ended. Please sign in again.',
+  not_onboarded: 'Finish setting up your profile before suggesting events.',
+  title_invalid: 'Add a title between 1 and 120 characters.',
+  link_invalid: 'That link doesn’t work. Use a full https:// link with no spaces.',
+  starts_at_invalid: 'Pick a start time that is still ahead and within the next year.',
+  city_invalid: 'We couldn’t find that city. Try again from the feed.',
+  venue_invalid: 'Keep the venue under 120 characters.',
+  details_invalid: 'Keep the details under 1,000 characters.',
+  rate_limited: 'You’ve suggested a lot today. Try again tomorrow.',
+  network: 'No connection. Check your internet and try again.',
+};
+
+/** Friendly copy for a `submit_event` error code. */
+export function mapSubmissionError(code: string | null | undefined): string {
+  if (code && code in SUBMISSION_COPY) return SUBMISSION_COPY[code];
+  return GENERIC_ERROR;
+}

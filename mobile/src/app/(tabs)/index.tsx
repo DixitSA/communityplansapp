@@ -25,6 +25,7 @@ import { useFiltersStore } from '@/features/feed/filtersStore';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { EventRowLink } from '@/features/event/EventCardLink';
 import { useDemoPlans } from '@/features/event/demoPlans';
+import { SuggestRow } from '@/features/submit/SuggestRow';
 import { EventMap } from '@/features/map/EventMap';
 import { startOfDay, toISODate } from '@/lib/dates';
 import { selection } from '@/lib/haptics';
@@ -269,7 +270,7 @@ export default function FeedScreen() {
     </EmptyState>
   ) : total === 0 ? (
     <EmptyState symbol="sparkles" title="Nothing planned yet" message="No events in the next two weeks. Check back soon.">
-      <View />
+      <SuggestRow />
     </EmptyState>
   ) : friendsOnly ? (
     <EmptyState
@@ -317,6 +318,9 @@ export default function FeedScreen() {
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
         ListEmptyComponent={empty}
+        ListFooterComponent={
+          <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{total > 0 ? <SuggestRow /> : null}</View>
+        }
         renderSectionHeader={({ section }) => (
           <View style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}>
             <AppText

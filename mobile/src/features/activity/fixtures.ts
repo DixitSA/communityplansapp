@@ -1,5 +1,6 @@
 // Fictional sample activity so the screen has content before the backend exists.
-export type Person = { id: string; name: string };
+/** Sample people have just an id and a name; real friend requests also carry the username and photo. */
+export type Person = { id: string; name: string; username?: string; avatarUrl?: string | null };
 
 export type ActivityItem =
   | { kind: 'friend_going'; id: string; minutesAgo: number; person: Person; eventId: string; eventTitle: string }

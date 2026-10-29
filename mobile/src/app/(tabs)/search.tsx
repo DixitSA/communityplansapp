@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -8,10 +8,10 @@ import {
   Button,
   EmptyState,
   FriendButton,
-  Icon,
+  NavRow,
   PersonRow,
+  PersonRowSkeleton,
   SearchField,
-  Skeleton,
   useTheme,
 } from '@/design';
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type PersonSearchResult } from '@/lib/api';
@@ -22,34 +22,15 @@ import { friendsHref, userHref } from '@/features/friends/routes';
 
 /** Under the search field while it's empty: the way to your friends and requests. */
 function FriendsShortcut() {
-  const { colors, space, radius } = useTheme();
   const incoming = (useFriendRequests().data ?? []).filter((r) => r.direction === 'incoming').length;
   return (
-    <Pressable
-      accessibilityRole="button"
+    <NavRow
+      symbol="person.2"
+      label="Friends and requests"
+      unread={incoming > 0}
       accessibilityLabel={incoming > 0 ? `Friends and requests, ${incoming} new` : 'Friends and requests'}
       onPress={() => router.push(friendsHref)}
-      style={({ pressed }) => ({
-        minHeight: 52,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: space.md,
-        paddingHorizontal: space.lg,
-        borderRadius: radius.card,
-        borderCurve: 'continuous',
-        backgroundColor: colors.surface,
-        opacity: pressed ? 0.85 : 1,
-      })}
-    >
-      <Icon name="person.2" size={20} />
-      <AppText variant="body" style={{ flex: 1 }}>
-        Friends and requests
-      </AppText>
-      {incoming > 0 ? (
-        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent }} />
-      ) : null}
-      <Icon name="chevron.right" size={14} color="inkSecondary" weight="semibold" />
-    </Pressable>
+    />
   );
 }
 
@@ -111,17 +92,7 @@ export default function SearchScreen() {
         />
       </View>
     ) : status === 'loading' ? (
-      <View accessibilityLabel="Searching" style={{ gap: space.md }}>
-        {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 64 }}>
-            <Skeleton width={48} height={48} radius={24} />
-            <View style={{ flex: 1, gap: space.sm }}>
-              <Skeleton width="45%" height={16} />
-              <Skeleton width="30%" height={12} />
-            </View>
-          </View>
-        ))}
-      </View>
+      <PersonRowSkeleton />
     ) : status === 'error' ? (
       <EmptyState symbol="wifi.slash" title="Couldn’t search" message="Check your connection and try again.">
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>

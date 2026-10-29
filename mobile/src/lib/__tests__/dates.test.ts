@@ -41,6 +41,13 @@ describe('formatEventTime (America/New_York)', () => {
     expect(formatEventTime(d(10, 29, 19), undefined, true)).toBe('7:00 PM');
   });
 
+  it('uses dates, not weekdays, once a range reaches 6 days', () => {
+    // Fri Oct 30 to Fri Nov 6 would read "Fri ... Fri".
+    expect(formatEventTime(d(10, 30, 19), d(11, 6, 17), true)).toBe('Fri, Oct 30 7:00 PM – Fri, Nov 6 5:00 PM');
+    // 5 days 22 hours is still under 6 days.
+    expect(formatEventTime(d(10, 30, 19), d(11, 5, 17), true)).toBe('Fri 7:00 PM – Thu 5:00 PM');
+  });
+
   it('measures real elapsed time across DST', () => {
     // Fall back Nov 1 2026: 10 PM Oct 31 to 9 AM Nov 1 is 12h of clock time but 12h real (extra hour at 1 AM => 12h).
     expect(formatEventTime(d(10, 31, 22), d(11, 1, 9))).toBe('10:00 PM – 9:00 AM');
