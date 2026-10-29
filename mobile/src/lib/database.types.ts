@@ -384,9 +384,6 @@ isOneToOne: false
             "are_friends":
 { Args: { "a": string,"b": string }; Returns: boolean
                            },
-"chat_open":
-{ Args: { "e": string }; Returns: boolean
-                           },
 "complete_onboarding":
 { Args: { "p_birthdate": string,"p_display_name": string,"p_home_city_id": number,"p_interest_ids": (number)[],"p_username": string }; Returns: undefined
                            },
@@ -414,15 +411,6 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "event_id": string,"going_count": number,"image_url": string,"is_open": boolean,"last_at": string,"last_author_name": string,"last_body": string,"starts_at": string,"title": string,"unread_count": number
             }[]
-                           },
-"is_admin":
-{ Args: Record<PropertyKey, never>; Returns: boolean
-                           },
-"is_blocked_between":
-{ Args: { "a": string,"b": string }; Returns: boolean
-                           },
-"is_going":
-{ Args: { "e": string,"u": string }; Returns: boolean
                            },
 "mark_chat_read":
 { Args: { "p_event_id": string }; Returns: undefined

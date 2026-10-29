@@ -233,17 +233,17 @@ select throws_ok($$ insert into public.event_messages (event_id, user_id, body)
 -- 7c. Helpers are not callable from the API roles
 reset role;
 select pg_temp.login('00000000-0000-0000-0000-00000000000b');
-select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'authenticated cannot call public.is_going');
+select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42883', null, 'authenticated cannot call public.is_going (dropped)');
 select throws_ok($$ select public.are_friends('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'authenticated cannot call public.are_friends');
-select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'authenticated cannot call public.is_blocked_between');
-select throws_ok($$ select public.is_admin() $$, '42501', null, 'authenticated cannot call public.is_admin');
-select throws_ok($$ select public.chat_open('11111111-1111-1111-1111-111111111111') $$, '42501', null, 'authenticated cannot call public.chat_open');
+select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42883', null, 'authenticated cannot call public.is_blocked_between (dropped)');
+select throws_ok($$ select public.is_admin() $$, '42883', null, 'authenticated cannot call public.is_admin (dropped)');
+select throws_ok($$ select public.chat_open('11111111-1111-1111-1111-111111111111') $$, '42883', null, 'authenticated cannot call public.chat_open (dropped)');
 reset role;
 set local role anon;
-select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'anon cannot call public.is_going');
+select throws_ok($$ select public.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42883', null, 'anon cannot call public.is_going (dropped)');
 select throws_ok($$ select public.are_friends('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'anon cannot call public.are_friends');
-select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42501', null, 'anon cannot call public.is_blocked_between');
-select throws_ok($$ select public.is_admin() $$, '42501', null, 'anon cannot call public.is_admin');
+select throws_ok($$ select public.is_blocked_between('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b') $$, '42883', null, 'anon cannot call public.is_blocked_between (dropped)');
+select throws_ok($$ select public.is_admin() $$, '42883', null, 'anon cannot call public.is_admin (dropped)');
 select throws_ok($$ select private.is_going('00000000-0000-0000-0000-00000000000a', '11111111-1111-1111-1111-111111111111') $$, '42501', null, 'anon cannot call private.is_going');
 
 reset role;
