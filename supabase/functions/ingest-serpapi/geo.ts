@@ -37,3 +37,12 @@ export function parseCensus(body: unknown): { lat: number; lng: number } | null 
   if (typeof m?.x !== "number" || typeof m.y !== "number") return null;
   return { lat: m.y, lng: m.x };
 }
+
+/** First result from a Nominatim jsonv2 response (lat/lon are strings), or null. */
+export function parseNominatim(body: unknown): { lat: number; lng: number } | null {
+  const first = Array.isArray(body) ? (body[0] as { lat?: unknown; lon?: unknown } | undefined) : undefined;
+  if (!first) return null;
+  const lat = Number(first.lat), lng = Number(first.lon);
+  if (first.lat === "" || first.lon === "" || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}

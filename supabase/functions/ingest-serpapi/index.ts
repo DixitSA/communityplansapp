@@ -1,12 +1,16 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { addressKey, FALLBACK_CENTER, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
+import { addressKey, FALLBACK_CENTER, parseCensus, parseNominatim, parseEwkbPoint, withinCity } from "./geo.ts";
 import { mapSerpapiEvent, type SerpEvent, type SerpRow } from "./mapper.ts";
 
 const SERP_URL = "https://serpapi.com/search.json";
 const CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress";
 const PAGE_SIZE = 10;
-const GEOCODE_TIMEOUT_MS = 5_000;
-const MAX_FRESH_GEOCODES = 30; // per run; the rest are retried tomorrow
+const GEOCODE_TIMEOUT_MS = 4_000;
+const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_UA = "yard-ingest/1.0 (+https://github.com/DixitSA/communityplansapp)";
+const NOMINATIM_GAP_MS = 1_100; // usage policy: max 1 request/second
+const MISS_TTL_MS = 7 * 86_400_000;
+const MAX_FRESH_GEOCODES = 60; // per run; the rest are retried tomorrow
 const GEOCODE_BUDGET_MS = 90_000; // free plan wall clock is 150 s; stop geocoding early
 const ACCOUNT_URL = "https://serpapi.com/account.json";
 const MIN_SEARCHES_LEFT = 8;
@@ -135,40 +139,86 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Geocode (cache first, including cached misses).
-    const keys = [...new Set([...rows.values()].map((r) => addressKey(r.geocode_query)))];
+    // 3. Geocode: cache, then Census (needs a street number), then Nominatim. Fresh misses are cached for 7 days.
+    const hasStreet = new Map<string, boolean>();
+    for (const r of rows.values()) hasStreet.set(addressKey(r.geocode_query), r.geocode_has_street);
+    const keys = [...hasStreet.keys()];
     const coords = new Map<string, { lat: number; lng: number } | null>();
     for (const part of chunk(keys, 50)) {
-      const { data, error } = await db.from("geocode_cache").select("address_key, lat, lng").in("address_key", part);
+      const { data, error } = await db.from("geocode_cache").select("address_key, lat, lng, created_at").in("address_key", part);
       if (error) throw error;
-      for (const c of data ?? []) coords.set(c.address_key, c.lat != null && c.lng != null ? { lat: c.lat, lng: c.lng } : null);
+      for (const c of data ?? []) {
+        if (c.lat != null && c.lng != null) coords.set(c.address_key, { lat: c.lat, lng: c.lng });
+        else if (Date.now() - Date.parse(c.created_at) < MISS_TTL_MS) coords.set(c.address_key, null); // else: stale miss, retry
+      }
     }
-    let fresh = 0;
-    for (const key of keys) {
-      if (coords.has(key) || fresh >= MAX_FRESH_GEOCODES || Date.now() - t0 > GEOCODE_BUDGET_MS) continue;
-      fresh++;
-      let hit: { lat: number; lng: number } | null;
+    let geocode_attempted = 0, geocode_errors = 0, geocode_nomatch = 0, census_hits = 0, nominatim_hits = 0;
+    const sample_misses: string[] = [];
+    let lastNominatim = 0;
+    /** One lookup. "error" = network/non-ok; "nomatch" = the geocoder answered with nothing. */
+    const lookup = async (url: string, headers: HeadersInit, parse: (b: unknown) => { lat: number; lng: number } | null) => {
       try {
-        const url = `${CENSUS_URL}?${new URLSearchParams({ address: key, benchmark: "Public_AR_Current", format: "json" })}`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS) });
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(GEOCODE_TIMEOUT_MS) });
         if (!res.ok) {
           await res.body?.cancel();
-          continue; // transient: don't cache
+          return { hit: null, state: "error" as const };
         }
-        hit = parseCensus(await res.json());
+        const hit = parse(await res.json());
+        return { hit, state: hit ? ("hit" as const) : ("nomatch" as const) };
       } catch {
-        continue; // timeout or network error: leave uncached, retry next run
+        return { hit: null, state: "error" as const };
       }
-      coords.set(key, hit);
-      const { error } = await db.from("geocode_cache")
-        .upsert({ address_key: key, lat: hit?.lat ?? null, lng: hit?.lng ?? null }, { onConflict: "address_key" });
+    };
+    let fresh = 0;
+    for (const key of keys) {
+      if (coords.has(key)) continue;
+      if (fresh >= MAX_FRESH_GEOCODES || Date.now() - t0 > GEOCODE_BUDGET_MS) break;
+      fresh++;
+      geocode_attempted++;
+      let res: Awaited<ReturnType<typeof lookup>> = { hit: null, state: "nomatch" };
+      if (hasStreet.get(key)) {
+        res = await lookup(
+          `${CENSUS_URL}?${new URLSearchParams({ address: key, benchmark: "Public_AR_Current", format: "json" })}`, {}, parseCensus,
+        );
+        if (res.hit) census_hits++;
+      }
+      const censusFailed = res.state === "error";
+      if (!res.hit) {
+        const wait = lastNominatim + NOMINATIM_GAP_MS - Date.now();
+        if (wait > 0) await sleep(wait);
+        res = await lookup(
+          `${NOMINATIM_URL}?${new URLSearchParams({
+            format: "jsonv2", limit: "1", countrycodes: "us", viewbox: "-81.25,35.55,-80.45,34.95", bounded: "1", q: key,
+          })}`,
+          { "User-Agent": NOMINATIM_UA }, parseNominatim,
+        );
+        lastNominatim = Date.now();
+        if (res.hit) nominatim_hits++;
+        // A Census outage plus a Nominatim no-match isn't a real miss: retry tomorrow instead of caching it for a week.
+        if (!res.hit && censusFailed) res = { hit: null, state: "error" };
+      }
+      if (res.state === "error") {
+        geocode_errors++; // transient: not cached, retried next run
+        if (sample_misses.length < 5) sample_misses.push(key);
+        continue;
+      }
+      if (res.state === "nomatch") {
+        geocode_nomatch++;
+        if (sample_misses.length < 5) sample_misses.push(key);
+      } else {
+        geocoded++;
+      }
+      coords.set(key, res.hit);
+      const { error } = await db.from("geocode_cache").upsert(
+        { address_key: key, lat: res.hit?.lat ?? null, lng: res.hit?.lng ?? null, created_at: new Date().toISOString() },
+        { onConflict: "address_key" },
+      );
       if (error) throw error;
-      if (hit) geocoded++;
     }
 
     // 4. Locate, drop cross-source duplicates.
     const dupIds: string[] = [];
-    const ready: (Omit<SerpRow, "geocode_query" | "interest_ids"> & { location: string; interest_ids: number[] })[] = [];
+    const ready: (Omit<SerpRow, "geocode_query" | "geocode_has_street" | "interest_ids"> & { location: string; interest_ids: number[] })[] = [];
     for (const r of rows.values()) {
       const c = coords.get(addressKey(r.geocode_query));
       if (!c || !withinCity(c, center)) {
@@ -186,7 +236,7 @@ Deno.serve(async (req) => {
         dupIds.push(r.external_id);
         continue;
       }
-      const { geocode_query: _g, ...rest } = r;
+      const { geocode_query: _g, geocode_has_street: _h, ...rest } = r;
       ready.push({ ...rest, location: `SRID=4326;POINT(${c.lng} ${c.lat})` });
     }
 
@@ -222,7 +272,8 @@ Deno.serve(async (req) => {
       upserted = ready.length;
     }
 
-    return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses, errors });
+    return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses, errors,
+      geocode_attempted, geocode_errors, geocode_nomatch, census_hits, nominatim_hits, sample_misses });
   } catch (e) {
     // Log message only: fetch errors can embed the URL (and api_key).
     console.error("ingest-serpapi failed:", scrub(e instanceof Error ? e.message : String(e)));

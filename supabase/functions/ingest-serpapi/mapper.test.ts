@@ -1,6 +1,7 @@
 import { assert, assertEquals, assertNotEquals } from "jsr:@std/assert@1";
 import { externalId, interestSlugs, mapSerpapiEvent, type MapContext, parseWhen, pickImage, type SerpEvent } from "./mapper.ts";
-import { addressKey, haversineKm, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
+import { geocodeQuery } from "./mapper.ts";
+import { addressKey, parseNominatim, haversineKm, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
 
 // Thu 2026-10-29 12:00 EDT. Clocks fall back on Sun 2026-11-01, so Nov events are EST.
 const now = new Date("2026-10-29T16:00:00Z");
@@ -166,4 +167,25 @@ Deno.test("geo: key normalization, distance rule, census and EWKB parsing", () =
   buf.setFloat64(8, 35.2271, true);
   const hex = [...new Uint8Array(buf.buffer)].map((b) => b.toString(16).padStart(2, "0")).join("");
   assertEquals(parseEwkbPoint("0101000020E6100000" + hex), { lat: 35.2271, lng: -80.8431 });
+});
+
+Deno.test("geocodeQuery handles venue-only, street on line 1, street on line 2 and no street", () => {
+  assertEquals(geocodeQuery(["Spectrum Center", "333 E Trade St, Charlotte, NC"]), { query: "333 E Trade St, Charlotte, NC", hasStreet: true });
+  assertEquals(geocodeQuery(["Venue, 123 Main St", "Charlotte, NC"]), { query: "123 Main St, Charlotte, NC", hasStreet: true });
+  assertEquals(geocodeQuery(["Venue", "Charlotte, NC"]), { query: "Venue, Charlotte, NC", hasStreet: false });
+  assertEquals(geocodeQuery(["Spectrum Center, 333 E Trade St, Charlotte, NC"]), { query: "333 E Trade St, Charlotte, NC", hasStreet: true });
+});
+
+Deno.test("parseNominatim reads string lat/lon and rejects empties", () => {
+  assertEquals(parseNominatim([{ lat: "35.2251", lon: "-80.8397" }]), { lat: 35.2251, lng: -80.8397 });
+  assertEquals(parseNominatim([]), null);
+  assertEquals(parseNominatim({}), null);
+  assertEquals(parseNominatim([{ lat: "", lon: "" }]), null);
+  assertEquals(parseNominatim([{ lat: "x", lon: "1" }]), null);
+});
+
+Deno.test("mapped row exposes geocode_has_street", async () => {
+  const ev = (await load("timed"))[0];
+  assertEquals((await mapSerpapiEvent(ev, ctx))!.geocode_has_street, true);
+  assertEquals((await mapSerpapiEvent({ ...ev, address: ["Venue", "Charlotte, NC"] }, ctx))!.geocode_has_street, false);
 });

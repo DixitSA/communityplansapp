@@ -41,6 +41,7 @@ export interface SerpRow {
   status: "active";
   /** Not columns: the handler uses these and strips them before the upsert. */
   geocode_query: string;
+  geocode_has_street: boolean;
   interest_ids: number[];
 }
 
@@ -258,12 +259,14 @@ export function interestSlugs(title: string, description: string): string[] {
 
 const FREE_RE = /\bno cover\b|(?<!-)\bfree\b(?!\s*(?:parking|wi-?fi|drinks?)\b)(?!-)/i;
 
-/** First `address` line without the venue name: "Venue, 123 Main St" -> "123 Main St", then the rest. */
-function geocodeQuery(address: string[]): string {
-  const first = address[0].split(",").map((s) => s.trim()).filter(Boolean);
-  const idx = first.findIndex((s) => /^\d/.test(s));
-  const street = idx > 0 ? first.slice(idx) : first;
-  return [...street, ...address.slice(1).map((s) => s.trim())].filter(Boolean).join(", ");
+/**
+ * Geocoder query from Google's address lines. Starts at the first comma segment that begins with a
+ * digit ("333 E Trade St, Charlotte, NC"); with no street number it is the venue plus the city line.
+ */
+export function geocodeQuery(address: string[]): { query: string; hasStreet: boolean } {
+  const segs = address.flatMap((l) => l.split(",")).map((s) => s.trim()).filter(Boolean);
+  const idx = segs.findIndex((s) => /^\d/.test(s));
+  return idx >= 0 ? { query: segs.slice(idx).join(", "), hasStreet: true } : { query: segs.join(", "), hasStreet: false };
 }
 
 /** Returns null when the event is skipped (no clear time, no address, outside the window, over). */
@@ -280,6 +283,7 @@ export async function mapSerpapiEvent(raw: SerpEvent, ctx: MapContext): Promise<
   const address = (raw.address ?? []).map((s) => s.trim()).filter(Boolean);
   if (address.length === 0) return null; // nothing to geocode
 
+  const q = geocodeQuery(address);
   const venue = (raw.venue?.name?.trim() || address[0].split(",")[0].trim() || "").slice(0, MAX_TEXT) || null;
   const desc = (raw.description ?? "").trim();
   const ticket = raw.ticket_info?.find((t) => t.link_type === "tickets" && httpsOnly(t.link));
@@ -304,7 +308,8 @@ export async function mapSerpapiEvent(raw: SerpEvent, ctx: MapContext): Promise<
     ticket_url: httpsOnly(ticket?.link) ?? httpsOnly(raw.link),
     attribution: source ? `via ${source}` : "via Google Events",
     status: "active",
-    geocode_query: geocodeQuery(address),
+    geocode_query: q.query,
+    geocode_has_street: q.hasStreet,
     interest_ids,
   };
 }
