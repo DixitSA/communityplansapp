@@ -269,6 +269,18 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"geocode_cache": {
+                  Row: {
+                    "address_key": string,"created_at": string,"lat": number | null,"lng": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_key": string,"created_at"?: string,"lat"?: number | null,"lng"?: number | null
+                  }
+                  Update: {
+                    "address_key"?: string,"created_at"?: string,"lat"?: number | null,"lng"?: number | null
+                  }
+                  Relationships: []
                 },"interests": {
                   Row: {
                     "id": number,"label": string,"slug": string,"sort": number,"symbol": string
@@ -445,6 +457,9 @@ isOneToOne: false
 "complete_onboarding":
 { Args: { "p_birthdate": string,"p_display_name": string,"p_home_city_id": number,"p_interest_ids": (number)[],"p_username": string }; Returns: undefined
                            },
+"find_duplicate_event":
+{ Args: { "p_city_id": number,"p_exclude_source": Database["public"]['Enums']["event_source"],"p_lat": number,"p_lng": number,"p_starts_at": string,"p_title": string }; Returns: string
+                           },
 "get_chat_messages":
 { Args: { "p_before_id"?: number,"p_event_id": string,"p_limit"?: number }; Returns: {
               "avatar_path": string,"body": string,"created_at": string,"display_name": string,"id": number,"is_mine": boolean,"user_id": string
@@ -519,7 +534,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "event_source": "ticketmaster"|"seatgeek"|"curated"|"ical","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going","submission_status": "pending"|"approved"|"rejected"
+            "event_source": "ticketmaster"|"seatgeek"|"curated"|"ical"|"serpapi","friendship_status": "pending"|"accepted","rsvp_status": "interested"|"down_if_friends"|"going","submission_status": "pending"|"approved"|"rejected"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -635,7 +650,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "event_source": ["ticketmaster", "seatgeek", "curated", "ical"],"friendship_status": ["pending", "accepted"],"rsvp_status": ["interested", "down_if_friends", "going"]
+            "event_source": ["ticketmaster", "seatgeek", "curated", "ical", "serpapi"],"friendship_status": ["pending", "accepted"],"rsvp_status": ["interested", "down_if_friends", "going"]
           }
         }
 } as const

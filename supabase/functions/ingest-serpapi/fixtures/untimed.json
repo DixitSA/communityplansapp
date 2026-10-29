@@ -1,0 +1,17 @@
+{
+  "events_results": [
+    { "title": "Charlotte Art Crawl", "date": { "start_date": "Nov 1", "when": "Nov 1 – 3" },
+      "address": ["NoDa Arts District", "Charlotte, NC"], "link": "https://example.com/crawl" },
+    { "title": "Open Studio Day", "date": { "start_date": "Nov 4", "when": "Wed, Nov 4" },
+      "address": ["Studio 7, 100 N Tryon St", "Charlotte, NC"], "link": "https://example.com/studio" },
+    { "title": "Mystery Event", "date": { "start_date": "Nov 6" },
+      "address": ["Somewhere, 1 Main St", "Charlotte, NC"], "link": "https://example.com/mystery" },
+    { "title": "Holiday Lights Gala", "date": { "start_date": "Dec 12", "when": "Sat, Dec 12, 7 PM" },
+      "address": ["Uptown, 600 E 4th St", "Charlotte, NC"], "link": "https://example.com/gala" },
+    { "title": "Morning Yoga", "date": { "start_date": "Oct 29", "when": "Today, 9 – 11 AM" },
+      "address": ["Freedom Park, 1900 East Blvd", "Charlotte, NC"], "link": "https://example.com/yoga" },
+    { "title": "No Address Party", "date": { "start_date": "Oct 31", "when": "Sat, Oct 31, 9 PM" },
+      "link": "https://example.com/noaddr" },
+    { "date": { "when": "Sat, Oct 31, 9 PM" }, "address": ["X, 1 Main St"] }
+  ]
+}
