@@ -107,6 +107,8 @@ export type ChatSubscription = {
   onInsert: (message: ChatMessage) => void;
   /** A message changed: today that means it was deleted. */
   onUpdate: (message: ChatMessage) => void;
+  /** The live connection is up (also after a reconnect). Anything sent before this may have been missed, so refetch. */
+  onSubscribed?: () => void;
 };
 
 /** Why someone reports a message. Stored as the report's `reason` text. */

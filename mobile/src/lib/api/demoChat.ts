@@ -201,7 +201,13 @@ export function createDemoChat({ wait, now = () => new Date() }: {
     subscribeToEventChat(eventId, handlers) {
       const room = roomOf(eventId);
       room.listeners.add(handlers);
-      return () => room.listeners.delete(handlers);
+      // Like Realtime, the "connected" call comes a moment after subscribing.
+      let active = true;
+      void Promise.resolve().then(() => active && handlers.onSubscribed?.());
+      return () => {
+        active = false;
+        room.listeners.delete(handlers);
+      };
     },
 
     async reportMessage(messageId) {

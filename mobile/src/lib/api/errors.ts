@@ -82,6 +82,8 @@ export function errorCode(err: unknown): string {
     // PostgREST wraps `raise exception 'must_be_18'` as { code: 'P0001', message: 'must_be_18' },
     // so for raised exceptions the message is the real code.
     if (e.code === 'P0001' && typeof e.message === 'string') return e.message;
+    // The chat trigger raises this with errcode 42501, which would otherwise read as "chat closed".
+    if (e.message === 'message_deleted') return 'message_deleted';
     if (typeof e.code === 'string') return e.code;
     if (e.name === 'AuthRetryableFetchError' || (typeof e.message === 'string' && /network request failed/i.test(e.message))) {
       return 'network';
@@ -96,6 +98,7 @@ const CHAT_COPY: Record<string, string> = {
   chat_closed: 'This chat is closed, so you can’t send messages.',
   // Postgres "row violates row-level security": the chat closed, or the viewer is no longer Going.
   '42501': 'This chat is closed, or you’re no longer going.',
+  message_deleted: 'That message was already deleted.',
   empty_message: 'Write something first.',
   message_too_long: 'That message is too long. Keep it under 2,000 characters.',
   network: 'No connection. Check your internet and try again.',

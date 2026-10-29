@@ -39,6 +39,9 @@ function onEveryPage(qc: QueryClient, eventId: string, fn: (list: ChatMessage[])
   qc.setQueryData<Pages>(chatKey(eventId), (old) => (old ? { ...old, pages: old.pages.map(fn) } : old));
 }
 
+/** How long to wait before telling the server about new messages we've read. */
+const READ_DEBOUNCE_MS = 2000;
+
 export type SendFailure = { message: string; body: string };
 
 /**
@@ -83,16 +86,47 @@ export function useChat(eventId: string, enabled = true) {
     }, [markRead]),
   );
 
+  // A burst of incoming messages makes one read-marker call, not one per message.
+  const readTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markReadSoon = useCallback(() => {
+    if (readTimer.current) clearTimeout(readTimer.current);
+    readTimer.current = setTimeout(() => {
+      readTimer.current = null;
+      if (focused.current && AppState.currentState === 'active') markRead();
+    }, READ_DEBOUNCE_MS);
+  }, [markRead]);
+  useEffect(
+    () => () => {
+      if (readTimer.current) clearTimeout(readTimer.current);
+    },
+    [],
+  );
+
+  // Realtime can miss messages: before the connection is up, after it drops, and while the app sleeps.
+  // So refetch whenever it (re)connects and whenever the app comes back to the foreground.
+  const catchUp = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: chatKey(eventId) }, { cancelRefetch: false });
+    if (focused.current) markRead();
+  }, [eventId, qc, markRead]);
+
   useEffect(() => {
     if (!enabled) return;
-    return chatService.subscribeToEventChat(eventId, {
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') catchUp();
+    });
+    const unsubscribe = chatService.subscribeToEventChat(eventId, {
       onInsert: (message) => {
         onFirstPage(qc, eventId, (list) => insertMessage(list, message));
-        if (!message.isMine && focused.current && AppState.currentState === 'active') markRead();
+        if (!message.isMine) markReadSoon();
       },
       onUpdate: (message) => onEveryPage(qc, eventId, (list) => updateMessage(list, message)),
+      onSubscribed: catchUp,
     });
-  }, [enabled, eventId, qc, markRead]);
+    return () => {
+      appState.remove();
+      unsubscribe();
+    };
+  }, [enabled, eventId, qc, markReadSoon, catchUp]);
 
   const sendMutation = useMutation({
     mutationFn: ({ body }: { tempId: string; body: string }) => chatService.sendMessage(eventId, body),

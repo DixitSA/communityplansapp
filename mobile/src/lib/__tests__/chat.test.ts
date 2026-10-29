@@ -14,6 +14,10 @@ describe('chat errors', () => {
     expect(mapChatError('chat_closed')).toMatch(/closed/i);
   });
 
+  it('has its own copy for an already-deleted message', () => {
+    expect(mapChatError(errorCode({ code: '42501', message: 'message_deleted' }))).not.toMatch(/closed/i);
+  });
+
   it('falls back to a generic message', () => {
     expect(mapChatError('???')).toBe('Something went wrong. Please try again.');
     expect(mapChatError(undefined)).toBe('Something went wrong. Please try again.');

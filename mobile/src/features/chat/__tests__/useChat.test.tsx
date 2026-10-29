@@ -113,6 +113,16 @@ describe('useChat', () => {
     expect(result.current.failure).toEqual({ message: expect.stringMatching(/too fast/i), body: 'hello' });
   });
 
+  it('refetches when the live connection comes up, so nothing sent in the gap is missed', async () => {
+    const { result } = await renderHook(() => useChat('e1'), { wrapper });
+    await waitFor(() => expect(result.current.messages).toHaveLength(2));
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(1);
+    svc.getChatMessages.mockResolvedValue([msg('3'), msg('2'), msg('1')]);
+    await act(async () => handlers.onSubscribed?.());
+    await waitFor(() => expect(ids(result.current.messages)).toEqual(['3', '2', '1']));
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(2);
+  });
+
   it('does not send empty text', async () => {
     const { result } = await renderHook(() => useChat('e1'), { wrapper });
     await waitFor(() => expect(result.current.messages).toHaveLength(2));

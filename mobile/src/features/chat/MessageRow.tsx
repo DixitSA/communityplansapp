@@ -14,7 +14,7 @@ export type MessageRowProps = {
   onOpenMenu: (message: ChatMessage) => void;
 };
 
-/** One bubble. Mine sit on the right in the accent color; everyone else's on the left, with a name and face at the start of a group. */
+/** One bubble. Mine sit on the right in the accent color; everyone else's on the left, with the name above a group's first bubble and the face beside its last (like iMessage). */
 function MessageRowBase({ item, onOpenMenu }: MessageRowProps) {
   const { colors, space, radius, scheme } = useTheme();
   const { message, startsGroup, endsGroup } = item;
@@ -72,12 +72,13 @@ function MessageRowBase({ item, onOpenMenu }: MessageRowProps) {
         paddingHorizontal: space.lg,
         marginTop: startsGroup ? space.md : 2,
         flexDirection: 'row',
+        alignItems: 'flex-end',
         justifyContent: mine ? 'flex-end' : 'flex-start',
         gap: space.sm,
       }}
     >
       {mine ? null : (
-        <View style={{ width: AVATAR }}>{startsGroup ? <Avatar name={message.displayName} size={AVATAR} /> : null}</View>
+        <View style={{ width: AVATAR }}>{endsGroup ? <Avatar name={message.displayName} size={AVATAR} /> : null}</View>
       )}
       <View style={{ maxWidth: '78%', alignItems: mine ? 'flex-end' : 'flex-start', flexShrink: 1 }}>
         {!mine && startsGroup ? (

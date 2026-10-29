@@ -56,6 +56,8 @@ export function insertMessage(list: ChatMessage[], incoming: ChatMessage): ChatM
 /** The server confirmed our send. Swaps the temporary message for the real one (or drops it if Realtime got there first). */
 export function confirmSent(list: ChatMessage[], tempId: string, real: ChatMessage): ChatMessage[] {
   if (list.some((m) => m.id === real.id)) return list.filter((m) => m.id !== tempId);
+  // A refetch can drop the temporary copy before the server answers; the real message still has to show.
+  if (!list.some((m) => m.id === tempId)) return insertMessage(list, real);
   return list.map((m) => (m.id === tempId ? real : m));
 }
 
@@ -211,7 +213,14 @@ export function chatSubtitle(
   const ended = now.getTime() >= end.getTime();
   const label = countdownLabel(event.startsAt, now);
   const parts: string[] = [];
-  if (ended) parts.push(label === 'Now' ? 'Today' : label, 'ended');
+  if (ended) {
+    const closesInMin = Math.ceil((end.getTime() + 48 * HOUR_MS - now.getTime()) / MINUTE_MS);
+    if (closesInMin > 0) {
+      const closes = closesInMin < 60 ? `${closesInMin}m` : `${Math.ceil(closesInMin / 60)}h`;
+      return `Ended · chat closes in ${closes}`;
+    }
+    parts.push(label === 'Now' ? 'Today' : label, 'ended');
+  }
   else if (event.startsAt.getTime() <= now.getTime()) parts.push('Happening now');
   else {
     parts.push(label);

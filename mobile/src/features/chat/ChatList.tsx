@@ -45,7 +45,7 @@ export type ChatListProps = {
   onOpen: (eventId: string) => void;
 };
 
-/** Upcoming chats, then a collapsed Archived section (chats closed 48 hours after their event). */
+/** Active chats (open ones), then a collapsed Archived section (chats closed 48 hours after their event). */
 export function ChatList({ chats, now, onOpen }: ChatListProps) {
   const { space } = useTheme();
   const [showArchived, setShowArchived] = useState(false);
@@ -56,7 +56,7 @@ export function ChatList({ chats, now, onOpen }: ChatListProps) {
       {upcoming.length > 0 ? (
         <View style={{ gap: space.sm }}>
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingHorizontal: space.xs }}>
-            Upcoming
+            Active
           </AppText>
           <Card chats={upcoming} now={now} onOpen={onOpen} />
         </View>

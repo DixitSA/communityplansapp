@@ -10,6 +10,8 @@ export type GlassSurfaceProps = {
   style?: StyleProp<ViewStyle>;
   /** Which edge touches content and gets the hairline in the solid fallback. A bottom bar uses 'top' (default), a header 'bottom'. */
   edge?: 'top' | 'bottom';
+  /** A translucent color (e.g. an event's category color at low alpha) that tints the glass, or the solid fallback. */
+  tint?: string;
 };
 
 function glassAvailable(): boolean {
@@ -24,12 +26,12 @@ function glassAvailable(): boolean {
  * A floating bar (RSVP row, sheet toolbar). Liquid Glass on iOS 26, a solid canvas bar with a
  * hairline on top elsewhere and when Reduce Transparency is on. Never put text-heavy content in it.
  */
-export function GlassSurface({ children, style, edge = 'top' }: GlassSurfaceProps) {
+export function GlassSurface({ children, style, edge = 'top', tint }: GlassSurfaceProps) {
   const { colors } = useTheme();
   const reduceTransparency = useReduceTransparency();
   if (glassAvailable() && !reduceTransparency) {
     return (
-      <GlassView glassEffectStyle="regular" style={style}>
+      <GlassView glassEffectStyle="regular" tintColor={tint} style={style}>
         {children}
       </GlassView>
     );
@@ -46,6 +48,7 @@ export function GlassSurface({ children, style, edge = 'top' }: GlassSurfaceProp
         style,
       ]}
     >
+      {tint ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tint }]} /> : null}
       {children}
     </View>
   );

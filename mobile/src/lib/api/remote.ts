@@ -327,7 +327,9 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
           { event: 'UPDATE', schema: 'public', table: 'event_messages', filter: `event_id=eq.${eventId}` },
           (payload) => deliver(payload.new as Parameters<typeof mapTableRow>[0], handlers.onUpdate),
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') handlers.onSubscribed?.();
+        });
       return () => {
         void supabase.removeChannel(channel);
       };

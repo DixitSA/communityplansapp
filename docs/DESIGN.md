@@ -173,7 +173,7 @@ The 11 mockup screens, each with its upgrade, plus the 7 missing screens v1 need
 
 The stretchy hero and source attribution stay. |
 | 07 | Going | Becomes a celebratory **sheet** (see §4.5), not a page. |
-| 08 | Event chat | iMessage conventions, a glass header with a countdown, Report/Block in the ··· menu (required by App Store guideline 1.2). |
+| 08 | Event chat | iMessage conventions, a glass header tinted by category with a countdown, Report/Block from a long press on a message (App Store guideline 1.2). Tapbacks and swipe-to-reply are v1.1. |
 | 09 | Chats list | Event thumbnails, countdown badges, unread dots, a collapsible Archived section. |
 | 10 | Profile | Upcoming plans as a horizontal ticket stack, interest chips, a friends count that leads to a friends list, settings moved to the gear. |
 | 11 | Filters | Native form sheet with detents, a stepped distance slider with haptic ticks, a live count button. |

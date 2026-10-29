@@ -135,6 +135,11 @@ describe('merging live changes', () => {
     expect(confirmSent([temp, real], 'tmp:1', real).map((m) => m.id)).toEqual(['7']);
   });
 
+  it('confirmSent still shows the real message when a refetch already removed the temp one', () => {
+    const real = msg('7', 'me', at(20), { body: 'hi' });
+    expect(confirmSent([msg('2', 'maya', at(19))], 'tmp:1', real).map((m) => m.id)).toEqual(['7', '2']);
+  });
+
   it('removeMessage rolls back a failed send', () => {
     const temp = makeTempMessage('tmp:1', 'hi', at(20));
     expect(removeMessage([temp, msg('1', 'maya', at(19))], 'tmp:1').map((m) => m.id)).toEqual(['1']);
@@ -232,6 +237,7 @@ describe('Chats list', () => {
     expect(chatSubtitle(upcoming, 18, at(20, 30))).toBe('Tonight · in 30m · 18 going');
     expect(chatSubtitle(upcoming, null, at(21, 30))).toBe('Happening now');
     expect(chatSubtitle(upcoming, 18, at(21, 30))).toBe('Happening now · 18 going');
+    expect(chatSubtitle({ startsAt: at(18, 0, 28) }, 18, at(2, 0, 30))).toBe('Ended · chat closes in 22h');
     expect(chatSubtitle({ startsAt: at(21, 0, 25) }, 18, NOW)).toBe('Sun · ended · 18 went');
   });
 });

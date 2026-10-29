@@ -18,13 +18,16 @@ export type ChatRowProps = {
 export function ChatRow({ chat, now, onPress }: ChatRowProps) {
   const { colors, space, radius } = useTheme();
   const unread = unreadBadge(chat.unreadCount);
-  const countdown = countdownLabel(chat.startsAt, now);
+  const label = countdownLabel(chat.startsAt, now);
+  // Once the event is under way and no longer "Now", it is over.
+  const ended = chat.startsAt.getTime() <= now.getTime() && label !== 'Now';
+  const countdown = ended ? 'Ended' : label;
   const when = chat.lastAt ? relativeTime(chat.lastAt, now) : null;
   const preview = chatPreview(chat);
 
   const a11y = [
     chat.title,
-    chat.isOpen ? countdown : `Chat closed, ${countdown}`,
+    chat.isOpen ? countdown : `${countdown}, chat closed`,
     chat.unreadCount > 0 ? `${chat.unreadCount} unread` : null,
     preview,
     when ? `${when} ago` : null,
@@ -103,7 +106,7 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
                 justifyContent: 'center',
               }}
             >
-              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} allowFontScaling={false} rounded>
+              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} maxFontSizeMultiplier={1.4} rounded>
                 {unread}
               </AppText>
             </View>
@@ -115,12 +118,12 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
               paddingHorizontal: space.sm,
               paddingVertical: 2,
               borderRadius: radius.pill,
-              backgroundColor: chat.isOpen ? colors.accentSoft : colors.surfaceMuted,
+              backgroundColor: ended ? colors.surfaceMuted : colors.accentSoft,
             }}
           >
             <AppText
               variant="caption"
-              color={chat.isOpen ? 'accent' : 'inkSecondary'}
+              color={ended ? 'inkSecondary' : 'accent'}
               style={{ fontWeight: '600' }}
               maxFontSizeMultiplier={1.4}
             >
