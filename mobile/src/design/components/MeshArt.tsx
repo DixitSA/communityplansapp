@@ -45,10 +45,12 @@ export type MeshArtProps = {
   /** Interest slug, picks the palette. */
   interest?: string;
   symbol?: SymbolName;
+  /** Size of the big background symbol. */
+  symbolSize?: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function MeshArt({ id, interest, symbol, style }: MeshArtProps) {
+export function MeshArt({ id, interest, symbol, symbolSize = 120, style }: MeshArtProps) {
   const palette = (interest && ART_PALETTES[interest]) || DEFAULT_PALETTE;
   const { points, colors } = buildMesh(id, palette);
 
@@ -62,7 +64,7 @@ export function MeshArt({ id, interest, symbol, style }: MeshArtProps) {
       {symbol ? (
         <Icon
           name={symbol}
-          size={120}
+          size={symbolSize}
           tintColor="rgba(255, 255, 255, 0.35)"
           weight="light"
           style={styles.symbol}
@@ -74,5 +76,6 @@ export function MeshArt({ id, interest, symbol, style }: MeshArtProps) {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, overflow: 'hidden' },
-  symbol: { position: 'absolute', right: -12, bottom: -12 },
+  // Offset in percent so it scales with the art and stays clear of the category tag (bottom-right).
+  symbol: { position: 'absolute', right: '15%', bottom: '15%' },
 });

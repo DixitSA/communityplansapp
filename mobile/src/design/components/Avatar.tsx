@@ -30,9 +30,11 @@ export type AvatarProps = {
   size?: number;
   /** Draws a canvas-colored ring so overlapping avatars stay separated. */
   ring?: boolean;
+  /** Ring color; the surface by default, `canvas` for avatars that overlap on a card. */
+  ringColor?: 'surface' | 'canvas';
 };
 
-export function Avatar({ name, size = 28, ring = false }: AvatarProps) {
+export function Avatar({ name, size = 28, ring = false, ringColor = 'surface' }: AvatarProps) {
   const { colors } = useTheme();
   const tint = tintFor(name);
   return (
@@ -48,14 +50,14 @@ export function Avatar({ name, size = 28, ring = false }: AvatarProps) {
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: ring ? 2 : 0,
-        borderColor: colors.surface,
+        borderColor: colors[ringColor],
       }}
     >
       <AppText
         variant="caption"
         color={tint.fg}
         allowFontScaling={false}
-        style={{ fontSize: Math.round(size * 0.4), lineHeight: Math.round(size * 0.5), fontWeight: '600' }}
+        style={{ fontSize: Math.round(size * 0.38), lineHeight: Math.round(size * 0.46), fontWeight: '600' }}
       >
         {initialsOf(name)}
       </AppText>

@@ -23,6 +23,10 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'chevron.right': 'chevron-forward',
   'chevron.down': 'chevron-down',
   mappin: 'location-sharp',
+  clock: 'time-outline',
+  'square.grid.2x2': 'grid-outline',
+  location: 'navigate-outline',
+  'mappin.circle.fill': 'location',
   map: 'map-outline',
   'square.and.arrow.up': 'share-outline',
   'music.note': 'musical-notes',
@@ -34,7 +38,51 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'moon.stars.fill': 'moon',
   'calendar.badge.plus': 'calendar-outline',
   'paintbrush.fill': 'brush',
+  checkmark: 'checkmark',
+  xmark: 'close',
+  'person.2.fill': 'people',
+  'person.crop.circle.badge.plus': 'person-add',
+  'bell.slash': 'notifications-off-outline',
+  'list.bullet': 'list',
+  'building.2': 'business-outline',
+  'slider.horizontal.3': 'options-outline',
+  'line.3.horizontal.decrease.circle': 'filter-circle-outline',
+  ellipsis: 'ellipsis-horizontal',
+  star: 'star-outline',
+  'star.fill': 'star',
+  'person.fill': 'person',
+  'person.2': 'people-outline',
+  'person.badge.plus': 'person-add',
+  'checkmark.circle': 'checkmark-circle-outline',
+  'checkmark.circle.fill': 'checkmark-circle',
+  'lock.fill': 'lock-closed',
+  'message.fill': 'chatbubble',
+  'ticket.fill': 'ticket',
+  'xmark.circle.fill': 'close-circle',
+  'exclamationmark.circle.fill': 'alert-circle',
+  gearshape: 'settings-outline',
+  'location.fill': 'navigate',
+  'envelope.fill': 'mail',
+  'lock.shield.fill': 'shield-checkmark',
+  'sportscourt.fill': 'basketball',
+  'leaf.fill': 'leaf',
+  'sun.max.fill': 'sunny',
+  'person.3.fill': 'people-circle',
+  laptopcomputer: 'laptop-outline',
+  'tshirt.fill': 'shirt',
+  'rectangle.portrait.and.arrow.right': 'log-out-outline',
+  'arrow.up': 'arrow-up',
+  'info.circle': 'information-circle-outline',
+  'bubble.left.fill': 'chatbubble',
 };
+
+/**
+ * Interest symbols come from the database as plain strings. They are SF Symbol names by contract
+ * (the `interests.symbol` column), so this narrows the type; an unknown name just renders blank.
+ */
+export function asSymbol(name: string): SymbolName {
+  return name as SymbolName;
+}
 
 export type IconProps = {
   name: SymbolName;

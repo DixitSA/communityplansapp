@@ -15,7 +15,7 @@ function loadPlaywright() {
   }
 }
 
-const PORT = 8091;
+const PORT = Number(process.env.PORT) || 8091;
 const BASE = `http://localhost:${PORT}`;
 const OUT_DIR = path.join(__dirname, '..', '.screenshots');
 const SCHEMES = ['light', 'dark'];

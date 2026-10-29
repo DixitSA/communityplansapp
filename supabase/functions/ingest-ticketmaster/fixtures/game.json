@@ -1,0 +1,72 @@
+{
+  "id": "Z7r9jZ1A7aaa2",
+  "name": "Hornets vs. Celtics",
+  "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7aaa2",
+  "images": [
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa2_small.jpg",
+      "width": 640,
+      "height": 360
+    },
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa2_large.jpg",
+      "width": 1136,
+      "height": 639
+    },
+    {
+      "ratio": "3_2",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa2_32.jpg",
+      "width": 2048,
+      "height": 1365
+    }
+  ],
+  "dates": {
+    "start": {
+      "localDate": "2026-11-20",
+      "localTime": "19:30:00",
+      "dateTime": "2026-11-21T00:30:00Z"
+    },
+    "status": {
+      "code": "onsale"
+    }
+  },
+  "classifications": [
+    {
+      "segment": {
+        "name": "Sports"
+      },
+      "genre": {
+        "name": "Basketball"
+      }
+    }
+  ],
+  "_embedded": {
+    "venues": [
+      {
+        "name": "Venue Z7r9jZ1A7aaa2",
+        "address": {
+          "line1": "100 Main St"
+        },
+        "city": {
+          "name": "Charlotte"
+        },
+        "state": {
+          "stateCode": "NC"
+        },
+        "location": {
+          "longitude": "-80.8397",
+          "latitude": "35.2251"
+        }
+      }
+    ]
+  },
+  "priceRanges": [
+    {
+      "currency": "USD",
+      "min": 22,
+      "max": 410
+    }
+  ]
+}

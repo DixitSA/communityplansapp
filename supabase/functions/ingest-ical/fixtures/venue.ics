@@ -1,0 +1,41 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:v1
+SUMMARY:Trivia at the Brewery
+DTSTART;TZID=America/New_York:20261120T190000
+DTEND;TZID=America/New_York:20261120T210000
+LOCATION:Birdsong Brewing\, 1016 N Davidson St
+URL:http://insecure.example/t
+END:VEVENT
+BEGIN:VEVENT
+UID:folded
+SUMMARY:A very long title that is folded across
+  several physical lines in the feed
+DESCRIPTION:Line one\nLine two with a semi\;colon and a long tail that
+  wraps
+DTSTART;TZID=America/New_York:20261121T200000
+BEGIN:VALARM
+TRIGGER:-PT15M
+SUMMARY:alarm summary must be ignored
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:cancelled
+SUMMARY:Cancelled Show
+STATUS:CANCELLED
+DTSTART:20261122T200000Z
+END:VEVENT
+BEGIN:VEVENT
+UID:weekly
+SUMMARY:Weekly Run Club
+RRULE:FREQ=WEEKLY;BYDAY=TU
+DTSTART;TZID=America/New_York:20261117T180000
+END:VEVENT
+BEGIN:VEVENT
+UID:allday
+SUMMARY:Festival Weekend
+DTSTART;VALUE=DATE:20261128
+DTEND;VALUE=DATE:20261130
+END:VEVENT
+END:VCALENDAR

@@ -147,6 +147,10 @@ select throws_ok($$ insert into public.device_tokens (token, user_id)
 select lives_ok($$ insert into public.friendships (user_a, user_b, requested_by)
   values ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000d',
           '00000000-0000-0000-0000-00000000000d') $$, 'dave sends alice a request');
+select throws_ok($$ insert into public.friendships (user_a, user_b, requested_by)
+  values ('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c',
+          '00000000-0000-0000-0000-00000000000d') $$,
+  null, null, 'cannot create a friend request between two other people');
 select is((select count(*) from public.friendships
   where user_b = '00000000-0000-0000-0000-00000000000d' and status = 'pending')::int, 1, 'request is pending');
 update public.friendships set status = 'accepted' where user_b = '00000000-0000-0000-0000-00000000000d';

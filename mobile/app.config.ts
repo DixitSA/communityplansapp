@@ -12,6 +12,12 @@ const config: ExpoConfig = {
     icon: './assets/expo.icon',
     bundleIdentifier: 'com.dixitsa.yard',
     supportsTablet: false,
+    // Needed by the real app build; Expo Go already has both capabilities.
+    usesAppleSignIn: true,
+    infoPlist: {
+      NSLocationWhenInUseUsageDescription:
+        'yard uses your location to show how far events are. It stays on your phone.',
+    },
   },
   android: {
     adaptiveIcon: {

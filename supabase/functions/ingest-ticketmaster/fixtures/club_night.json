@@ -1,0 +1,72 @@
+{
+  "id": "Z7r9jZ1A7aaa4",
+  "name": "Bass Fridays",
+  "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7aaa4",
+  "images": [
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa4_small.jpg",
+      "width": 640,
+      "height": 360
+    },
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa4_large.jpg",
+      "width": 1136,
+      "height": 639
+    },
+    {
+      "ratio": "3_2",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa4_32.jpg",
+      "width": 2048,
+      "height": 1365
+    }
+  ],
+  "dates": {
+    "start": {
+      "localDate": "2026-11-27",
+      "localTime": "23:00:00",
+      "dateTime": "2026-11-28T04:00:00Z"
+    },
+    "status": {
+      "code": "onsale"
+    }
+  },
+  "classifications": [
+    {
+      "segment": {
+        "name": "Music"
+      },
+      "genre": {
+        "name": "Dance/Electronic"
+      }
+    }
+  ],
+  "_embedded": {
+    "venues": [
+      {
+        "name": "Venue Z7r9jZ1A7aaa4",
+        "address": {
+          "line1": "100 Main St"
+        },
+        "city": {
+          "name": "Charlotte"
+        },
+        "state": {
+          "stateCode": "NC"
+        },
+        "location": {
+          "longitude": "-80.8397",
+          "latitude": "35.2251"
+        }
+      }
+    ]
+  },
+  "priceRanges": [
+    {
+      "currency": "USD",
+      "min": 0,
+      "max": 0
+    }
+  ]
+}

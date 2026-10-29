@@ -1,0 +1,45 @@
+{
+  "id": "Z7r9jZ1A7aaa6",
+  "name": "Mystery Show",
+  "url": "https://www.ticketmaster.com/event/Z7r9jZ1A7aaa6",
+  "images": [
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa6_small.jpg",
+      "width": 640,
+      "height": 360
+    },
+    {
+      "ratio": "16_9",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa6_large.jpg",
+      "width": 1136,
+      "height": 639
+    },
+    {
+      "ratio": "3_2",
+      "url": "https://s1.ticketm.net/Z7r9jZ1A7aaa6_32.jpg",
+      "width": 2048,
+      "height": 1365
+    }
+  ],
+  "dates": {
+    "start": {
+      "localDate": "2026-12-01",
+      "localTime": "19:00:00",
+      "dateTime": "2026-12-02T00:00:00Z"
+    },
+    "status": {
+      "code": "onsale"
+    }
+  },
+  "classifications": [
+    {
+      "segment": {
+        "name": "Miscellaneous"
+      },
+      "genre": {
+        "name": "Fairs & Festivals"
+      }
+    }
+  ]
+}

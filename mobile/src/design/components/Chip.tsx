@@ -21,6 +21,13 @@ export type ChipProps = {
   /** Interest slug: tints the chip with that category's tag colors. */
   category?: string;
   size?: 'regular' | 'small';
+  /** Tighter padding and gaps, for the filter row where three chips share one line with the map button. */
+  dense?: boolean;
+  /**
+   * Reserves a 2pt border so selection doesn't shift layout. `true` draws it in the category
+   * (or accent) color, `false` keeps it transparent. Leave undefined for no border at all.
+   */
+  ring?: boolean;
   /** Omit for a non-interactive tag. */
   onPress?: () => void;
 };
@@ -40,6 +47,8 @@ export function Chip({
   tone = 'accent',
   category,
   size = 'regular',
+  dense = false,
+  ring,
   onPress,
 }: ChipProps) {
   const { colors, space, radius, scheme } = useTheme();
@@ -59,27 +68,36 @@ export function Chip({
     fg = 'ink';
     iconColor = 'ink';
   }
-  const iconSize = small ? 12 : 15;
+  const iconSize = small ? 12 : dense ? 14 : 15;
 
   const content = (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        gap: space.xs,
-        paddingHorizontal: small ? space.sm : space.md,
+        gap: dense ? 3 : space.xs,
+        paddingHorizontal: small ? space.sm : dense ? space.sm : space.md,
         paddingVertical: small ? space.xs : space.sm,
+        // Regular chips are 36pt tall (matches the map/List toggle in the filter row).
+        minHeight: small ? undefined : 36,
         borderRadius: radius.pill,
         borderCurve: 'continuous',
         backgroundColor: bg,
+        ...(ring === undefined
+          ? null
+          : {
+              borderWidth: 2,
+              borderColor: ring ? (isCategory(category) ? categoryColors[category].solid : colors.accent) : 'transparent',
+            }),
       }}
     >
       {symbol ? <Icon name={symbol} size={iconSize} color={iconColor} /> : null}
       <AppText
-        variant={small ? 'caption' : 'subheadline'}
+        variant={small && !filled ? 'caption' : 'subheadline'}
         color={fg}
         style={{ fontWeight: '500' }}
-        maxFontSizeMultiplier={1.6}
+        // The filled filter-row chips sit in a tight row beside the map toggle, so they cap sooner.
+        maxFontSizeMultiplier={filled ? 1.4 : 1.6}
       >
         {label}
       </AppText>

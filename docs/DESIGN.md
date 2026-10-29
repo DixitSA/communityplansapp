@@ -75,7 +75,7 @@ The yard palette, checked for **WCAG AA**: text ≥ 4.5:1, glyphs on solid pins 
 - Clamp it so text stays AA.
 
 **Plan states:**
-- **Interested:** ★ outline, turning to a filled star when chosen.
+- **Interested:** ♡ heart outline, filled when chosen (the same glyph on cards, the RSVP row and Profile "Saved").
 - **Down if friends go:** a two-person glyph, with an `accentSoft` fill when chosen.
 - **Going:** ✓ on a filled `accent` button.
 
@@ -111,7 +111,7 @@ These are what make the app feel exceptional rather than merely fine.
    - A "Today" pill appears when you scroll away.
 2. **Card → detail zoom.** The native iOS zoom transition: the card's image grows into the hero, and swiping down dismisses it interactively.
 3. **Long-press preview.** A native context menu with a live preview of the event and quick actions: Going, Interested, Share, Directions. Power users never need to open the detail page.
-4. **RSVP row (per the v2 mockup).** Three equal buttons pinned at the bottom of the event page: **★ Interested · 👥 Down if friends go · ✓ Going**.
+4. **RSVP row (per the v2 mockup).** Three equal buttons pinned at the bottom of the event page: **♡ Interested · 👥 Down if friends go · ✓ Going**.
    - Going is the filled `accent` button. The others are `surface` buttons with a hairline border.
    - The selected state fills in, with a symbol bounce and a haptic.
    - After you choose, a one-line privacy hint appears under the row ("Only you can see this" / "Friends and other attendees can see this").
@@ -173,7 +173,7 @@ The 11 mockup screens, each with its upgrade, plus the 7 missing screens v1 need
 
 The stretchy hero and source attribution stay. |
 | 07 | Going | Becomes a celebratory **sheet** (see §4.5), not a page. |
-| 08 | Event chat | iMessage conventions, a glass header with a countdown, Report/Block in the ··· menu (required by App Store guideline 1.2). |
+| 08 | Event chat | iMessage conventions, a glass header tinted by category with a countdown, Report/Block from a long press on a message (App Store guideline 1.2). Tapbacks and swipe-to-reply are v1.1. |
 | 09 | Chats list | Event thumbnails, countdown badges, unread dots, a collapsible Archived section. |
 | 10 | Profile | Upcoming plans as a horizontal ticket stack, interest chips, a friends count that leads to a friends list, settings moved to the gear. |
 | 11 | Filters | Native form sheet with detents, a stepped distance slider with haptic ticks, a live count button. |
@@ -206,7 +206,7 @@ The tagline is **"Find your people."** Warm, short, a little playful, and never 
 | Card → detail zoom | `Link.AppleZoom` (Expo Router, iOS 18+) |
 | Long-press preview + menu | `Link.Preview` + `Link.Menu` (Expo Router) |
 | Sheets with detents (filters, Going) | Route with `presentation: 'formSheet'`, `sheetAllowedDetents` |
-| Persistent map sheet | `@gorhom/bottom-sheet` over `expo-maps` (Apple Maps) |
+| Persistent map sheet | `@expo/ui` `BottomSheet` over `expo-maps` (Apple Maps) |
 | Glass buttons/bars | `GlassView` / `GlassContainer` from `expo-glass-effect` |
 | Native toggles, pickers, segmented control, slider | `@expo/ui` SwiftUI components |
 | SF Symbols + symbol animations | `expo-symbols` |

@@ -1,12 +1,19 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Icon, type SymbolName } from './Icon';
 
-export type EmptyStateProps = { symbol: SymbolName; title: string; message: string };
+export type EmptyStateProps = {
+  symbol: SymbolName;
+  title: string;
+  message: string;
+  /** Optional action under the message, e.g. a "Clear filters" button. */
+  children?: ReactNode;
+};
 
-export function EmptyState({ symbol, title, message }: EmptyStateProps) {
+export function EmptyState({ symbol, title, message, children }: EmptyStateProps) {
   const { colors, space, radius } = useTheme();
   return (
     <View style={{ alignItems: 'center', gap: space.sm, paddingVertical: space.xxxl, paddingHorizontal: space.xl }}>
@@ -30,6 +37,7 @@ export function EmptyState({ symbol, title, message }: EmptyStateProps) {
       <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }}>
         {message}
       </AppText>
+      {children}
     </View>
   );
 }

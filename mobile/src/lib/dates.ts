@@ -64,3 +64,8 @@ export function formatTime(d: Date, short = false): string {
   if (short && m === 0) return `${h12} ${suffix}`;
   return `${h12}:${String(m).padStart(2, '0')} ${suffix}`;
 }
+
+/** "6:00 PM – 9:00 PM", or just the start when there is no end. */
+export function formatTimeRange(start: Date, end?: Date): string {
+  return end ? `${formatTime(start)} – ${formatTime(end)}` : formatTime(start);
+}

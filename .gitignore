@@ -10,6 +10,8 @@ Config.xcconfig
 .env
 .env.*
 !.env.example
+# Public (EXPO_PUBLIC_*) client config only; see the file header.
+!mobile/.env.development
 
 # Supabase local state
 supabase/.temp/

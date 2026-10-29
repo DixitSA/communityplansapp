@@ -14,6 +14,8 @@ export type GlassButtonProps = {
   iconColor?: ColorToken;
   /** Sits on a photo/art: darker glass (and a dark translucent fallback) so white glyphs stay legible. */
   overImage?: boolean;
+  /** Solid color fill instead of glass (e.g. the Going check on a card). */
+  fill?: ColorToken;
 };
 
 function glassAvailable(): boolean {
@@ -32,10 +34,11 @@ export function GlassButton({
   size = 44,
   iconColor = 'ink',
   overImage = false,
+  fill,
 }: GlassButtonProps) {
   const { colors } = useTheme();
   const reduceTransparency = useReduceTransparency();
-  const useGlass = glassAvailable() && !reduceTransparency;
+  const useGlass = !fill && glassAvailable() && !reduceTransparency;
   const circle = { width: size, height: size, borderRadius: size / 2, borderCurve: 'continuous' as const };
 
   return (
@@ -59,8 +62,8 @@ export function GlassButton({
             circle,
             styles.center,
             {
-              backgroundColor: overImage ? 'rgba(0, 0, 0, 0.4)' : colors.surface,
-              borderWidth: overImage ? 0 : StyleSheet.hairlineWidth,
+              backgroundColor: fill ? colors[fill] : overImage ? 'rgba(0, 0, 0, 0.4)' : colors.surface,
+              borderWidth: overImage || fill ? 0 : StyleSheet.hairlineWidth,
               borderColor: colors.line,
             },
           ]}

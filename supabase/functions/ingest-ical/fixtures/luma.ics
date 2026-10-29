@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Luma//EN
+BEGIN:VEVENT
+UID:evt-abc@lu.ma
+SUMMARY:Charlotte Founders Mixer
+DESCRIPTION:Meet builders.\nBring a friend\, please.
+LOCATION:Optimist Hall\, 1115 N Brevard St\, Charlotte
+GEO:35.2400;-80.8300
+URL:https://lu.ma/abc
+DTSTART:20261115T230000Z
+DTEND:20261116T010000Z
+END:VEVENT
+END:VCALENDAR
