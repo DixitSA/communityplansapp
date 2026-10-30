@@ -207,6 +207,7 @@ export default function ChatScreen() {
         title={event?.title ?? 'Chat'}
         subtitle={event ? chatSubtitle(event, goingCount, now) : ''}
         imageUrl={event?.imageUrl}
+        imageSensitive={event?.imageSensitive}
         interest={event?.interest}
         symbol={event?.symbol}
         onBack={goBack}

@@ -58,8 +58,9 @@ export function EventImage({ eventId, source, sensitive, overlay = 'badge' }: Ev
         <View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}
-          accessible={overlay === 'label'}
-          accessibilityLabel={overlay === 'label' ? 'Sensitive image, hidden' : undefined}
+          // Decoration only: the card, or the event page's tap target, carries the spoken label.
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
         >
           <View
             style={{
