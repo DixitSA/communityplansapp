@@ -14,6 +14,7 @@ try { pw = require('playwright'); } catch { pw = require(path.join(execSync('npm
   const files = process.argv.slice(2).length ? process.argv.slice(2) : ['kit.html'];
   for (const file of files) {
   await page.goto('file://' + path.join(__dirname, file));
+  await page.waitForFunction(() => window.READY !== false); // native.html builds its slides after loading data
   await page.evaluate(() => document.fonts.ready);
   for (const el of await page.$$('.board')) {
     const id = await el.getAttribute('id');

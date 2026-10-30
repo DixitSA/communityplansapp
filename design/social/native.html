@@ -1,0 +1,72 @@
+<!doctype html>
+<!-- yard. "native" carousel: a real photo fills each slide, captions look like Instagram's own text stickers,
+     and yard. is just a small signature. Data comes from a drafts/*.js file:
+       node design/social/render.cjs "native.html?data=drafts/2026-10-30-halloween-party.js"
+     Slides without a photo fall back to a dark gradient (fine for nightlife; add real photos when you have them). -->
+<html><head><meta charset="utf-8"><style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#888; font-family:'Inter','Inter Display',-apple-system,'SF Pro Text',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+.board { position:relative; overflow:hidden; margin:40px; width:1080px; height:1350px; background:#101411; color:#fff; }
+.bg { position:absolute; inset:0; }
+.bg img { width:100%; height:100%; object-fit:cover; }
+.shade { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 45%, rgba(0,0,0,.6) 100%); }
+/* Instagram "classic" text sticker look: tight rounded label boxes per line. */
+.stk { position:absolute; left:64px; right:64px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.stk > div { max-width:100%; line-height:1.42; }
+.stk span { display:inline; background:#fff; color:#111; font-weight:700; font-size:54px; line-height:1.18; padding:6px 20px 8px; border-radius:14px; letter-spacing:-0.01em; box-decoration-break:clone; -webkit-box-decoration-break:clone; }
+.stk.big span { font-size:84px; font-weight:800; letter-spacing:-0.03em; }
+.stk.dark span { background:rgba(17,17,17,.82); color:#fff; }
+.stk .small { font-size:38px; font-weight:600; }
+.meta { position:absolute; left:64px; right:64px; bottom:120px; display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.meta span { background:rgba(17,17,17,.72); color:#fff; font-size:38px; font-weight:600; padding:8px 20px 10px; border-radius:14px; }
+.meta .hl { background:#7FC3A0; color:#0f1a14; font-weight:700; }
+.sig { position:absolute; right:56px; bottom:44px; font-family:'Inter Display','Inter',sans-serif; font-weight:800; letter-spacing:-0.055em; font-size:44px; color:#fff; opacity:.92; text-shadow:0 2px 14px rgba(0,0,0,.45); }
+.sig i { font-style:normal; color:#7FC3A0; }
+.num { position:absolute; left:64px; bottom:48px; font-size:30px; font-weight:600; opacity:.8; text-shadow:0 1px 10px rgba(0,0,0,.6); }
+.credit { position:absolute; right:56px; top:40px; font-size:24px; font-weight:600; opacity:.75; text-shadow:0 1px 10px rgba(0,0,0,.6); }
+</style></head><body>
+<script>
+window.READY = false;
+const dataFile = new URLSearchParams(location.search).get('data') || 'drafts/example.js';
+const s = document.createElement('script');
+s.src = dataFile;
+s.onload = build;
+s.onerror = () => { document.body.textContent = `Could not load ${dataFile}`; window.READY = true; };
+document.head.append(s);
+
+// Fallback backgrounds when a slide has no photo: deep, slightly different per slide.
+const FALLBACK = ['#1b1325,#3a1d2b', '#101b2b,#1d3a3a', '#24140f,#3d2a12', '#14141f,#2b1d3d', '#0f1f17,#1f3a2a', '#1f1010,#3a1d1d'];
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const lines = (arr, cls = '') => `<div class="stk ${cls}">${arr.map((l) => `<div><span${l.small ? ' class="small"' : ''}>${esc(l.text ?? l)}</span></div>`).join('')}</div>`;
+
+function bg(slide, i) {
+  if (slide.photo) return `<div class="bg"><img src="${slide.photo}" alt=""></div><div class="shade"></div>`;
+  const [a, b] = FALLBACK[i % FALLBACK.length].split(',');
+  return `<div class="bg" style="background:radial-gradient(120% 90% at 20% 10%, ${b} 0%, ${a} 70%)"></div>`;
+}
+
+function build() {
+  const D = window.YARD_NATIVE;
+  const total = D.slides.length;
+  document.body.insertAdjacentHTML('beforeend', D.slides.map((sl, i) => {
+    let inner = '';
+    if (sl.kind === 'cover') {
+      inner = `<div style="position:absolute;top:150px;left:0;right:0">${lines(sl.lines, 'big')}</div>` +
+        (sl.sub ? `<div style="position:absolute;top:720px;left:0;right:0">${lines([{ text: sl.sub, small: true }], 'dark')}</div>` : '');
+    } else if (sl.kind === 'end') {
+      inner = `<div style="position:absolute;top:360px;left:0;right:0">${lines(sl.lines, 'big')}</div>` +
+        (sl.sub ? `<div style="position:absolute;top:860px;left:0;right:0">${lines([{ text: sl.sub, small: true }], 'dark')}</div>` : '');
+    } else {
+      inner = `<div style="position:absolute;top:110px;left:0;right:0">${lines([`${sl.day} · ${sl.time}`], 'dark')}</div>` +
+        `<div style="position:absolute;top:220px;left:0;right:0">${lines([sl.title], 'big')}</div>` +
+        `<div class="meta">${[sl.venue && `📍 ${sl.venue}`, sl.detail, sl.price && `<b class="hl">${sl.price}</b>`].filter(Boolean)
+          .map((m) => m.startsWith('<b') ? `<span class="hl">${m.replace(/<\/?b[^>]*>/g, '')}</span>` : `<span>${esc(m)}</span>`).join('')}</div>`;
+    }
+    return `<div class="board" id="${D.id}-${i + 1}">${bg(sl, i)}${inner}` +
+      (sl.credit ? `<div class="credit">📷 ${esc(sl.credit)}</div>` : '') +
+      `<div class="num">${i + 1}/${total}</div><div class="sig">yard<i>.</i></div></div>`;
+  }).join(''));
+  Promise.all([...document.images].map((im) => im.decode().catch(() => {}))).then(() => { window.READY = true; });
+}
+</script>
+</body></html>
