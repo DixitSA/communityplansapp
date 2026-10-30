@@ -15,7 +15,40 @@ Deno.test("minimal event is valid; title trimmed; time normalized to UTC", () =>
     assertEquals(r.value.title, "Trivia Night");
     assertEquals(r.value.starts_at, "2026-11-06T00:00:00.000Z");
     assertEquals(r.value.venue, null);
+    assertEquals(r.value.image_url, null);
   }
+});
+
+Deno.test("image_url is optional and blank values normalize to null", () => {
+  assertEquals(reason({ ...ok }), "ok");
+  assertEquals(reason({ ...ok, image_url: null }), "ok");
+  assertEquals(reason({ ...ok, image_url: "   " }), "ok");
+  const r = validateEvent({ ...ok, image_url: "https://cdn.example.com/posters/event.jpg" }, now);
+  assert(r.ok);
+  if (r.ok) assertEquals(r.value.image_url, "https://cdn.example.com/posters/event.jpg");
+});
+
+Deno.test("image_url requires a valid HTTPS URL with a host and no credentials, whitespace or controls", () => {
+  assertEquals(reason({ ...ok, image_url: "http://cdn.example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https:example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https:/example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https:///example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://user:pass@cdn.example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://@cdn.example.com/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/event image.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com\\event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://bad_.example/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com:bad/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com:65536/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com:00080/event.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/event.jpg\n" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/\u0080.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/\u0085.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/\u009f.jpg" }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com/" + "x".repeat(2040) }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: 7 }), "image_url_invalid");
+  assertEquals(reason({ ...ok, image_url: "https://cdn.example.com:8443/event.jpg" }), "ok");
 });
 
 Deno.test("title rules", () => {
@@ -78,6 +111,11 @@ Deno.test("fingerprint ignores case, punctuation, spacing and seconds; differs o
   assertEquals(a.length, 64);
   assertNotEquals(a, await fingerprint({ title: "Trivia Night", starts_at: "2026-11-06T00:01:00.000Z", venue: "The Fillmore" }));
   assertNotEquals(a, await fingerprint({ title: "Trivia Night", starts_at: "2026-11-06T00:00:00.000Z", venue: null }));
+  // Image changes must not alter de-duplication identity.
+  const withImage = validateEvent({ ...ok, image_url: "https://cdn.example.com/a.jpg" }, now);
+  const withAnotherImage = validateEvent({ ...ok, image_url: "https://cdn.example.com/b.jpg" }, now);
+  assert(withImage.ok && withAnotherImage.ok);
+  if (withImage.ok && withAnotherImage.ok) assertEquals(await fingerprint(withImage.value), await fingerprint(withAnotherImage.value));
 });
 
 Deno.test("NUL bytes are rejected in any string, title included", () => {

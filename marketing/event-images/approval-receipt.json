@@ -1,0 +1,170 @@
+{
+  "approved_at": "2026-10-30T00:13:21.5084925Z",
+  "approved": 17,
+  "new_events": 16,
+  "existing_events_updated": 1,
+  "rows": [
+    {
+      "event_id": "b8381a4b-8692-49c5-b9ec-020e987605e1",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-10-30 22:00:00+00",
+      "status": "approved",
+      "submission_id": "22835c22-596d-494a-82c4-b181b023bf34",
+      "title": "Live Friday Nights at Camp"
+    },
+    {
+      "event_id": "d6ed27b6-8a00-4d54-8e1a-3e5abf1a6625",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-10-31 23:00:00+00",
+      "status": "approved",
+      "submission_id": "47d3101d-98ef-4df2-810b-33082029d7a4",
+      "title": "Boileryard Bash"
+    },
+    {
+      "event_id": "539ea5db-2de8-4ee5-8f82-aea8d3a18211",
+      "has_image": true,
+      "reuse_existing": true,
+      "starts_at": "2026-11-01 17:00:00+00",
+      "status": "approved",
+      "submission_id": "df531fdf-01a4-4e02-9a1e-aab7649c0655",
+      "title": "Festival Día de Muertos"
+    },
+    {
+      "event_id": "795375cc-d7f4-4c79-883a-022c76c95280",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-06 01:00:00+00",
+      "status": "approved",
+      "submission_id": "2a189a4c-ef0c-4073-9939-c4e80af933b2",
+      "title": "Paige Fish: The Midnight Crisis Tour with Hank Garrett"
+    },
+    {
+      "event_id": "35c6fd8c-d221-451d-a691-3b781cd3acc4",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-07 01:00:00+00",
+      "status": "approved",
+      "submission_id": "60532c75-6321-4161-aa82-e6bfe3c0f6e7",
+      "title": "Caiola with Bre Kennedy and Thomas LaVine"
+    },
+    {
+      "event_id": "a17e1128-eaea-472e-9646-5014374be25f",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-07 02:00:00+00",
+      "status": "approved",
+      "submission_id": "255b0621-2190-4f13-960c-19701f9402a2",
+      "title": "Barfly Friday Night Karaoke (21+)"
+    },
+    {
+      "event_id": "747d286c-f4a3-489d-8072-102c1704eb54",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-07 20:00:00+00",
+      "status": "approved",
+      "submission_id": "0dca09f8-1fb1-4485-b5a2-6c5c631e9d0e",
+      "title": "3rd Annual Chili Cook Off"
+    },
+    {
+      "event_id": "4e021747-acf4-438c-b349-ebdc62f9a95e",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-08 01:00:00+00",
+      "status": "approved",
+      "submission_id": "83566f77-601a-4571-8a1a-8dde838b3991",
+      "title": "Live Like Bryant's 4th Annual Fall Jam"
+    },
+    {
+      "event_id": "efb724d0-555a-41d6-ba44-ccaa3597cce3",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-12 00:00:00+00",
+      "status": "approved",
+      "submission_id": "194a1d1b-7b65-4ef2-9a39-fb480701d9c4",
+      "title": "New Friend's Book Club"
+    },
+    {
+      "event_id": "b57867e2-2946-4901-b4e8-cad7d6eadc91",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-12 01:00:00+00",
+      "status": "approved",
+      "submission_id": "e70bdab0-b242-4141-b211-c010446398e9",
+      "title": "An Evening with Spafford"
+    },
+    {
+      "event_id": "4189ad09-719f-46e9-aa34-2c7f6284bb2a",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-13 01:00:00+00",
+      "status": "approved",
+      "submission_id": "beef36eb-6b97-461c-8e26-dda944bc37ee",
+      "title": "Lespecial with Natalie Brooke"
+    },
+    {
+      "event_id": "0b77b35c-e16a-4766-99a0-5f7e926dabe0",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-14 17:00:00+00",
+      "status": "approved",
+      "submission_id": "f1b2e4d3-60e3-4a66-a538-d9f011fb23be",
+      "title": "Witch Fest Market"
+    },
+    {
+      "event_id": "cc4c4e59-5075-4962-ae23-a17e5f793b7d",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-14 21:00:00+00",
+      "status": "approved",
+      "submission_id": "86425292-5501-44c5-b531-6930d11fc34e",
+      "title": "Crystal Fountains Bluegrass"
+    },
+    {
+      "event_id": "ff1a5e6b-eb06-4231-8f2b-f4ef23cba82f",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-15 18:00:00+00",
+      "status": "approved",
+      "submission_id": "7905986c-1458-441c-bd63-0a2ef283561b",
+      "title": "Philip Funderburk Live"
+    },
+    {
+      "event_id": "c2740989-5696-46cd-8126-3600dec0baaa",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-20 23:00:00+00",
+      "status": "approved",
+      "submission_id": "80ee56c7-2343-41bb-bc09-47ceb62a3964",
+      "title": "Gothic Punk Night Market"
+    },
+    {
+      "event_id": "191f5df4-6672-4711-8cbe-14a5ba00a2a6",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-21 21:00:00+00",
+      "status": "approved",
+      "submission_id": "7021376b-e4fb-42db-9937-b1e0e4fa7366",
+      "title": "Grievous Angels Band"
+    },
+    {
+      "event_id": "5579d7ea-5c97-4082-906c-b18bcb3b79a7",
+      "has_image": true,
+      "reuse_existing": false,
+      "starts_at": "2026-11-24 00:00:00+00",
+      "status": "approved",
+      "submission_id": "e9f3c2ed-5f0f-47f0-93fa-c67cd621096d",
+      "title": "Board Game Speed Dating at Heist Brewery (20s & 30s)"
+    }
+  ],
+  "verification": {
+    "approved": 17,
+    "active": 17,
+    "matching_images": 17,
+    "matching_times": 17,
+    "with_locations": 17,
+    "categorized": 17,
+    "returned_by_app_feed": 17
+  }
+}

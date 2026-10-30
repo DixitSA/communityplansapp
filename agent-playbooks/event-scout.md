@@ -31,6 +31,7 @@ Behave like a person. Open **at most about 60 pages per session**, one at a time
 - Skip private events and anything outside Charlotte, NC and its close suburbs.
 - Keep `details` to a short factual summary (max 1000 characters), in your own words. No copied marketing blocks.
 - `source_handle` is the site domain you found it on (for example `fillmorenc.com`).
+- `image_url`: optional direct HTTPS URL for imagery clearly tied to this specific event (such as its official event poster). Do not use venue logos, generic venue photos, unrelated event images, or posters for a different date/event. Include only a valid URL with a host, no credentials or whitespace, max 2048 characters. Do not download, alter, or re-host the image.
 
 ## Output: `events.json`
 Write only valid JSON, no comments. Allowed keys per event are exactly these; any other key makes the event get rejected.
@@ -43,6 +44,7 @@ Write only valid JSON, no comments. Allowed keys per event are exactly these; an
 | `venue` | no | max 120 |
 | `address` | no | max 200, street address if known |
 | `link` | no | `https://` only, max 500 |
+| `image_url` | no | Event-specific image URL; HTTPS, max 2048 |
 | `details` | no | max 1000 |
 | `source_handle` | no | max 100 |
 
@@ -58,6 +60,7 @@ Max 50 events per file.
       "venue": "Example Brewing Co.",
       "address": "123 N Davidson St, Charlotte, NC 28202",
       "link": "https://www.examplebrewing.com/events/trivia",
+      "image_url": "https://www.examplebrewing.com/images/thursday-trivia.jpg",
       "details": "Weekly team trivia, teams of up to 6. Free to play.",
       "source_handle": "examplebrewing.com"
     }

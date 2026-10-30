@@ -1,0 +1,301 @@
+{
+  "events": [
+    {
+      "index": 1,
+      "title": "Live Friday Nights at Camp",
+      "starts_at": "2026-10-30T18:00:00-04:00",
+      "event_source_url": "https://camp.nc/camp-events/live-friday-nights-at-camp/?occurrence=2026-10-30",
+      "image_url": "https://camp.nc/wp-content/uploads/2025/04/Friday-Night-@-Camp_29-scaled.jpg",
+      "local_path": "marketing/event-images/01_live_friday_nights.jpg",
+      "evidence": "The exact linked event page has this featured image (data-mec-postid 10270) and the same og:image; the page describes the Friday Nights at Camp series.",
+      "image_kind": "recurring_series",
+      "verification_gaps": "Performer lineup is not shown in the image; it is a series photo.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.050Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 2,
+      "title": "Boileryard Bash",
+      "starts_at": "2026-10-31T19:00:00-04:00",
+      "event_source_url": "https://camp.nc/camp-events/boileryard-bash/?occurrence=2026-10-31",
+      "image_url": "https://camp.nc/wp-content/uploads/2026/10/6f05953a-67c9-48e8-a0ee-a641dc2f6822.png",
+      "local_path": "marketing/event-images/02_boileryard_bash.png",
+      "evidence": "Exact linked Camp event page title is Boileryard Bash; its featured image (data-mec-postid 10489) and og:image point to this 2026/10 poster.",
+      "image_kind": "event_poster",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.051Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 3,
+      "title": "Festival Día de Muertos",
+      "starts_at": "2026-11-01T12:00:00-05:00",
+      "event_source_url": "https://camp.nc/camp-events/festival-dia-de-muertos-day-of-the-dead-festival-3/?occurrence=2026-11-01",
+      "image_url": "https://camp.nc/wp-content/uploads/2026/10/IMG_9757.jpeg",
+      "local_path": "marketing/event-images/03_dia_de_muertos.jpeg",
+      "evidence": "Exact linked Camp event page has a featured image (data-mec-postid 10500) and matching og:image.",
+      "image_kind": "event_poster",
+      "verification_gaps": "The page labels the specific event; the image has no descriptive alt text.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.051Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 4,
+      "title": "Paige Fish: The Midnight Crisis Tour with Hank Garrett",
+      "starts_at": "2026-11-05T20:00:00-05:00",
+      "event_source_url": "https://visulite.com/shows/details/showID/11080",
+      "image_url": "https://visulite.com/shows/11080/headliner_logo.jpg",
+      "local_path": "marketing/event-images/04_paige_fish.jpg",
+      "evidence": "Exact linked Visulite show page title/date and its headliner image alt text “PAIGE FISH The Midnight Crisis Tour” match.",
+      "image_kind": "performer",
+      "verification_gaps": "Support act has a separate image; selected headliner image.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.051Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 5,
+      "title": "Caiola with Bre Kennedy and Thomas LaVine",
+      "starts_at": "2026-11-06T20:00:00-05:00",
+      "event_source_url": "https://visulite.com/shows/details/showID/11053",
+      "image_url": "https://visulite.com/shows/11053/headliner_logo.jpg",
+      "local_path": "marketing/event-images/05_caiola.jpg",
+      "evidence": "Exact linked Visulite show page title/date and headliner img alt “CAIOLA” match; support image alt is “BRE KENNEDY”.",
+      "image_kind": "performer",
+      "verification_gaps": "Selected headliner image; no combined bill artwork.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 6,
+      "title": "Barfly Friday Night Karaoke (21+)",
+      "starts_at": "2026-11-06T21:00:00-05:00",
+      "event_source_url": "https://camp.nc/camp-events/barfly-friday-night-karaoke-21/?occurrence=2026-11-06",
+      "image_url": "https://camp.nc/wp-content/uploads/2026/10/5cbca7f0f343-Untitled_Artwork.png",
+      "local_path": "marketing/event-images/06_barfly_karaoke.png",
+      "evidence": "Exact linked Camp event page title is Barfly Friday Night Karaoke (21+); featured image data-mec-postid 10477 and og:image are the same artwork.",
+      "image_kind": "recurring_series",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 7,
+      "title": "3rd Annual Chili Cook Off",
+      "starts_at": "2026-11-07T15:00:00-05:00",
+      "event_source_url": "https://birdsongbrewing.com/events",
+      "image_url": "https://static.spotapps.co/spots/9c/3bfb985a1d42f7810fd57c8a6be80c/w926",
+      "local_path": "marketing/event-images/07_chili_cook_off.jpg",
+      "evidence": "Official Birdsong Events DOM section#3593504 contains the exact h2 title, Saturday Nov 7 date, time and sibling event-image using this URL.",
+      "image_kind": "event_photo",
+      "verification_gaps": "The image has no descriptive alt text; association is via its containing event section.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 8,
+      "title": "Live Like Bryant's 4th Annual Fall Jam",
+      "starts_at": "2026-11-07T20:00:00-05:00",
+      "event_source_url": "https://visulite.com/shows/details/showID/11076",
+      "image_url": "https://visulite.com/shows/11076/support_act_1_logo.jpg",
+      "local_path": "marketing/event-images/08_live_like_bryant.jpg",
+      "evidence": "Exact linked Visulite show page is titled “LIVE LIKE BRYANT’S 4th Annual Fall Jam”; its separate support_act_1 image has alt “HARVEY STREET”, the artist named in that exact event description. Search found no separate public event page on the foundation site.",
+      "image_kind": "performer",
+      "verification_gaps": "Page headliner_logo.jpg is a generic Live Like Bryant Foundation logo; replaced with the event-associated Harvey Street performer image. No Fall Jam specific poster located.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 9,
+      "title": "New Friend's Book Club",
+      "starts_at": "2026-11-11T19:00:00-05:00",
+      "event_source_url": "https://www.nodabrewing.com/all-events",
+      "image_url": "https://static.wixstatic.com/media/353859_9f5e23b7ad444511b5dbe0b59434bb9f~mv2.png",
+      "local_path": "marketing/event-images/09_new_friends_book_club.png",
+      "evidence": "NoDa official Events DOM event data for exact title/slug/date lists this URL as mainImage (1200×630).",
+      "image_kind": "recurring_series",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 10,
+      "title": "An Evening with Spafford",
+      "starts_at": "2026-11-11T20:00:00-05:00",
+      "event_source_url": "https://visulite.com/shows/details/showID/11074",
+      "image_url": "https://visulite.com/shows/11074/headliner_logo.jpg",
+      "local_path": "marketing/event-images/10_spafford.jpg",
+      "evidence": "Exact linked Visulite show page title/date and headliner image alt “An Evening with SPAFFORD” match.",
+      "image_kind": "performer",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 11,
+      "title": "Lespecial with Natalie Brooke",
+      "starts_at": "2026-11-12T20:00:00-05:00",
+      "event_source_url": "https://visulite.com/shows/details/showID/11070",
+      "image_url": "https://visulite.com/shows/11070/headliner_logo.jpg",
+      "local_path": "marketing/event-images/11_lespecial.jpg",
+      "evidence": "Exact linked Visulite show page title/date and headliner image alt “LESPECIAL” match; support image alt is “NATALIE BROOKE”.",
+      "image_kind": "performer",
+      "verification_gaps": "Selected headliner image; no combined bill artwork.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 12,
+      "title": "Witch Fest Market",
+      "starts_at": "2026-11-14T12:00:00-05:00",
+      "event_source_url": "https://www.triplecbrewing.com/live-music-events",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/552bc631e4b0a253ae3ab53c/1792595069579-WMK9A9EUUF52XY5RZPZ0/Screenshot+2026-10-21+110206.png",
+      "local_path": "marketing/event-images/12_witch_fest_market.webp",
+      "evidence": "Triple C official event card has alt “WITCH FEST MARKET” and links the exact Witch Fest event listing beside this image.",
+      "image_kind": "event_poster",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 13,
+      "title": "Crystal Fountains Bluegrass",
+      "starts_at": "2026-11-14T16:00:00-05:00",
+      "event_source_url": "https://www.triplecbrewing.com/live-music-events",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/552bc631e4b0a253ae3ab53c/1758203959418-X0HYEYYW0A33DBAD7ZUZ/Crystal+Fountains.jpg",
+      "local_path": "marketing/event-images/13_crystal_fountains.webp",
+      "evidence": "Triple C official event card image alt “Crystal Fountains Bluegrass” matches the event; associated event card says live music on patio.",
+      "image_kind": "performer",
+      "verification_gaps": "Image content type served as image/webp, so original bytes are stored with .webp extension.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 14,
+      "title": "Philip Funderburk Live",
+      "starts_at": "2026-11-15T13:00:00-05:00",
+      "event_source_url": "https://www.triplecbrewing.com/live-music-events",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/552bc631e4b0a253ae3ab53c/1791910854880-BSB3UJ5T6S5Y20GCMDFM/619976449_26315528024698693_4937654583122749866_n.jpg",
+      "local_path": "marketing/event-images/14_philip_funderburk.webp",
+      "evidence": "Triple C official event card image alt “Philip Funderburk Live” matches the event.",
+      "image_kind": "performer",
+      "verification_gaps": "Image content type served as image/webp, so original bytes are stored with .webp extension.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 15,
+      "title": "Gothic Punk Night Market",
+      "starts_at": "2026-11-20T18:00:00-05:00",
+      "event_source_url": "https://www.nodabrewing.com/all-events",
+      "image_url": "https://static.wixstatic.com/media/528504_8f00cf9225684ef19409bd2b6b0c52fb~mv2.png",
+      "local_path": "marketing/event-images/15_gothic_punk_night_market.png",
+      "evidence": "NoDa official Events DOM event card image alt “Gothic Punk Night Market” appears beside exact title and Nov 20, 2026 6–9 PM card.",
+      "image_kind": "event_poster",
+      "verification_gaps": null,
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 16,
+      "title": "Grievous Angels Band",
+      "starts_at": "2026-11-21T16:00:00-05:00",
+      "event_source_url": "https://www.triplecbrewing.com/live-music-events",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/552bc631e4b0a253ae3ab53c/1747660352322-JLKI2UXKM0XPXWEZRBXE/Angels.jpg",
+      "local_path": "marketing/event-images/16_grievous_angels.webp",
+      "evidence": "Triple C official event card image alt “Grievous Angels Band” matches the event.",
+      "image_kind": "performer",
+      "verification_gaps": "Image content type served as image/webp, so original bytes are stored with .webp extension.",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    },
+    {
+      "index": 17,
+      "title": "Board Game Speed Dating at Heist Brewery (20s & 30s)",
+      "starts_at": "2026-11-23T19:00:00-05:00",
+      "event_source_url": "https://heistbrewery.com/event/noda-board-game-speed-dating-heist-brewery-charlotte-20s-30s-2/",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/63067cdbea66711d3b62b6ce/0d64069f-0b8f-4040-9724-12b84aa009fc/BGSD.png",
+      "local_path": "marketing/event-images/17_board_game_speed_dating.png",
+      "evidence": "Quirk Events official Board Game Speed Dating product page links BGSD.png. Its North Carolina page lists the Charlotte series event on November 23, 7–9 PM. This is undated organizer series art, not a November 23 event poster.",
+      "image_kind": "recurring_series",
+      "verification_gaps": "Heist uses 20s & 30s in its title; the organizer specifies men and women ages 25–39. Series art has no printed age restriction.",
+      "image_source_url": "https://www.quirkevents.com/tickets/p/general-admission-includes-5-food-voucher",
+      "corroborating_source_url": "https://www.quirkevents.com/north-carolina",
+      "visual_review": {
+        "model": "gpt-6-astra",
+        "verdict": "accepted",
+        "reviewed_at": "2026-10-29T20:55:08.052Z",
+        "basis": "Actual image pixels inspected against event details and official source association."
+      }
+    }
+  ],
+  "review_summary": {
+    "model": "gpt-6-astra",
+    "accepted": 17,
+    "rejected_replaced": 1,
+    "note": "Generic Live Like Bryant foundation logo replaced with the officially assigned Harvey Street photo. Heist uses undated organizer series art. No event submission or publication performed."
+  }
+}
