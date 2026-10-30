@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
@@ -9,6 +8,7 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
+import { EventImage } from './EventImage';
 import { Facepile } from './Facepile';
 import { Icon } from './Icon';
 import { MeshArt } from './MeshArt';
@@ -56,12 +56,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
       }}
     >
       {event.imageUrl ? (
-        <Image
-          source={{ uri: event.imageUrl }}
-          contentFit="cover"
-          style={{ flex: 1 }}
-          accessibilityIgnoresInvertColors
-        />
+        <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
       ) : (
         <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={36} />
       )}

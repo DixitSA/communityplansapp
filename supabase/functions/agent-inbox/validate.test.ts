@@ -128,3 +128,13 @@ Deno.test("titles that normalize to empty still get distinct fingerprints", asyn
   const at = "2026-11-06T00:00:00.000Z";
   assertNotEquals(await fingerprint({ title: "音楽の夜", starts_at: at, venue: null }), await fingerprint({ title: "映画祭", starts_at: at, venue: null }));
 });
+
+Deno.test("image_sensitive is an optional boolean, default false", () => {
+  const plain = validateEvent(ok, now);
+  assertEquals(plain.ok && plain.value.image_sensitive, false);
+  const flagged = validateEvent({ ...ok, image_sensitive: true }, now);
+  assertEquals(flagged.ok && flagged.value.image_sensitive, true);
+  assertEquals(reason({ ...ok, image_sensitive: null }), "ok");
+  assertEquals(reason({ ...ok, image_sensitive: "yes" }), "image_sensitive_invalid");
+  assertEquals(reason({ ...ok, image_sensitive: 1 }), "image_sensitive_invalid");
+});

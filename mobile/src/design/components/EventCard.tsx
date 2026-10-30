@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -9,6 +8,7 @@ import { light } from '@/lib/haptics';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
+import { EventImage } from './EventImage';
 import { Facepile, formatFriendsLabel } from './Facepile';
 import { GlassButton } from './GlassButton';
 import type { SymbolName } from './Icon';
@@ -24,6 +24,8 @@ export type EventCardData = {
   venue: string;
   distanceMi: number;
   imageUrl?: string;
+  /** The image is flagged as sensitive: it shows blurred until the viewer taps to view it on the event page. */
+  imageSensitive?: boolean;
   /** Category slug (music, food_drinks, fitness, arts_culture, nightlife): picks art palette and tag colors. */
   interest: string;
   /** Tag text, e.g. "Music". */
@@ -125,12 +127,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
     <View style={{ minHeight: 170, justifyContent: 'flex-end' }}>
       <View style={StyleSheet.absoluteFill}>
         {event.imageUrl ? (
-          <Image
-            source={{ uri: event.imageUrl }}
-            contentFit="cover"
-            style={{ flex: 1 }}
-            accessibilityIgnoresInvertColors
-          />
+          <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
         ) : (
           <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} />
         )}

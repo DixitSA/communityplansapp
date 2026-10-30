@@ -3,7 +3,7 @@
 export const MAX_EVENTS = 50;
 export const MAX_BODY_BYTES = 256 * 1024;
 
-const KEYS = ["title", "starts_at", "ends_at", "venue", "address", "link", "image_url", "details", "source_handle"] as const;
+const KEYS = ["title", "starts_at", "ends_at", "venue", "address", "link", "image_url", "details", "source_handle", "image_sensitive"] as const;
 const ISO_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2})$/;
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
@@ -18,6 +18,7 @@ export type AgentEvent = {
   image_url: string | null;
   details: string | null;
   source_handle: string | null;
+  image_sensitive: boolean; // the agent judged the image racy/explicit: the app blurs it behind "Tap to view"
 };
 export type Validated = { ok: true; value: AgentEvent } | { ok: false; reason: string };
 
@@ -101,12 +102,16 @@ export function validateEvent(raw: unknown, now: Date): Validated {
   if (link.v !== null && !/^https:\/\/[^\s]+$/.test(link.v)) return { ok: false, reason: "link_invalid" };
   const imageUrl = optImageUrl(o.image_url);
   if ("err" in imageUrl) return { ok: false, reason: imageUrl.err };
+  if (o.image_sensitive !== undefined && o.image_sensitive !== null && typeof o.image_sensitive !== "boolean") {
+    return { ok: false, reason: "image_sensitive_invalid" };
+  }
 
   return {
     ok: true,
     value: {
       title, starts_at: new Date(startMs).toISOString(), ends_at: endIso,
       venue: venue.v, address: address.v, link: link.v, image_url: imageUrl.v, details: details.v, source_handle: handle.v,
+      image_sensitive: o.image_sensitive === true,
     },
   };
 }

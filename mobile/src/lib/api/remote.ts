@@ -208,7 +208,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         supabase
           .from('events')
           .select(
-            'id, title, description, starts_at, ends_at, venue_name, venue_address, neighborhood, image_url, is_free, price_min, price_max, source, attribution, ticket_url, event_interests(interest_id)',
+            'id, title, description, starts_at, ends_at, venue_name, venue_address, neighborhood, image_url, image_sensitive, is_free, price_min, price_max, source, attribution, ticket_url, event_interests(interest_id)',
           )
           .eq('id', id)
           .maybeSingle(),
@@ -232,6 +232,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         // The events table stores a geography column the client can't read; the feed card knows the distance.
         distanceMi: 0,
         imageUrl: e.image_url ?? undefined,
+        imageSensitive: e.image_sensitive,
         interest: primary?.slug ?? 'community',
         categoryLabel: primary?.label ?? 'Event',
         symbol: (primary?.symbol ?? 'sparkles') as EventPage['symbol'],

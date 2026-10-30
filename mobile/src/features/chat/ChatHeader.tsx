@@ -1,8 +1,7 @@
-import { Image } from 'expo-image';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppText, GlassSurface, Icon, MeshArt, categoryColors, isCategory, useTheme, type SymbolName } from '@/design';
+import { AppText, EventImage, GlassSurface, Icon, MeshArt, categoryColors, isCategory, useTheme, type SymbolName } from '@/design';
 
 export const CHAT_HEADER_THUMB = 36;
 
@@ -11,6 +10,8 @@ export type ChatHeaderProps = {
   subtitle: string;
   eventId: string;
   imageUrl?: string;
+  /** Flagged images stay blurred here too (the chat has no room for the reveal label). */
+  imageSensitive?: boolean;
   interest?: string;
   symbol?: SymbolName;
   onBack: () => void;
@@ -43,6 +44,7 @@ export function ChatHeader({
   subtitle,
   eventId,
   imageUrl,
+  imageSensitive,
   interest = 'community',
   symbol = 'bubble.left.fill',
   onBack,
@@ -82,7 +84,7 @@ export function ChatHeader({
           }}
         >
           {imageUrl ? (
-            <Image source={{ uri: imageUrl }} contentFit="cover" style={{ flex: 1 }} accessibilityIgnoresInvertColors />
+            <EventImage eventId={eventId} source={imageUrl} sensitive={imageSensitive} overlay="none" />
           ) : (
             <MeshArt id={eventId} interest={interest} symbol={symbol} symbolSize={18} />
           )}

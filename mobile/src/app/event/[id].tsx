@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -17,10 +16,13 @@ import {
   Button,
   Chip,
   EmptyState,
+  EventImage,
   Facepile,
   GlassButton,
   Icon,
   MeshArt,
+  useImageHidden,
+  useRevealedImages,
   useTheme,
 } from '@/design';
 import { openDirections, openEventMenu, shareEvent } from '@/features/event/actions';
@@ -58,6 +60,8 @@ export default function EventScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const status = usePlan(id, event?.myStatus);
+  const imageHidden = useImageHidden(id, event?.imageSensitive);
+  const revealImage = useRevealedImages((s) => s.reveal);
   const { setStatus } = useSetRsvp();
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
@@ -150,12 +154,7 @@ export default function EventScreen() {
         <Link.AppleZoomTarget>
           <View style={{ height: heroHeight }}>
             {event.imageUrl ? (
-              <Image
-                source={{ uri: event.imageUrl }}
-                contentFit="cover"
-                style={{ flex: 1 }}
-                accessibilityIgnoresInvertColors
-              />
+              <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} overlay="label" />
             ) : (
               <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={170} />
             )}
@@ -180,6 +179,18 @@ export default function EventScreen() {
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingTop: heroHeight - radius.hero }}
       >
+        {/* The hero sits under the scroll view, so the tap target for a hidden image lives here, over it. */}
+        {imageHidden ? (
+          <Pressable
+            onPress={() => {
+              light();
+              revealImage(event.id);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Sensitive image. Show image"
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: heroHeight - radius.hero }}
+          />
+        ) : null}
         <View
           style={{
             backgroundColor: colors.canvas,

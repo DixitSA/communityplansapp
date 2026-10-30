@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
     const { data: subs, error: subErr } = await db
       .from("event_submissions")
-      .select("id, title, starts_at, ends_at, venue, address, link, image_url, details, source_handle, admin_note")
+      .select("id, title, starts_at, ends_at, venue, address, link, image_url, image_sensitive, details, source_handle, admin_note")
       .eq("status", "pending").eq("origin", "agent").eq("city_id", city.id)
       .order("starts_at", { ascending: true }).limit(LOAD_LIMIT); // past rows first (rejected), far-off rows last, so they can't stall the queue
     if (subErr) throw subErr;
@@ -185,7 +185,8 @@ Deno.serve(async (req) => {
           title: s.title.slice(0, MAX_TEXT), starts_at: s.starts_at, ends_at: s.ends_at,
           venue_name: s.venue.slice(0, MAX_TEXT), venue_address: s.address?.slice(0, MAX_TEXT * 2) ?? null,
           location: `SRID=4326;POINT(${c.lng} ${c.lat})`,
-          ticket_url: s.link, image_url: s.image_url?.startsWith(bucketPrefix) ? s.image_url : null, description: truncateDescription(s.details),
+          ticket_url: s.link, image_url: s.image_url?.startsWith(bucketPrefix) ? s.image_url : null, image_sensitive: s.image_sensitive,
+          description: truncateDescription(s.details),
           attribution: attributionFor(s.source_handle), is_free: isFree(s.title, s.details), price_min: null,
         }, { onConflict: "source,external_id" }).select("id").single();
         if (evErr) throw evErr;

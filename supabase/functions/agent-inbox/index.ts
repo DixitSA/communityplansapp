@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { isSafeImageUrl, MAX_IMAGE_BYTES, sniffImage } from "./image.ts";
+import { type ImageRow, resendImageRows } from "./resend.ts";
 import { fingerprint, MAX_BODY_BYTES, MAX_EVENTS, validateEvent } from "./validate.ts";
 
 async function digest(s: string): Promise<Uint8Array> {
@@ -71,7 +72,7 @@ async function downloadImage(start: string): Promise<Uint8Array | null> {
 /** Copy images for freshly inserted rows into Storage. Failures keep the original URL. */
 async function copyImages(
   db: SupabaseClient,
-  rows: { id: string; agent_fingerprint: string; image_url: string; event_id?: string }[],
+  rows: ImageRow[],
 ): Promise<{ copied: number; failed: number }> {
   const t0 = Date.now();
   let copied = 0, failed = 0, next = 0;
@@ -96,14 +97,15 @@ async function copyImages(
           continue;
         }
         const publicUrl = db.storage.from(IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-        const { error } = await db.from("event_submissions").update({ image_url: publicUrl }).eq("id", row.id);
+        const flag = row.image_sensitive === undefined ? {} : { image_sensitive: row.image_sensitive };
+        const { error } = await db.from("event_submissions").update({ image_url: publicUrl, ...flag }).eq("id", row.id);
         if (error) {
           failed++;
           continue;
         }
         if (row.event_id) {
           // Already published: add the picture to the live event, never replace one it has.
-          const { error: evErr } = await db.from("events").update({ image_url: publicUrl }).eq("id", row.event_id).is("image_url", null);
+          const { error: evErr } = await db.from("events").update({ image_url: publicUrl, ...flag }).eq("id", row.event_id).is("image_url", null);
           if (evErr) {
             failed++;
             continue;
@@ -192,11 +194,10 @@ Deno.serve(async (req) => {
         .select("id, agent_fingerprint, image_url");
       if (error) throw error;
       inserted = data?.length ?? 0;
-      const withImages: { id: string; agent_fingerprint: string; image_url: string; event_id?: string }[] = (data ?? []).flatMap((r) =>
+      const withImages: ImageRow[] = (data ?? []).flatMap((r) =>
         r.image_url && r.agent_fingerprint ? [{ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: r.image_url }] : []
       );
-      // A re-sent event can fill in a missing image (e.g. the agent couldn't get one first time): on a pending row,
-      // or on an approved row whose published event still has no picture.
+      // A re-sent event can fill in a missing image on a known pending or published row (see resend.ts).
       const insertedFps = new Set((data ?? []).map((r) => r.agent_fingerprint));
       const resent = [...rows.entries()].filter(([fp, r]) => !insertedFps.has(fp) && typeof r.image_url === "string");
       if (resent.length > 0) {
@@ -211,16 +212,7 @@ Deno.serve(async (req) => {
           if (evErr) throw evErr;
           for (const e of evs ?? []) bare.add(e.id);
         }
-        const ownBucket = `/storage/v1/object/public/${IMAGE_BUCKET}/`;
-        for (const r of existing ?? []) {
-          if (!r.agent_fingerprint || r.image_url?.includes(ownBucket)) continue;
-          const image_url = rows.get(r.agent_fingerprint)!.image_url as string;
-          if (r.status === "pending") {
-            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url });
-          } else if (r.event_id && bare.has(r.event_id)) {
-            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url, event_id: r.event_id });
-          }
-        }
+        withImages.push(...resendImageRows(existing ?? [], rows, bare, `/storage/v1/object/public/${IMAGE_BUCKET}/`));
       }
       if (withImages.length > 0) ({ copied: images_copied, failed: images_failed } = await copyImages(db, withImages));
     }
