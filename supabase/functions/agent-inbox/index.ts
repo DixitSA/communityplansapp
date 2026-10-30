@@ -71,7 +71,7 @@ async function downloadImage(start: string): Promise<Uint8Array | null> {
 /** Copy images for freshly inserted rows into Storage. Failures keep the original URL. */
 async function copyImages(
   db: SupabaseClient,
-  rows: { id: string; agent_fingerprint: string; image_url: string }[],
+  rows: { id: string; agent_fingerprint: string; image_url: string; event_id?: string }[],
 ): Promise<{ copied: number; failed: number }> {
   const t0 = Date.now();
   let copied = 0, failed = 0, next = 0;
@@ -97,8 +97,19 @@ async function copyImages(
         }
         const publicUrl = db.storage.from(IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
         const { error } = await db.from("event_submissions").update({ image_url: publicUrl }).eq("id", row.id);
-        if (error) failed++;
-        else copied++;
+        if (error) {
+          failed++;
+          continue;
+        }
+        if (row.event_id) {
+          // Already published: add the picture to the live event, never replace one it has.
+          const { error: evErr } = await db.from("events").update({ image_url: publicUrl }).eq("id", row.event_id).is("image_url", null);
+          if (evErr) {
+            failed++;
+            continue;
+          }
+        }
+        copied++;
       } catch {
         failed++;
       }
@@ -181,21 +192,33 @@ Deno.serve(async (req) => {
         .select("id, agent_fingerprint, image_url");
       if (error) throw error;
       inserted = data?.length ?? 0;
-      const withImages = (data ?? []).flatMap((r) =>
+      const withImages: { id: string; agent_fingerprint: string; image_url: string; event_id?: string }[] = (data ?? []).flatMap((r) =>
         r.image_url && r.agent_fingerprint ? [{ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: r.image_url }] : []
       );
-      // A re-sent event can fill in a missing image on its still-pending row (e.g. the agent couldn't get one first time).
+      // A re-sent event can fill in a missing image (e.g. the agent couldn't get one first time): on a pending row,
+      // or on an approved row whose published event still has no picture.
       const insertedFps = new Set((data ?? []).map((r) => r.agent_fingerprint));
       const resent = [...rows.entries()].filter(([fp, r]) => !insertedFps.has(fp) && typeof r.image_url === "string");
       if (resent.length > 0) {
         const { data: existing, error: exErr } = await db
-          .from("event_submissions").select("id, agent_fingerprint, image_url")
-          .in("agent_fingerprint", resent.map(([fp]) => fp)).eq("status", "pending");
+          .from("event_submissions").select("id, agent_fingerprint, image_url, status, event_id")
+          .in("agent_fingerprint", resent.map(([fp]) => fp)).in("status", ["pending", "approved"]);
         if (exErr) throw exErr;
+        const publishedIds = (existing ?? []).flatMap((r) => (r.status === "approved" && r.event_id ? [r.event_id] : []));
+        const bare = new Set<string>();
+        if (publishedIds.length > 0) {
+          const { data: evs, error: evErr } = await db.from("events").select("id").in("id", publishedIds).is("image_url", null);
+          if (evErr) throw evErr;
+          for (const e of evs ?? []) bare.add(e.id);
+        }
         const ownBucket = `/storage/v1/object/public/${IMAGE_BUCKET}/`;
         for (const r of existing ?? []) {
-          if (r.agent_fingerprint && !r.image_url?.includes(ownBucket)) {
-            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: rows.get(r.agent_fingerprint)!.image_url as string });
+          if (!r.agent_fingerprint || r.image_url?.includes(ownBucket)) continue;
+          const image_url = rows.get(r.agent_fingerprint)!.image_url as string;
+          if (r.status === "pending") {
+            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url });
+          } else if (r.event_id && bare.has(r.event_id)) {
+            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url, event_id: r.event_id });
           }
         }
       }
