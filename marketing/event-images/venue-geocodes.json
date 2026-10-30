@@ -1,0 +1,70 @@
+[
+  {
+    "input": "300 Camp Road, Charlotte, NC 28206",
+    "matches": []
+  },
+  {
+    "input": "400 Camp Road, Charlotte, NC 28206",
+    "matches": []
+  },
+  {
+    "input": "1615 Elizabeth Avenue, Charlotte, NC 28204",
+    "matches": [
+      {
+        "matchedAddress": "1615 ELIZABETH AVE, CHARLOTTE, NC, 28204",
+        "coordinates": {
+          "x": -80.826435317592,
+          "y": 35.2136609217
+        }
+      }
+    ]
+  },
+  {
+    "input": "1016 North Davidson Street, Charlotte, NC 28206",
+    "matches": [
+      {
+        "matchedAddress": "1016 N DAVIDSON ST, CHARLOTTE, NC, 28206",
+        "coordinates": {
+          "x": -80.827104004721,
+          "y": 35.230598591181
+        }
+      }
+    ]
+  },
+  {
+    "input": "150 West 32nd Street, Charlotte, NC 28206",
+    "matches": [
+      {
+        "matchedAddress": "150 W 32ND ST, CHARLOTTE, NC, 28206",
+        "coordinates": {
+          "x": -80.81343043749,
+          "y": 35.251385805132
+        }
+      }
+    ]
+  },
+  {
+    "input": "2900 Griffith Street, Charlotte, NC 28203",
+    "matches": [
+      {
+        "matchedAddress": "2900 GRIFFITH ST, CHARLOTTE, NC, 28203",
+        "coordinates": {
+          "x": -80.869092110523,
+          "y": 35.201084446944
+        }
+      }
+    ]
+  },
+  {
+    "input": "2909 North Davidson Street, Charlotte, NC 28205",
+    "matches": [
+      {
+        "matchedAddress": "2909 N DAVIDSON ST, CHARLOTTE, NC, 28205",
+        "coordinates": {
+          "x": -80.809082558747,
+          "y": 35.245140179428
+        }
+      }
+    ]
+  }
+]

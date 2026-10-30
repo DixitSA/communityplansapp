@@ -19,7 +19,7 @@ Users can suggest an event (for example one they saw on Instagram) from the app,
 1. Open Table Editor > `event_submissions` and filter `status = 'pending'`, oldest first. Read the title, link, date, venue and details. Open the link yourself. To list the queue with where each row came from:
 
 ```sql
-select id, origin, source_handle, title, starts_at, ends_at, venue, address, link, details, created_at
+select id, origin, source_handle, title, starts_at, ends_at, venue, address, link, image_url, details, created_at
 from public.event_submissions
 where status = 'pending'
 order by created_at;
@@ -38,8 +38,8 @@ where id = '<submission id>';
 with s as (
   select * from public.event_submissions where id = '<submission id>' and status = 'pending'
 ), new_event as (
-  insert into public.events (source, city_id, title, starts_at, ends_at, venue_name, venue_address, ticket_url, description, location)
-  select 'curated', s.city_id, s.title, s.starts_at, s.ends_at, s.venue, s.address, s.link, s.details,
+  insert into public.events (source, city_id, title, starts_at, ends_at, venue_name, venue_address, ticket_url, image_url, description, location)
+  select 'curated', s.city_id, s.title, s.starts_at, s.ends_at, s.venue, s.address, s.link, s.image_url, s.details,
          extensions.st_setsrid(extensions.st_makepoint(<lng>, <lat>), 4326)::extensions.geography
   from s
   returning id
@@ -49,6 +49,6 @@ set status = 'approved', event_id = (select id from new_event), reviewed_at = no
 where id = '<submission id>' and status = 'pending';
 ```
 
-This works the same for `user` and `agent` rows (`ends_at` and `address` are null for most user rows). Agent rows are unverified: open the link and check the date and venue before publishing. Note the order is longitude first, then latitude. Edit the title, add an image, interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
+This works the same for `user` and `agent` rows (`ends_at`, `address` and `image_url` are null for most user rows). Agent rows are unverified: open the link and check the date, venue and any image before publishing. Note the order is longitude first, then latitude. Add interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
 
 Submitters are not notified in this version. If a link looks abusive, reject it and consider a report against the user.

@@ -1,0 +1,13 @@
+{
+  "name": "yard-marketing-automation",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "start": "node --env-file=.env server/index.mjs",
+    "import-user-token": "node --env-file=.env scripts/import-user-token.mjs",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>yard. — Marketing room</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Marketing workspace navigation">
+      <a class="brand" href="#overview" aria-label="yard. marketing home"><span>yard.</span><small>CONTENT ROOM</small></a>
+      <div class="workspace-switch"><span class="workspace-mark">Y</span><span><b>Yard Social</b><small>Charlotte · prelaunch</small></span><span class="switch-caret">⌄</span></div>
+      <nav class="primary-nav" aria-label="Primary">
+        <button class="nav-item active" data-view="overview"><span class="nav-glyph">◫</span>Overview</button>
+        <button class="nav-item" data-view="drafts"><span class="nav-glyph">▤</span>Drafts <span class="nav-count" id="nav-draft-count">—</span></button>
+        <button class="nav-item" data-view="calendar"><span class="nav-glyph">▦</span>Calendar</button>
+        <button class="nav-item" data-view="discovery"><span class="nav-glyph">⌕</span>Event discovery</button>
+        <button class="nav-item" data-view="history"><span class="nav-glyph">↺</span>History</button>
+        <button class="nav-item" data-view="insights"><span class="nav-glyph">⌁</span>Insights</button>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label">TOOLS</div>
+      <button class="nav-item" data-view="ideas"><span class="nav-glyph">✳</span>Ideas & providers</button>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-status">
+        <div class="status-line"><span id="sidebar-publish-dot" class="status-dot off"></span><span id="sidebar-publish-label">Server publish flag · unknown</span></div>
+        <p>No action runs automatically. Publishing requires a prior exact approval and a separate human confirmation.</p>
+        <button class="text-button" data-view="ideas">View setup <span>↗</span></button>
+      </div>
+      <div class="user-row"><div class="avatar">Y</div><span><b>Local workspace</b><small>Reviewer identity required</small></span><span class="more">···</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button id="menu-toggle" class="mobile-menu" aria-label="Open navigation">☰</button>
+        <div class="breadcrumbs"><span>Marketing</span><span class="crumb-sep">/</span><strong id="crumb-current">Overview</strong></div>
+        <div class="topbar-right">
+          <span class="local-pill"><span class="status-dot"></span>LOCAL</span>
+          <span id="api-state" class="connection-state"><i class="status-dot off"></i>Connecting…</span>
+          <button class="icon-button" aria-label="Refresh data" id="refresh-button" title="Refresh data">↻</button>
+        </div>
+      </header>
+
+      <div id="publish-banner" class="publish-banner" role="status">
+        <div class="banner-mark">!</div>
+        <div><strong id="publish-banner-title">Human review gates every action</strong><p id="publish-banner-copy">Publish-now requires a separate human confirmation. Scheduled approvals run only at the exact approved time while the server publishing switch is enabled.</p></div>
+        <span id="publish-state" class="banner-state">SERVER FLAG · CHECKING</span>
+      </div>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+      <section id="view-overview" class="view active" aria-labelledby="overview-title"></section>
+      <section id="view-drafts" class="view" aria-labelledby="drafts-title" hidden></section>
+      <section id="view-calendar" class="view" aria-labelledby="calendar-title" hidden></section>
+      <section id="view-discovery" class="view" aria-labelledby="discovery-title" hidden></section>
+      <section id="view-history" class="view" aria-labelledby="history-title" hidden></section>
+      <section id="view-insights" class="view" aria-labelledby="insights-title" hidden></section>
+      <section id="view-ideas" class="view" aria-labelledby="ideas-title" hidden></section>
+      <footer class="app-footer"><span><b>yard.</b> · Find your people.</span><span>Local review workspace · Drafts are not approvals</span></footer>
+    </main>
+  </div>
+
+  <dialog id="approval-dialog" class="approval-dialog" aria-labelledby="approval-title">
+    <form method="dialog" class="dialog-close-row"><button class="icon-button" value="cancel" aria-label="Close">×</button></form>
+    <div class="eyebrow">FINAL REVIEW</div>
+    <h2 id="approval-title">Record approval</h2>
+    <p class="dialog-intro">This approval is tied to this exact revision. If the media, caption, destination, action, or time changes, it needs a new review.</p>
+    <div id="approval-receipt" class="approval-receipt"></div>
+    <form id="approval-form">
+      <div class="form-grid">
+        <label>Platform<select id="approval-platform" required></select></label>
+        <label>Account<select id="approval-account" required></select></label>
+        <label>Action<select id="approval-action" required><option value="publish_now">Publish now (after publishing is enabled)</option><option value="schedule">Schedule (after publishing is enabled)</option></select></label>
+        <label id="scheduled-at-field" hidden><span id="approval-time-label">Scheduled time · local</span><input id="approval-time" type="datetime-local"></label>
+      </div>
+      <label class="field-label">Approved by<input id="approval-approver" name="approver" autocomplete="name" required placeholder="Enter your name"></label>
+      <label class="attest"><input id="approval-attest" type="checkbox" required><span>I reviewed the exact media, full caption, hashtags, destination, action, and time shown above.</span></label>
+      <div class="dialog-actions"><button class="button secondary" value="cancel" formmethod="dialog">Cancel</button><button class="button primary" id="approval-submit" type="submit">Save approval record</button></div>
+      <p class="form-footnote">Saving this creates a local audit record. It does not publish content.</p>
+    </form>
+  </dialog>
+</body>
+</html>

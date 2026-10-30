@@ -1,0 +1,311 @@
+{
+  "profile": {
+    "displayName": "Yard | Find your people.",
+    "bio": "Charlotte plans, made more social. Find events, see who's going, meet your people. Yard is in the works.",
+    "category": "App",
+    "location": "Charlotte, NC"
+  },
+  "posts": [
+    {
+      "id": "feed-01",
+      "title": "A city feels smaller when you know someone there",
+      "format": "carousel",
+      "slides": [
+        { "headline": "New city. Same question.", "body": "What should we do this weekend?" },
+        { "headline": "And the follow-up…", "body": "Who’s going with me?" },
+        { "headline": "We’re building Yard for that.", "body": "Find events around Charlotte and see where your friends are headed." },
+        { "headline": "More plans. More familiar faces.", "body": "Yard is in the works. We’ll share the journey here." }
+      ],
+      "caption": "Moving somewhere new can make even a good weekend feel like a blank page. We’re building Yard to bring local plans and your people a little closer together, starting in Charlotte. Still a work in progress; glad you’re here for it.",
+      "hashtags": ["#CharlotteNC", "#Charlotte", "#FindYourPeople", "#MakingPlans", "#YardApp"],
+      "cta": "Follow along while we build.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": true
+    },
+    {
+      "id": "feed-02",
+      "title": "What is Yard?",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Yard is a social way to make plans.", "body": "We’re bringing event discovery and your friend plans together." },
+        { "headline": "Find something happening.", "body": "Browse events by day, interests, time and distance." },
+        { "headline": "See where friends are going.", "body": "Choose a plan and make it easier to show up together." },
+        { "headline": "Meet your people out there.", "body": "Yard is being built for Charlotte, one good plan at a time." }
+      ],
+      "caption": "A useful plan has two parts: something worth doing and someone you’d like to do it with. Yard brings those pieces into one place. We’re building now, with Charlotte first.",
+      "hashtags": ["#YardApp", "#CharlotteNC", "#CharlotteSocial", "#ThingsToDo", "#FindYourPeople"],
+      "cta": "Save this if that sounds like your kind of app.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": true
+    },
+    {
+      "id": "feed-03",
+      "title": "Your plans should feel like yours",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Not every maybe is an announcement.", "body": "Sometimes you’re just saving an idea for later." },
+        { "headline": "Interested stays private.", "body": "Yard’s save-for-later plan is visible only to you." },
+        { "headline": "Going is different.", "body": "When you commit, your friends and fellow attendees can see you’re going." },
+        { "headline": "Clear choices. No guessing.", "body": "We’re building privacy into the way plans work." }
+      ],
+      "caption": "A small but important product decision: saving an event is just for you. Going is the commitment you choose to share with friends and other attendees. We’re designing Yard so each plan state is clear about who can see it.",
+      "hashtags": ["#YardApp", "#PrivacyByDesign", "#CharlotteNC", "#SocialApps", "#ThoughtfulTech"],
+      "cta": "What makes a social app feel comfortable to you?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": true
+    },
+    {
+      "id": "feed-04",
+      "title": "Making friends after college takes a little intention",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Friendship needs a second hello.", "body": "The first conversation is a start, not a whole friendship." },
+        { "headline": "Make the invite specific.", "body": "Try: “Want to get coffee next Tuesday?” A day and an idea make it easier to answer." },
+        { "headline": "Choose something you’d do anyway.", "body": "A walk, a class, a low-key meal. Keep the first plan easy to say yes to." },
+        { "headline": "Then follow up.", "body": "“I had a good time. Let’s do it again.” Simple counts." }
+      ],
+      "caption": "After school, friendship can take more intention than it used to. A small, specific invitation is a kind place to start: one activity, one day, no big production. Save this for the next time you think, “We should hang out sometime.”",
+      "hashtags": ["#AdultFriendship", "#PostCollegeLife", "#MakingFriends", "#CharlotteNC", "#NewChapter"],
+      "cta": "Save this for your next “we should hang out” moment.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    },
+    {
+      "id": "feed-05",
+      "title": "Three tiny habits for a new city",
+      "format": "carousel",
+      "slides": [
+        { "headline": "New city? Start smaller than a whole new life.", "body": "You don’t need a perfect routine to feel more at home." },
+        { "headline": "Pick one weekly anchor.", "body": "A walk after work, a library hour, a regular class—something you can return to." },
+        { "headline": "Learn one name at a time.", "body": "Say hi to the person you keep seeing. Familiarity can start with a hello." },
+        { "headline": "Leave room for a second visit.", "body": "You don’t have to decide if it’s “your place” after one try." }
+      ],
+      "caption": "Getting to know a new city doesn’t have to mean filling every night. Try one small repeatable thing, learn a name, and give a place more than one chance. Keep what feels good; leave what doesn’t.",
+      "hashtags": ["#NewToCharlotte", "#CharlotteNC", "#NewCityLife", "#SmallHabits", "#FindingYourPeople"],
+      "cta": "What’s one little thing that helped a place feel familiar?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    },
+    {
+      "id": "feed-06",
+      "title": "The group chat has 47 messages and no plan",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Skip “What does everyone want to do?”", "body": "Open-ended questions are hard to answer when everyone’s busy." },
+        { "headline": "Offer two real options.", "body": "“Walk Saturday morning or dinner Sunday?” is easier to react to." },
+        { "headline": "Add the useful details.", "body": "Include a time, a rough cost if you know it, and where to meet." },
+        { "headline": "Let a no be easy.", "body": "“No worries if neither works” keeps the invite warm." }
+      ],
+      "caption": "A little structure can get a plan unstuck: two options, a day, and the details people need to decide. No guilt, no 47-message poll. Send the invite, then let everyone answer honestly.",
+      "hashtags": ["#GroupChat", "#MakingPlans", "#FriendshipTips", "#WeekendPlans", "#CharlotteNC"],
+      "cta": "Copy the two-option trick into your next group chat.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    },
+    {
+      "id": "feed-07",
+      "title": "A good weekend plan can be very small",
+      "format": "carousel",
+      "slides": [
+        { "headline": "No big itinerary required.", "body": "A nice weekend can have one easy thing in it." },
+        { "headline": "Try a one-hour plan.", "body": "Coffee and a walk. A market lap. A catch-up on a park bench." },
+        { "headline": "Give it a clear start and finish.", "body": "“Meet at 10, head out by 11” can feel easier to fit in." },
+        { "headline": "Small plans still count.", "body": "You made time for someone. That’s a good use of an hour." }
+      ],
+      "caption": "When everyone’s tired, “let’s do something all day” can be a tough sell. Try one hour, one simple activity, and a clear end time. You can always keep hanging out if you’re both having a good time.",
+      "hashtags": ["#WeekendPlans", "#LowKeyPlans", "#FriendTime", "#CharlotteNC", "#SimplePleasures"],
+      "cta": "Send this to someone you’d like to see for an hour.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    },
+    {
+      "id": "feed-08",
+      "title": "Let your interests do the introducing",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Not sure what to talk about? Start with the thing.", "body": "A shared interest gives a first conversation somewhere to go." },
+        { "headline": "Ask one open question.", "body": "“How did you get into that?” is better than a rapid-fire interview." },
+        { "headline": "Trade one recommendation each.", "body": "A book, a trail, a recipe, a beginner class—keep it easy." },
+        { "headline": "Make the next hello natural.", "body": "“If you go again, let me know” leaves the door open." }
+      ],
+      "caption": "A shared interest can take some pressure off meeting someone new. Ask what they enjoy about it, swap one recommendation, and let the conversation breathe. You don’t need to turn every nice chat into a new best friend.",
+      "hashtags": ["#SharedInterests", "#MakingFriends", "#ConversationTips", "#CharlotteNC", "#MeetPeople"],
+      "cta": "What interest has introduced you to someone new?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    },
+    {
+      "id": "feed-09",
+      "title": "The text after you meet someone new",
+      "format": "carousel",
+      "slides": [
+        { "headline": "Liked talking to them? Say so.", "body": "A kind follow-up doesn’t need a perfect opening." },
+        { "headline": "Name the moment you shared.", "body": "“It was fun talking about your pottery class.”" },
+        { "headline": "Offer one low-pressure next step.", "body": "“Want to grab coffee next week?”" },
+        { "headline": "Leave room for their answer.", "body": "Send it once. A warm invite is enough." }
+      ],
+      "caption": "The post-hangout text can be simple: “I liked talking with you about [thing]. Want to [easy activity] next week?” Be specific, be kind, and let the other person choose.\n\nA tiny note from Yard: find your people.",
+      "hashtags": ["#FriendshipTips", "#MakingFriends", "#AdultFriendship", "#CharlotteNC", "#ReachOut"],
+      "cta": "Save the template for later.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft",
+      "pinnedCandidate": false
+    }
+  ],
+  "reels": [
+    {
+      "id": "reel-01",
+      "title": "A kinder way to end the group-chat spiral",
+      "durationSeconds": 15,
+      "timestampedScript": [
+        { "time": "0:00–0:03", "voiceover": "The group chat wants to hang out. Nobody can pick a plan.", "onScreen": "the 47-message spiral" },
+        { "time": "0:03–0:07", "voiceover": "Try two options instead of an open-ended question.", "onScreen": "Saturday walk or Sunday coffee?" },
+        { "time": "0:07–0:11", "voiceover": "Add a time and the detail everyone needs.", "onScreen": "10 AM · easy pace · meet at the entrance" },
+        { "time": "0:11–0:15", "voiceover": "Then let people answer without pressure.", "onScreen": "A plan can be simple." }
+      ],
+      "shotList": [
+        { "time": "0:00–0:03", "shot": "Phone with a staged, fictional group chat; label it as a reenactment and show no real names." },
+        { "time": "0:03–0:07", "shot": "Replace the chat bubbles with two simple text options on screen." },
+        { "time": "0:07–0:11", "shot": "Add time, pace and meeting detail as concise type; use no actual venue claim." },
+        { "time": "0:11–0:15", "shot": "End with a calm cream card and small yard. wordmark." }
+      ],
+      "caption": "The group chat doesn’t need another “I’m good with anything.” Offer two options, add a time and one useful detail, then leave room for a real answer. A simple plan is still a plan.",
+      "hashtags": ["#GroupChat", "#WeekendPlans", "#FriendshipTips", "#CharlotteNC", "#MakeAPlan"],
+      "cta": "Save this for the next time the chat gets stuck.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft"
+    },
+    {
+      "id": "reel-02",
+      "title": "Maybe, if you’re going",
+      "durationSeconds": 16,
+      "timestampedScript": [
+        { "time": "0:00–0:03", "voiceover": "There’s “save it for later.”", "onScreen": "Interested" },
+        { "time": "0:03–0:07", "voiceover": "There’s “I’m in if my friends are.”", "onScreen": "Down if friends go" },
+        { "time": "0:07–0:11", "voiceover": "And there’s “see you there.”", "onScreen": "Going" },
+        { "time": "0:11–0:16", "voiceover": "We’re building Yard so each kind of yes has a place.", "onScreen": "Plans that feel like you. · yard." }
+      ],
+      "shotList": [
+        { "time": "0:00–0:11", "shot": "Show three clean typographic cards appearing one at a time; avoid implying live events or RSVPs." },
+        { "time": "0:11–0:16", "shot": "Cards come together into a simple Yard end card in the brand palette." }
+      ],
+      "caption": "Interested, Down if friends go, or Going? Sometimes the honest answer changes as a plan gets closer. We’re building Yard to give each answer a clear place.",
+      "hashtags": ["#YardApp", "#MakingPlans", "#CharlotteNC", "#SocialPlanning", "#FindYourPeople"],
+      "cta": "Which one sounds most like your usual first answer?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft"
+    },
+    {
+      "id": "reel-03",
+      "title": "Three small ways to feel less new in a new city",
+      "durationSeconds": 17,
+      "timestampedScript": [
+        { "time": "0:00–0:04", "voiceover": "Pick one place you’d happily go back to.", "onScreen": "1. Find a small repeat" },
+        { "time": "0:04–0:08", "voiceover": "Learn one name. No need to collect a whole new friend group in a week.", "onScreen": "2. Start with hello" },
+        { "time": "0:08–0:13", "voiceover": "Make one easy invitation around something you already like.", "onScreen": "3. Invite someone along" },
+        { "time": "0:13–0:17", "voiceover": "Belonging can begin with small repeats.", "onScreen": "Give it time." }
+      ],
+      "shotList": [
+        { "time": "0:00–0:04", "shot": "A person returning to a familiar sidewalk or neighborhood corner; avoid identifiable business claims." },
+        { "time": "0:04–0:08", "shot": "A brief, natural hello between consenting actors; no dialogue needed." },
+        { "time": "0:08–0:13", "shot": "Two people sharing a low-key hobby or walk; no staged testimonial." },
+        { "time": "0:13–0:17", "shot": "Quiet closing shot with optional small yard. signature." }
+      ],
+      "caption": "A new city can feel like a lot to figure out all at once. Try making it smaller: one familiar place, one hello, one easy invite around something you already enjoy. No rush to have it all figured out.",
+      "hashtags": ["#NewCityLife", "#CharlotteNC", "#MakingFriends", "#FindingYourPeople", "#SmallSteps"],
+      "cta": "What small repeat helped you feel at home somewhere?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft"
+    },
+    {
+      "id": "reel-04",
+      "title": "A little privacy, built in",
+      "durationSeconds": 18,
+      "timestampedScript": [
+        { "time": "0:00–0:04", "voiceover": "Saving an idea doesn’t have to be an announcement.", "onScreen": "Interested · just for you" },
+        { "time": "0:04–0:09", "voiceover": "In Yard, Interested is private.", "onScreen": "Your saved plans stay yours." },
+        { "time": "0:09–0:14", "voiceover": "Going is the choice you share with friends and fellow attendees.", "onScreen": "Going · visible to friends and attendees" },
+        { "time": "0:14–0:18", "voiceover": "Clear choices make better plans.", "onScreen": "yard. · Find your people." }
+      ],
+      "shotList": [
+        { "time": "0:00–0:09", "shot": "Minimal heart/save graphic on a cream background; keep it clear this is product behavior being built." },
+        { "time": "0:09–0:14", "shot": "Forest-green Going card with a small friends icon; no names, faces or counts." },
+        { "time": "0:14–0:18", "shot": "Yard end card; quiet pacing, no notification sound or urgency cue." }
+      ],
+      "caption": "Saving an event and committing to go are different choices. In Yard, Interested is private; Going is visible to friends and fellow attendees. We’re building that distinction into the product.",
+      "hashtags": ["#PrivacyByDesign", "#YardApp", "#CharlotteNC", "#ThoughtfulTech", "#SocialApps"],
+      "cta": "What helps a social app feel comfortable to use?",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft"
+    },
+    {
+      "id": "reel-05",
+      "title": "The follow-up text doesn’t need to be clever",
+      "durationSeconds": 18,
+      "timestampedScript": [
+        { "time": "0:00–0:04", "voiceover": "Had a nice conversation and want to see them again?", "onScreen": "the follow-up text" },
+        { "time": "0:04–0:08", "voiceover": "Mention the thing you talked about.", "onScreen": "“I liked hearing about your pottery class…”" },
+        { "time": "0:08–0:13", "voiceover": "Offer one easy plan for another time.", "onScreen": "“…want to get coffee next week?”" },
+        { "time": "0:13–0:18", "voiceover": "Send the kind note. Let them answer in their own time.", "onScreen": "That’s enough." }
+      ],
+      "shotList": [
+        { "time": "0:00–0:04", "shot": "Two consenting actors say goodbye after a casual conversation; no testimonial framing." },
+        { "time": "0:04–0:08", "shot": "Close-up of a staged text draft referencing a fictional shared topic." },
+        { "time": "0:08–0:13", "shot": "Add a specific, low-pressure invitation; label the phone conversation as reenacted." },
+        { "time": "0:13–0:18", "shot": "Person sends the message and puts the phone down; optional subtle yard. end card." }
+      ],
+      "caption": "A kind follow-up can be one sentence: “I liked talking about [thing]. Want to [easy activity] next week?” Specific, warm, and no pressure to answer on the spot.",
+      "hashtags": ["#FriendshipTips", "#AdultFriendship", "#MakingFriends", "#ReachOut", "#CharlotteNC"],
+      "cta": "Save this little text template for later.",
+      "platforms": ["instagram", "facebook"],
+      "status": "draft"
+    }
+  ],
+  "highlights": [
+    { "label": "Start here", "coverText": "Start" },
+    { "label": "Charlotte", "coverText": "CLT" },
+    { "label": "Plans", "coverText": "Plans" },
+    { "label": "People", "coverText": "People" },
+    { "label": "Building", "coverText": "Build" }
+  ],
+  "calendar": [
+    { "day": 1, "type": "feed", "contentId": "feed-01", "note": "Pinned-candidate mission carousel; relative day only." },
+    { "day": 2, "type": "story", "prompt": "Question sticker: What makes it easier to go somewhere new?" },
+    { "day": 3, "type": "reel", "contentId": "reel-01", "note": "Useful two-option group-chat tip." },
+    { "day": 4, "type": "rest", "prompt": "No post required." },
+    { "day": 5, "type": "feed", "contentId": "feed-04", "note": "Post-college friendship tips." },
+    { "day": 6, "type": "story", "prompt": "Poll: Which is easier to accept—a specific invite or an open-ended one?" },
+    { "day": 7, "type": "feed", "contentId": "feed-02", "note": "Pinned-candidate product explainer." },
+    { "day": 8, "type": "rest", "prompt": "No post required." },
+    { "day": 9, "type": "feed", "contentId": "feed-03", "note": "Pinned-candidate privacy explainer." },
+    { "day": 10, "type": "story", "prompt": "Share a low-pressure invitation template from feed-04." },
+    { "day": 11, "type": "reel", "contentId": "reel-02", "note": "Product explainer for three plan states." },
+    { "day": 12, "type": "rest", "prompt": "No post required." },
+    { "day": 13, "type": "feed", "contentId": "feed-05", "note": "Small habits for a new city." },
+    { "day": 14, "type": "story", "prompt": "Question sticker: What small repeat helped a place feel familiar?" },
+    { "day": 15, "type": "reel", "contentId": "reel-03", "note": "Lifestyle tips for settling into a new city." },
+    { "day": 16, "type": "rest", "prompt": "No post required." },
+    { "day": 17, "type": "feed", "contentId": "feed-06", "note": "Practical group-chat planning carousel." },
+    { "day": 18, "type": "story", "prompt": "Poll: Coffee, walk, or meal for a one-hour catch-up?" },
+    { "day": 19, "type": "feed", "contentId": "feed-07", "note": "Tiny weekend plans carousel." },
+    { "day": 20, "type": "rest", "prompt": "No post required." },
+    { "day": 21, "type": "reel", "contentId": "reel-04", "note": "Product privacy explainer." },
+    { "day": 22, "type": "story", "prompt": "Share one low-key plan idea that does not depend on a specific venue or event." },
+    { "day": 23, "type": "feed", "contentId": "feed-08", "note": "Conversation ideas around shared interests." },
+    { "day": 24, "type": "rest", "prompt": "No post required." },
+    { "day": 25, "type": "feed", "contentId": "feed-09", "note": "Kind follow-up text template." },
+    { "day": 26, "type": "story", "prompt": "Question sticker: What is your favorite easy way to reconnect after meeting someone?" },
+    { "day": 27, "type": "reel", "contentId": "reel-05", "note": "Lifestyle-first follow-up text template." },
+    { "day": 28, "type": "rest", "prompt": "No post required." },
+    { "day": 29, "type": "story", "prompt": "Reshare a useful tip from this month; add the yard. signature only if it fits naturally." },
+    { "day": 30, "type": "rest", "prompt": "No post required. This outline is not scheduled; choose dates and approve each draft separately." }
+  ]
+}

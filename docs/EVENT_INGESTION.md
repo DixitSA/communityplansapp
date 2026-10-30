@@ -81,7 +81,7 @@ No redeploy is needed for the secret to take effect on the next run.
 
 ## Agent inbox: events found by your own Codex or Claude
 
-You run Codex or Claude on your own computer, under your own subscription. The agent browses public venue sites and search results, then posts structured events to the `agent-inbox` function. They land as **pending** rows in `event_submissions` (`origin = 'agent'`, no submitter) and are visible only to admins. Nothing is published until you approve it in Studio (see `docs/MODERATION.md`). The function validates with the same rules as `submit_event`, always uses Charlotte, and de-duplicates with a fingerprint (title + start minute + venue), so posting the same file twice is safe.
+You run Codex or Claude on your own computer, under your own subscription. The agent browses public venue sites and search results, then posts structured events to the `agent-inbox` function. They land as **pending** rows in `event_submissions` (`origin = 'agent'`, no submitter) and are visible only to admins. Nothing is published until you approve it in Studio (see `docs/MODERATION.md`). The function validates with the same rules as `submit_event`, always uses Charlotte, and de-duplicates with a fingerprint (title + start minute + venue), so posting the same file twice is safe. An optional `image_url` may point to an event-specific HTTPS image; it is carried into the curated event when published.
 
 **One-time setup (PowerShell, from the repo root).** This generates a new secret, stores it in Supabase, and saves it as a user environment variable named `YARD_AGENT_SECRET` (it is separate from `INGEST_SECRET`):
 

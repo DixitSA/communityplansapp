@@ -1,0 +1,16 @@
+1
+00:00:00,000 --> 00:00:03,000
+There’s “save it for later.”
+
+2
+00:00:03,000 --> 00:00:07,000
+There’s “I’m in if my friends are.”
+
+3
+00:00:07,000 --> 00:00:11,000
+And there’s “see you there.”
+
+4
+00:00:11,000 --> 00:00:16,000
+We’re building Yard so each kind of yes has a place.
+

@@ -1,0 +1,257 @@
+[
+  {
+    "id": "reel-01",
+    "title": "A kinder way to end the group-chat spiral",
+    "status": "draft",
+    "format": "silent typography-only concept storyboard",
+    "disclosure": "CONCEPT STORYBOARD · TYPOGRAPHY ONLY",
+    "video": "reel-01.mp4",
+    "cover": "reel-01-cover.jpg",
+    "subtitles": "reel-01.srt",
+    "durationSeconds": 15,
+    "dimensions": "1080x1920",
+    "frameRate": 30,
+    "videoCodec": "H.264 / libx264",
+    "audio": "Silent; no music or recorded voiceover.",
+    "captionSidecarNote": "SRT covers the full duration with draft voiceover text; the video itself is silent.",
+    "caption": "The group chat doesn’t need another “I’m good with anything.” Offer two options, add a time and one useful detail, then leave room for a real answer. A simple plan is still a plan.",
+    "hashtags": [
+      "#GroupChat",
+      "#WeekendPlans",
+      "#FriendshipTips",
+      "#CharlotteNC",
+      "#MakeAPlan"
+    ],
+    "cta": "Save this for the next time the chat gets stuck.",
+    "scenes": [
+      {
+        "time": "0:00–0:03",
+        "onScreen": "the 47-message spiral",
+        "draftVoiceoverCaption": "The group chat wants to hang out. Nobody can pick a plan.",
+        "image": "storyboards/reel-01-scene-01.png"
+      },
+      {
+        "time": "0:03–0:07",
+        "onScreen": "Saturday walk or Sunday coffee?",
+        "draftVoiceoverCaption": "Try two options instead of an open-ended question.",
+        "image": "storyboards/reel-01-scene-02.png"
+      },
+      {
+        "time": "0:07–0:11",
+        "onScreen": "10 AM · easy pace · meet at the entrance",
+        "draftVoiceoverCaption": "Add a time and the detail everyone needs.",
+        "image": "storyboards/reel-01-scene-03.png"
+      },
+      {
+        "time": "0:11–0:15",
+        "onScreen": "A plan can be simple.",
+        "draftVoiceoverCaption": "Then let people answer without pressure.",
+        "image": "storyboards/reel-01-scene-04.png"
+      }
+    ]
+  },
+  {
+    "id": "reel-02",
+    "title": "Maybe, if you’re going",
+    "status": "draft",
+    "format": "silent typography-only concept storyboard",
+    "disclosure": "CONCEPT STORYBOARD · TYPOGRAPHY ONLY",
+    "video": "reel-02.mp4",
+    "cover": "reel-02-cover.jpg",
+    "subtitles": "reel-02.srt",
+    "durationSeconds": 16,
+    "dimensions": "1080x1920",
+    "frameRate": 30,
+    "videoCodec": "H.264 / libx264",
+    "audio": "Silent; no music or recorded voiceover.",
+    "captionSidecarNote": "SRT covers the full duration with draft voiceover text; the video itself is silent.",
+    "caption": "Interested, Down if friends go, or Going? Sometimes the honest answer changes as a plan gets closer. We’re building Yard to give each answer a clear place.",
+    "hashtags": [
+      "#YardApp",
+      "#MakingPlans",
+      "#CharlotteNC",
+      "#SocialPlanning",
+      "#FindYourPeople"
+    ],
+    "cta": "Which one sounds most like your usual first answer?",
+    "scenes": [
+      {
+        "time": "0:00–0:03",
+        "onScreen": "Interested",
+        "draftVoiceoverCaption": "There’s “save it for later.”",
+        "image": "storyboards/reel-02-scene-01.png"
+      },
+      {
+        "time": "0:03–0:07",
+        "onScreen": "Down if friends go",
+        "draftVoiceoverCaption": "There’s “I’m in if my friends are.”",
+        "image": "storyboards/reel-02-scene-02.png"
+      },
+      {
+        "time": "0:07–0:11",
+        "onScreen": "Going",
+        "draftVoiceoverCaption": "And there’s “see you there.”",
+        "image": "storyboards/reel-02-scene-03.png"
+      },
+      {
+        "time": "0:11–0:16",
+        "onScreen": "Plans that feel like you. · yard.",
+        "draftVoiceoverCaption": "We’re building Yard so each kind of yes has a place.",
+        "image": "storyboards/reel-02-scene-04.png"
+      }
+    ]
+  },
+  {
+    "id": "reel-03",
+    "title": "Three small ways to feel less new in a new city",
+    "status": "draft",
+    "format": "silent typography-only concept storyboard",
+    "disclosure": "CONCEPT STORYBOARD · TYPOGRAPHY ONLY",
+    "video": "reel-03.mp4",
+    "cover": "reel-03-cover.jpg",
+    "subtitles": "reel-03.srt",
+    "durationSeconds": 17,
+    "dimensions": "1080x1920",
+    "frameRate": 30,
+    "videoCodec": "H.264 / libx264",
+    "audio": "Silent; no music or recorded voiceover.",
+    "captionSidecarNote": "SRT covers the full duration with draft voiceover text; the video itself is silent.",
+    "caption": "A new city can feel like a lot to figure out all at once. Try making it smaller: one familiar place, one hello, one easy invite around something you already enjoy. No rush to have it all figured out.",
+    "hashtags": [
+      "#NewCityLife",
+      "#CharlotteNC",
+      "#MakingFriends",
+      "#FindingYourPeople",
+      "#SmallSteps"
+    ],
+    "cta": "What small repeat helped you feel at home somewhere?",
+    "scenes": [
+      {
+        "time": "0:00–0:04",
+        "onScreen": "1. Find a small repeat",
+        "draftVoiceoverCaption": "Pick one place you’d happily go back to.",
+        "image": "storyboards/reel-03-scene-01.png"
+      },
+      {
+        "time": "0:04–0:08",
+        "onScreen": "2. Start with hello",
+        "draftVoiceoverCaption": "Learn one name. No need to collect a whole new friend group in a week.",
+        "image": "storyboards/reel-03-scene-02.png"
+      },
+      {
+        "time": "0:08–0:13",
+        "onScreen": "3. Invite someone along",
+        "draftVoiceoverCaption": "Make one easy invitation around something you already like.",
+        "image": "storyboards/reel-03-scene-03.png"
+      },
+      {
+        "time": "0:13–0:17",
+        "onScreen": "Give it time.",
+        "draftVoiceoverCaption": "Belonging can begin with small repeats.",
+        "image": "storyboards/reel-03-scene-04.png"
+      }
+    ]
+  },
+  {
+    "id": "reel-04",
+    "title": "A little privacy, built in",
+    "status": "draft",
+    "format": "silent typography-only concept storyboard",
+    "disclosure": "CONCEPT STORYBOARD · TYPOGRAPHY ONLY",
+    "video": "reel-04.mp4",
+    "cover": "reel-04-cover.jpg",
+    "subtitles": "reel-04.srt",
+    "durationSeconds": 18,
+    "dimensions": "1080x1920",
+    "frameRate": 30,
+    "videoCodec": "H.264 / libx264",
+    "audio": "Silent; no music or recorded voiceover.",
+    "captionSidecarNote": "SRT covers the full duration with draft voiceover text; the video itself is silent.",
+    "caption": "Saving an event and committing to go are different choices. In Yard, Interested is private; Going is visible to friends and fellow attendees. We’re building that distinction into the product.",
+    "hashtags": [
+      "#PrivacyByDesign",
+      "#YardApp",
+      "#CharlotteNC",
+      "#ThoughtfulTech",
+      "#SocialApps"
+    ],
+    "cta": "What helps a social app feel comfortable to use?",
+    "scenes": [
+      {
+        "time": "0:00–0:04",
+        "onScreen": "Interested · just for you",
+        "draftVoiceoverCaption": "Saving an idea doesn’t have to be an announcement.",
+        "image": "storyboards/reel-04-scene-01.png"
+      },
+      {
+        "time": "0:04–0:09",
+        "onScreen": "Your saved plans stay yours.",
+        "draftVoiceoverCaption": "In Yard, Interested is private.",
+        "image": "storyboards/reel-04-scene-02.png"
+      },
+      {
+        "time": "0:09–0:14",
+        "onScreen": "Going · visible to friends and attendees",
+        "draftVoiceoverCaption": "Going is the choice you share with friends and fellow attendees.",
+        "image": "storyboards/reel-04-scene-03.png"
+      },
+      {
+        "time": "0:14–0:18",
+        "onScreen": "yard. · Find your people.",
+        "draftVoiceoverCaption": "Clear choices make better plans.",
+        "image": "storyboards/reel-04-scene-04.png"
+      }
+    ]
+  },
+  {
+    "id": "reel-05",
+    "title": "The follow-up text doesn’t need to be clever",
+    "status": "draft",
+    "format": "silent typography-only concept storyboard",
+    "disclosure": "CONCEPT STORYBOARD · TYPOGRAPHY ONLY",
+    "video": "reel-05.mp4",
+    "cover": "reel-05-cover.jpg",
+    "subtitles": "reel-05.srt",
+    "durationSeconds": 18,
+    "dimensions": "1080x1920",
+    "frameRate": 30,
+    "videoCodec": "H.264 / libx264",
+    "audio": "Silent; no music or recorded voiceover.",
+    "captionSidecarNote": "SRT covers the full duration with draft voiceover text; the video itself is silent.",
+    "caption": "A kind follow-up can be one sentence: “I liked talking about [thing]. Want to [easy activity] next week?” Specific, warm, and no pressure to answer on the spot.",
+    "hashtags": [
+      "#FriendshipTips",
+      "#AdultFriendship",
+      "#MakingFriends",
+      "#ReachOut",
+      "#CharlotteNC"
+    ],
+    "cta": "Save this little text template for later.",
+    "scenes": [
+      {
+        "time": "0:00–0:04",
+        "onScreen": "the follow-up text",
+        "draftVoiceoverCaption": "Had a nice conversation and want to see them again?",
+        "image": "storyboards/reel-05-scene-01.png"
+      },
+      {
+        "time": "0:04–0:08",
+        "onScreen": "“I liked hearing about your pottery class…”",
+        "draftVoiceoverCaption": "Mention the thing you talked about.",
+        "image": "storyboards/reel-05-scene-02.png"
+      },
+      {
+        "time": "0:08–0:13",
+        "onScreen": "“…want to get coffee next week?”",
+        "draftVoiceoverCaption": "Offer one easy plan for another time.",
+        "image": "storyboards/reel-05-scene-03.png"
+      },
+      {
+        "time": "0:13–0:18",
+        "onScreen": "That’s enough.",
+        "draftVoiceoverCaption": "Send the kind note. Let them answer in their own time.",
+        "image": "storyboards/reel-05-scene-04.png"
+      }
+    ]
+  }
+]

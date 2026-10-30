@@ -1,0 +1,11 @@
+{
+  "submitted_at": "2026-10-29T20:59:21.9372048Z",
+  "endpoint": "https://lvgmelaavgmyjjdggzop.supabase.co/functions/v1/agent-inbox",
+  "received": 17,
+  "inserted": 17,
+  "duplicates": 0,
+  "rejected": [],
+  "verified_pending": 17,
+  "verified_matching_images": 17,
+  "published": false
+}

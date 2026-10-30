@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-29",
+  "city": "Charlotte, NC",
+  "purpose": "Initial official venue and organizer allowlist for human-reviewed event discovery. These are verified source identities, not verified Meta API access.",
+  "metaApiEligibility": "three_instagram_handles_verified_2026-10-29",
+  "connectorConfigured": true,
+  "accessTokenPresent": true,
+  "sources": [
+    {
+      "id": "camp-north-end",
+      "name": "Camp North End",
+      "kind": "venue_and_event_organizer",
+      "officialWebsite": "https://camp.nc/",
+      "eventsUrl": "https://camp.nc/friday-night-music/",
+      "social": {
+        "instagram": {
+          "username": "campnorthend",
+          "url": "https://www.instagram.com/campnorthend/",
+          "verifiedFrom": "https://camp.nc/about/faqs/"
+        }
+      },
+      "city": "Charlotte, NC",
+      "apiEligibility": "business_discovery_read_succeeded_2026-10-29",
+      "notes": "The official FAQ links to this Instagram account and says it posts event updates."
+    },
+    {
+      "id": "the-fillmore-charlotte",
+      "name": "The Fillmore Charlotte",
+      "kind": "venue",
+      "officialWebsite": "https://www.fillmorenc.com/",
+      "eventsUrl": "https://avidxchangemusicfactory.com/the-fillmore/",
+      "social": {
+        "instagram": {
+          "username": "fillmorenc",
+          "url": "https://www.instagram.com/fillmorenc/",
+          "verifiedFrom": "https://avidxchangemusicfactory.com/the-fillmore/"
+        },
+        "facebook": {
+          "url": "https://www.facebook.com/FillmoreNC",
+          "verifiedFrom": "https://avidxchangemusicfactory.com/the-fillmore/"
+        }
+      },
+      "city": "Charlotte, NC",
+      "apiEligibility": "business_discovery_read_succeeded_2026-10-29",
+      "notes": "Venue site links to both social accounts and its upcoming shows."
+    },
+    {
+      "id": "charlotte-shout",
+      "name": "Charlotte SHOUT! / Charlotte Center City Partners",
+      "kind": "festival_organizer",
+      "officialWebsite": "https://charlotteshout.com/",
+      "eventsUrl": "https://charlotteshout.com/about-us/faqs/",
+      "social": {
+        "instagram": {
+          "username": "cltshout",
+          "url": "https://www.instagram.com/cltshout/",
+          "verifiedFrom": "https://www.charlottecentercity.org/initiatives/charlotte-shout"
+        },
+        "facebook": {
+          "url": "https://www.facebook.com/cltshout",
+          "verifiedFrom": "https://www.charlottecentercity.org/initiatives/charlotte-shout"
+        }
+      },
+      "city": "Charlotte, NC",
+      "apiEligibility": "business_discovery_read_succeeded_2026-10-29",
+      "notes": "The producer’s official site links the festival website and identifies @cltshout on Instagram and Facebook."
+    },
+    {
+      "id": "evening-muse",
+      "name": "The Evening Muse",
+      "kind": "venue",
+      "officialWebsite": "https://www.eveningmuse.com/",
+      "eventsUrl": "https://www.eveningmuse.com/",
+      "social": {},
+      "city": "Charlotte, NC",
+      "apiEligibility": "not_tested",
+      "notes": "Official site publishes a live show calendar. Social handles intentionally omitted until confirmed from the venue’s own site."
+    },
+    {
+      "id": "birdsong-brewing",
+      "name": "Birdsong Brewing Co.",
+      "kind": "venue_and_event_organizer",
+      "officialWebsite": "https://birdsongbrewing.com/",
+      "eventsUrl": "https://birdsongbrewing.com/events",
+      "social": {},
+      "city": "Charlotte, NC",
+      "apiEligibility": "not_tested",
+      "notes": "Official site publishes event listings and points visitors to Instagram Stories for schedule updates; exact account handle omitted until verified from a first-party link."
+    },
+    {
+      "id": "resident-culture-brewing",
+      "name": "Resident Culture Brewing",
+      "kind": "venue_and_event_organizer",
+      "officialWebsite": "https://residentculturebrewing.com/",
+      "eventsUrl": "https://residentculturebrewing.com/",
+      "social": {},
+      "city": "Charlotte, NC",
+      "apiEligibility": "not_tested",
+      "notes": "Official site lists active Charlotte locations and links an Events section; social handles omitted until confirmed from a first-party link."
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+# Meta publishing API research
+
+Research date: 2026-10-29. This is a future-integration brief, not implementation guidance to publish now. Meta Developer documentation returned HTTP 429 during direct page opens; the Instagram and Facebook Postman collections below are published in Meta’s official Postman workspace. Recheck the linked Meta docs, permissions, and app-review requirements before building against them.
+
+## Recommended integration shape
+
+- Use Facebook Login for a Page-connected Instagram Professional account if the dashboard needs both Instagram and Facebook publishing. Meta’s Instagram API with Facebook Login requires a Facebook Page linked to the Instagram Professional account; it does not support consumer Instagram accounts. Content publishing supports Professional accounts, but Stories are limited to Business accounts. [Meta Instagram API collection](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api?entity=request-23987686-3a63181c-e5c6-4890-96dd-e4d425bef5e0), [official workspace](https://www.postman.com/meta/instagram/overview)
+- Keep the OAuth callback, app secret, token exchange, Graph requests, and media publishing on a trusted server. Store tokens encrypted and out of app/browser bundles, logs, and source control. This is a security recommendation for the integration, not a substitute for Meta’s current security guidance.
+
+## Facebook Login and tokens
+
+1. Start Facebook Login with a registered redirect URI and CSRF `state`; request only the permissions needed for the selected actions. The authorization response is a one-time code. Exchange that code server-side for a short-lived user token, keeping the App Secret off the client.
+2. Exchange the user token server-side at `/{version}/oauth/access_token` with `grant_type=fb_exchange_token`, `client_id`, `client_secret`, and `fb_exchange_token`. Meta’s Login guide describes this long-lived-token path; direct access to the guide was rate-limited during this research, so verify response and current lifetimes before implementation. [Facebook Login access-token guide](https://developers.facebook.com/documentation/facebook-login/guides/access-tokens/)
+3. Use the resulting user token to enumerate managed Pages: `GET /{version}/me/accounts?fields=id,name,access_token,tasks,instagram_business_account`. The returned Page access token acts for that Page; `instagram_business_account.id` supplies the linked IG user ID. A specific Page can also be read with `GET /{version}/{page_id}?fields=name,access_token,instagram_business_account`. These exact lookup patterns and fields appear in Meta’s collection. [Meta Instagram token requests](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api?entity=request-23987686-3fe78620-2258-44b6-893f-42d76c7200d7), [Meta Facebook API collection](https://www.postman.com/meta/facebook/documentation/r56bjfd/facebook-api)
+4. Treat expiry as managed state, even if a Page-token response has no expiry value. Retain token type, granted scopes, `expires_at` when supplied, last successful validation, and the Page/account IDs. Provide reconnect/re-auth when access is revoked or permissions change. Do not assume “no expiry” means irrevocable. [Meta Facebook Login access-token guide](https://developers.facebook.com/documentation/facebook-login/guides/access-tokens/)
+
+The Instagram-with-Facebook-Login collection lists `pages_show_list`, `instagram_basic`, `instagram_content_publish`, `pages_read_engagement`, and `instagram_manage_comments` among its needed permissions. Request the subset actually used; do not request comment permissions for a publish-only dashboard. The collection does not establish the full current Facebook Page publishing/insights permission set; confirm `pages_manage_posts` and `read_insights` (and any required review/advanced-access steps) against the live Page API permission docs before implementation. [Meta Instagram permissions](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api?entity=request-23987686-3a63181c-e5c6-4890-96dd-e4d425bef5e0), [Meta Pages API access tokens](https://developers.facebook.com/docs/pages/access-tokens/)
+
+## Publishing contracts
+
+Instagram publishing uses a create-container, then publish flow. Media URLs must be reachable by Meta’s fetcher; publish only after the container is ready. Keep the uploaded asset and container ID attached to the draft revision for reconciliation.
+
+| Content | Create | Publish |
+|---|---|---|
+| Image | `POST /{ig_user_id}/media` with `image_url` and optional `caption` | `POST /{ig_user_id}/media_publish` with `creation_id` |
+| Carousel | Create each child with `is_carousel_item=true`; create a parent with `media_type=CAROUSEL` and the child container IDs in `children` | Publish the parent container with `media_publish` |
+| Reel | `POST /{ig_user_id}/media` with `media_type=REELS`, public `video_url`, caption, optional `share_to_feed` | Poll `/{container_id}?fields=status_code,status` until ready, then call `media_publish` |
+| Story | Create a media container with `media_type=STORIES` and supported image/video URL, then publish its container | Same `media_publish` endpoint; Facebook Login flow limits Stories to Business accounts |
+
+The Reel collection explicitly shows the container status check, `media_publish` call, public video URL requirement, and `share_to_feed` behavior. Verify current image/carousel/story parameter limits and formats against the live publishing docs before implementation; those specific pages were not independently retrievable in this pass. [Meta Reels publishing requests](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api?entity=request-23987686-3fe78620-2258-44b6-893f-42d76c7200d7), [Meta content-publishing docs](https://developers.facebook.com/docs/instagram-platform/content-publishing/)
+
+For Facebook Pages, the standard publishing surfaces are `POST /{page_id}/feed` for a text/message post and `POST /{page_id}/photos` for a photo with its caption/message; use the Page access token. Confirm current field names, upload method, permissions, and Page-task requirements against Meta’s live docs before coding; the retrieved Meta collection directly exposed Page token retrieval and Page Reel publishing, not the complete text/photo request contracts. [Meta Facebook API collection](https://www.postman.com/meta/facebook/documentation/r56bjfd/facebook-api), [Pages API: Posts](https://developers.facebook.com/docs/pages-api/posts/)
+
+## Insights
+
+For the dashboard, separate Instagram account insights from media-level insights and Facebook Page insights from post-level insights. The expected Graph edges are `/{ig_user_id}/insights`, `/{ig_media_id}/insights`, `/{page_id}/insights`, and `/{post_id}/insights`; allowed metrics and windows depend on account type, media type, and API version. The retrieved Meta Instagram collection advertises gathering insights and lists `instagram_basic` and `pages_read_engagement`, but it did not expose the full current metrics contract. Verify metrics, permission (`instagram_manage_insights` and/or Page `read_insights`), retention window, and breakdown support in the live docs; avoid hard-coding a metric list from older examples. [Meta Instagram API collection](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api?entity=request-23987686-3a63181c-e5c6-4890-96dd-e4d425bef5e0), [Instagram Insights docs](https://developers.facebook.com/docs/instagram-platform/insights/), [Page Insights docs](https://developers.facebook.com/docs/graph-api/reference/page/insights/)
+
+## Version pin
+
+The latest Graph API version shown by Meta’s Graph API changelog at research time is **v26.0**, introduced July 29, 2026. Pin an explicit version in server configuration and schedule version/changelog review; do not rely on an unversioned endpoint or leave a stale version indefinitely. Meta’s Postman collections use an `api_version` variable, so the collection alone does not establish the current version. [Meta Graph API changelog](https://developers.facebook.com/docs/graph-api/changelog/), [Meta Graph API versioning](https://developers.facebook.com/docs/graph-api/overview/versioning/)
+
+## Approval and duplicate protection
+
+- Require a human approval record for each publish action: exact content revision/hash, target platform and account/Page ID, action type (publish now, save draft, or other), approver identity, and approval timestamp. Editing the copy, media, destination, or action invalidates that approval. Require a separate approval for each destination.
+- Serialize publishing per approved revision and destination. Persist the Meta container/upload IDs and request state before each external publish call.
+- If a publish request times out or returns an ambiguous error, mark it `outcome_unknown` and lock that revision/destination against automatic retry. Reconcile by reading the returned container/media/post state where possible; otherwise require a human to resolve before another publish attempt. Do not equate a client timeout with a failed publish. The Meta examples return container/media IDs but do not establish an idempotency key for publish calls, so this lock is an application-side safeguard.

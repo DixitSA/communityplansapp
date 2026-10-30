@@ -4,7 +4,15 @@ Add one URL per line. The agent may open these (and normal venue/promoter sites 
 
 ## Venue and promoter sites
 
-<!-- Example: https://www.fillmorenc.com/events -->
+https://camp.nc/friday-night-music/
+https://camp.nc/weekly-lookahead/
+https://visulite.com/boxOffice
+https://birdsongbrewing.com/events
+https://www.nodabrewing.com/all-events
+https://www.triplecbrewing.com/live-music-events
+https://heistbrewery.com/events/
+https://www.quirkevents.com/north-carolina
+https://www.fillmorenc.com/
 
 ## Individual public event pages I want included
 
