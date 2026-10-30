@@ -1,0 +1,120 @@
+<!doctype html>
+<!-- yard. Instagram starter kit. Each .board is one export; render with: node design/social/render.cjs -->
+<html><head><meta charset="utf-8"><style>
+:root {
+  --canvas:#F6F3EC; --surface:#FFFFFF; --muted:#ECE8DF; --ink:#16201A; --ink2:#5E665F; --line:#E4E0D6;
+  --accent:#2E5B45; --accentSoft:#DCE9E0; --accentDark:#7FC3A0; --night:#101411; --nightSurface:#1A1F1B;
+  --music:#D9722A; --food:#8E6FD1; --fitness:#3F8F5F; --arts:#B87A30; --nightlife:#C9567A; --sports:#2F6FB3;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#888; font-family:'Inter Display','Inter',-apple-system,'SF Pro Display',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+.board { position:relative; overflow:hidden; margin:40px; }
+.sq { width:1080px; height:1080px; } .post { width:1080px; height:1350px; } .story { width:1080px; height:1920px; }
+.wm { font-weight:800; letter-spacing:-0.055em; line-height:1; }
+.wm i { font-style:normal; color:var(--accentDark); }
+.over { font-weight:600; text-transform:uppercase; letter-spacing:0.14em; font-size:30px; }
+.spark { color:var(--accent); }
+
+/* avatar */
+#avatar { background:var(--accent); display:flex; align-items:center; justify-content:center; }
+#avatar .wm { color:var(--canvas); font-size:330px; margin-top:-30px; }
+
+/* 01 hello */
+#hello { background:var(--canvas); color:var(--ink); padding:96px; display:flex; flex-direction:column; }
+#hello .over { color:var(--ink2); }
+#hello h1 { font-size:200px; font-weight:800; letter-spacing:-0.05em; line-height:0.95; margin-top:auto; }
+#hello h1 span { color:var(--accent); }
+#hello p { font-size:44px; line-height:1.3; color:var(--ink2); margin-top:56px; max-width:820px; font-weight:500; }
+#hello .foot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:auto; }
+#hello .foot .wm { font-size:120px; color:var(--accent); }
+#hello .pill { background:var(--accent); color:#fff; font-size:34px; font-weight:600; padding:22px 40px; border-radius:999px; }
+
+/* 02 how it works */
+#how { background:var(--canvas); color:var(--ink); padding:96px 80px; }
+#how h2 { font-size:96px; font-weight:800; letter-spacing:-0.045em; line-height:1; margin:24px 0 48px; }
+#how .over { color:var(--ink2); }
+.state { background:var(--surface); border-radius:44px; padding:40px 48px; display:flex; gap:44px; align-items:center; margin-bottom:26px; box-shadow:0 6px 24px rgba(22,32,26,.06); }
+.state .ico { width:132px; height:132px; border-radius:36px; display:flex; align-items:center; justify-content:center; flex:none; }
+.state h3 { font-size:54px; font-weight:700; letter-spacing:-0.02em; }
+.state p { font-size:36px; color:var(--ink2); margin-top:10px; line-height:1.3; font-weight:500; }
+#how .foot { position:absolute; left:80px; right:80px; bottom:80px; display:flex; justify-content:space-between; align-items:center; color:var(--ink2); font-size:34px; font-weight:600; }
+#how .foot .wm { font-size:72px; color:var(--accent); }
+
+/* 03 weekend + story */
+.wk { background:var(--canvas); color:var(--ink); padding:84px 72px 64px; display:flex; flex-direction:column; }
+.wk .over { color:var(--accent); }
+.wk h2 { font-size:92px; font-weight:800; letter-spacing:-0.05em; line-height:0.98; margin:18px 0 12px; }
+.day { font-size:36px; font-weight:800; color:var(--accent); letter-spacing:-0.01em; margin:18px 0 10px; }
+.row { background:var(--surface); border-radius:32px; padding:16px 32px; display:flex; align-items:center; gap:28px; margin-bottom:14px; }
+.row .t { font-variant-numeric:tabular-nums; font-size:30px; font-weight:700; color:var(--ink2); width:170px; flex:none; white-space:nowrap; }
+.row .dot { width:22px; height:22px; border-radius:50%; flex:none; }
+.row .thumb { width:84px; height:84px; border-radius:20px; object-fit:cover; flex:none; margin:-8px 0; }
+.row .ph { width:84px; height:84px; border-radius:20px; flex:none; display:flex; align-items:center; justify-content:center; margin:-8px 0; }
+.row .ph .dot { width:24px; height:24px; }
+.row .n { font-size:36px; font-weight:700; letter-spacing:-0.015em; line-height:1.15; }
+.row .v { font-size:28px; color:var(--ink2); margin-top:4px; font-weight:500; }
+.wk .foot { margin-top:auto; padding-top:28px; display:flex; justify-content:space-between; align-items:center; font-size:32px; font-weight:600; color:var(--ink2); }
+.wk .foot .wm { font-size:72px; color:var(--accent); }
+.story.wk { padding:130px 72px 140px; }
+.story.wk h2 { font-size:120px; margin-bottom:28px; } .story.wk .day { margin:26px 0 12px; }
+.story.wk .row { padding:20px 36px; } .story.wk .n { font-size:40px; } .story.wk .v { font-size:30px; }
+
+
+/* 04 private (dark) */
+#private { background:var(--night); color:#EEF2EE; padding:96px; display:flex; flex-direction:column; }
+#private .over { color:var(--accentDark); }
+#private h2 { font-size:150px; font-weight:800; letter-spacing:-0.05em; line-height:0.97; margin-top:auto; }
+#private h2 span { color:var(--accentDark); }
+#private p { font-size:44px; line-height:1.35; color:#A3ADA5; margin-top:52px; max-width:860px; font-weight:500; }
+#private .foot { margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end; }
+#private .foot .wm { font-size:110px; color:#EEF2EE; }
+#private .foot span { font-size:34px; color:#A3ADA5; font-weight:600; }
+</style></head><body>
+
+<div class="board sq" id="avatar"><div class="wm">yard<i>.</i></div></div>
+
+<div class="board post" id="hello">
+  <div class="over">Charlotte, NC · coming soon</div>
+  <h1>Find your <span>people.</span></h1>
+  <p>Everything happening in Charlotte, on one calendar — and which of your friends are going.</p>
+  <div class="foot" style="margin-top:96px"><div class="wm">yard<i style="color:var(--accent)">.</i></div><div class="pill">@yard.irl</div></div>
+</div>
+
+<div class="board post" id="how">
+  <div class="over">How yard works</div>
+  <h2>Three ways<br>to say yes.</h2>
+  <div class="state"><div class="ico" style="background:#FBE1EA"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#C9567A" stroke-width="2.2" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/></svg></div>
+    <div><h3>Interested</h3><p>Save it for later. Only you can see it.</p></div></div>
+  <div class="state"><div class="ico" style="background:var(--accentSoft)"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#2E5B45" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><path d="M15.5 14.2c2.6-.3 4.8 1.2 5.5 4.3"/></svg></div>
+    <div><h3>Down if friends go</h3><p>We’ll tell you the moment a friend commits.</p></div></div>
+  <div class="state"><div class="ico" style="background:var(--accent)"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div><h3>Going</h3><p>Friends and fellow attendees see you’re in.</p></div></div>
+  <div class="foot"><div class="wm">yard<i style="color:var(--accent)">.</i></div><div>@yard.irl</div></div>
+</div>
+
+<div class="board post wk" id="weekend"></div>
+<div class="board story wk" id="story"></div>
+
+<div class="board post" id="private">
+  <div class="over">Privacy is the product</div>
+  <h2>Your maybes<br>stay <span>yours.</span></h2>
+  <p>“Interested” is private. Always. Friends only see you when you’re Going — and blocks override everything.</p>
+  <div class="foot" style="margin-top:96px"><div class="wm">yard<i>.</i></div><span>@yard.irl</span></div>
+</div>
+
+<script src="picks.js"></script>
+<script>
+// Posts read this week's picks from picks.js. `post: false` keeps an event out of the 4:5 post (it only fits 5);
+// `story: false` keeps it out of the story.
+const W = window.YARD_WEEK, CAT = window.YARD_CATS;
+const only = (key) => W.days.map(([d, rows]) => [d, rows.filter((r) => r[key] !== false)]).filter(([, rows]) => rows.length);
+function fill(el, title, list) {
+  el.innerHTML = `<div class="over">${W.label}</div><h2>${title}</h2>` +
+    list.map(([d, rows]) => `<div class="day">${d}</div>` + rows.map((r) =>
+      `<div class="row"><div class="t">${r.time}</div>${r.image ? `<img class="thumb" src="${r.image}" alt="">` : `<div class="ph" style="background:${CAT[r.cat].soft}"><div class="dot" style="background:${CAT[r.cat].solid}"></div></div>`}<div><div class="n">${r.title}</div><div class="v">${r.venue}</div></div></div>`).join('')).join('') +
+    `<div class="foot"><div class="wm">yard<i style="color:var(--accent)">.</i></div><div>@yard.irl</div></div>`;
+}
+fill(document.getElementById('weekend'), 'This weekend<br>in Charlotte', only('post'));
+fill(document.getElementById('story'), 'This weekend<br>in Charlotte', only('story'));
+</script>
+</body></html>
