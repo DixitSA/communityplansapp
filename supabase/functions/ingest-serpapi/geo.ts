@@ -52,9 +52,34 @@ export function parseNominatim(body: unknown): { lat: number; lng: number } | nu
  *  falling back to the area's centre, which would stack unrelated events on one point. */
 const GEOAPIFY_PRECISE = new Set(["amenity", "building", "street"]);
 
-export function parseGeoapify(body: unknown): { lat: number; lng: number } | null {
-  const first = (body as { results?: { lat?: unknown; lon?: unknown; result_type?: unknown }[] })?.results?.[0];
+/** The city a query names, when it ends in "<city>, NC" (e.g. "blue door, charlotte, nc" → "charlotte"). */
+export function queryCity(query: string): string | undefined {
+  return /,\s*charlotte\s*(,|$)/i.test(query) ? "charlotte" : undefined;
+}
+
+const GENERIC = new Set(["the", "at", "and", "of", "co", "company", "inc", "llc", "bar", "brewing", "brewery", "restaurant", "cafe", "club", "clt", "charlotte"]);
+const SPELLING: Record<string, string> = { theatre: "theater", centre: "center" };
+const nameTokens = (s: string) =>
+  s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/['’]/g, "").split(/[^a-z0-9]+/)
+    .filter((t) => t && !GENERIC.has(t)).map((t) => SPELLING[t] ?? t);
+
+/** Does a geocoder's place name plausibly refer to the venue we asked for? One side's meaningful words must all
+ *  appear in the other ("Triple C Brewing Company" ~ "The Barrel Room at Triple C Brewing"; "Blue Flowers" ≁ "Blue Door").
+ *  A one-word name must match exactly: "Flora" is not "Fonta Flora". */
+export function sameVenue(asked: string, found: string): boolean {
+  const a = nameTokens(asked), f = nameTokens(found);
+  if (a.length === 0 || f.length === 0) return false;
+  if (a.length === 1 || f.length === 1) return a.length === f.length && a[0] === f[0];
+  return f.every((t) => a.includes(t)) || a.every((t) => f.includes(t));
+}
+
+export function parseGeoapify(body: unknown, expectCity?: string, expectName?: string): { lat: number; lng: number } | null {
+  const first = (body as { results?: { lat?: unknown; lon?: unknown; result_type?: unknown; city?: unknown; name?: unknown }[] })?.results?.[0];
   if (typeof first?.lat !== "number" || typeof first.lon !== "number") return null;
   if (typeof first.result_type !== "string" || !GEOAPIFY_PRECISE.has(first.result_type)) return null;
+  // A query that says "Charlotte" must resolve inside Charlotte: a same-named venue in another town is a different place.
+  if (expectCity && (typeof first.city !== "string" || first.city.toLowerCase() !== expectCity.toLowerCase())) return null;
+  // Venue-name searches (no street address) must come back as that venue, not a neighbour with a similar name.
+  if (expectName && (typeof first.name !== "string" || !sameVenue(expectName, first.name))) return null;
   return Number.isFinite(first.lat) && Number.isFinite(first.lon) ? { lat: first.lat, lng: first.lon } : null;
 }

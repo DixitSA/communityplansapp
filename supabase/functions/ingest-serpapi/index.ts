@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { addressKey, FALLBACK_CENTER, parseCensus, parseGeoapify, parseNominatim, parseEwkbPoint, withinCity } from "./geo.ts";
+import { addressKey, FALLBACK_CENTER, parseCensus, parseGeoapify, parseNominatim, parseEwkbPoint, queryCity, withinCity } from "./geo.ts";
 import { mapSerpapiEvent, type SerpEvent, type SerpRow } from "./mapper.ts";
 
 const SERP_URL = "https://serpapi.com/search.json";
@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
           limit: "1", format: "json", apiKey: geoapifyKey,
         });
         if (!hasStreet.get(key)) q.set("type", "amenity"); // venue-name queries: look for a place, not the city
-        const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, parseGeoapify, GEOAPIFY_TIMEOUT_MS);
+        const r = await lookup("geoapify", `${GEOAPIFY_URL}?${q}`, {}, (b) => parseGeoapify(b, queryCity(key), hasStreet.get(key) ? undefined : key.split(",")[0]), GEOAPIFY_TIMEOUT_MS);
         if (r.hit) { hit = r.hit; geoapify_hits++; }
         else if (r.state === "nomatch") answered = true;
         else failed = true;

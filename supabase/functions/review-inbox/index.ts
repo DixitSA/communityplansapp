@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { addressKey, FALLBACK_CENTER, parseCensus, parseEwkbPoint, parseGeoapify, withinCity } from "../ingest-serpapi/geo.ts";
+import { addressKey, FALLBACK_CENTER, parseCensus, parseEwkbPoint, parseGeoapify, queryCity, withinCity } from "../ingest-serpapi/geo.ts";
 import { geocodeQuery, interestSlugs } from "../ingest-serpapi/mapper.ts";
 import { attributionFor, dateWindow, isFree, titleOk, truncateDescription } from "./rules.ts";
 
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
           limit: "1", format: "json", apiKey: geoapifyKey,
         });
         if (!q.hasStreet) p.set("type", "amenity");
-        const r = await lookup(`${GEOAPIFY_URL}?${p}`, parseGeoapify, GEOAPIFY_TIMEOUT_MS);
+        const r = await lookup(`${GEOAPIFY_URL}?${p}`, (b) => parseGeoapify(b, queryCity(key), q.hasStreet ? undefined : key.split(",")[0]), GEOAPIFY_TIMEOUT_MS);
         hit = r.hit;
         failed ||= r.failed;
       }
