@@ -1,7 +1,6 @@
-import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Chip, MeshArt, useTheme } from '@/design';
+import { AppText, Chip, EventImage, MeshArt, useTheme } from '@/design';
 import { linearGradient } from '@/design/components/meshFallback';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
@@ -31,7 +30,7 @@ export function TicketCard({ event }: { event: EventDetail }) {
       <View style={{ height: ART_HEIGHT, justifyContent: 'flex-end' }}>
         <View style={StyleSheet.absoluteFill}>
           {event.imageUrl ? (
-            <Image source={{ uri: event.imageUrl }} contentFit="cover" style={{ flex: 1 }} accessibilityIgnoresInvertColors />
+            <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
           ) : (
             <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={96} />
           )}

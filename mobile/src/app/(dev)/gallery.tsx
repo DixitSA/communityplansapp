@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   AppText,
@@ -10,6 +10,7 @@ import {
   DateStrip,
   EmptyState,
   EventCard,
+  EventImage,
   EventRow,
   Facepile,
   FriendButton,
@@ -30,6 +31,7 @@ import {
   Skeleton,
   StepProgress,
   TextField,
+  useRevealedImages,
   useTheme,
   type CardPlan,
   type DayMeta,
@@ -39,6 +41,9 @@ import {
 import { EventCardLink, EventRowLink } from '@/features/event/EventCardLink';
 import { getFixtureEvents } from '@/features/feed/fixtures';
 import { startOfDay, toISODate } from '@/lib/dates';
+
+// Any picture works to show the blur; the app icon ships with the bundle, so the gallery works offline.
+const SAMPLE_IMAGE: number = require('../../../assets/images/icon.png');
 
 const VARIANTS: TypeVariant[] = [
   'display', 'largeTitle', 'title', 'title2', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
@@ -351,6 +356,22 @@ export default function Gallery() {
         <EventCard event={events[3]} plan="going" />
         {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
         <EventCardLink event={events[2]} />
+      </Section>
+
+      <Section title="EventImage (flagged images blur until revealed; tap the label to reveal both)">
+        {/* Cards and rows: blurred with an eye-slash badge (the card's tap still opens the event). */}
+        <View style={{ height: 120, borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}>
+          <EventImage eventId="gallery-sensitive" source={SAMPLE_IMAGE} sensitive />
+        </View>
+        {/* Event page hero: the label; tapping it reveals the image everywhere for this session. */}
+        <Pressable
+          onPress={() => useRevealedImages.getState().reveal('gallery-sensitive')}
+          accessibilityRole="button"
+          accessibilityLabel="Sensitive image. Show image"
+          style={{ height: 180, borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}
+        >
+          <EventImage eventId="gallery-sensitive" source={SAMPLE_IMAGE} sensitive overlay="label" />
+        </Pressable>
       </Section>
     </Screen>
   );

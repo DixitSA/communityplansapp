@@ -445,6 +445,7 @@ export type Database = {
           ends_at: string | null
           event_id: string | null
           id: string
+          image_sensitive: boolean
           image_url: string | null
           link: string | null
           origin: string
@@ -466,6 +467,7 @@ export type Database = {
           ends_at?: string | null
           event_id?: string | null
           id?: string
+          image_sensitive?: boolean
           image_url?: string | null
           link?: string | null
           origin?: string
@@ -487,6 +489,7 @@ export type Database = {
           ends_at?: string | null
           event_id?: string | null
           id?: string
+          image_sensitive?: boolean
           image_url?: string | null
           link?: string | null
           origin?: string
@@ -533,6 +536,7 @@ export type Database = {
           ends_at: string | null
           external_id: string | null
           id: string
+          image_sensitive: boolean
           image_url: string | null
           is_free: boolean
           location: unknown
@@ -558,6 +562,7 @@ export type Database = {
           ends_at?: string | null
           external_id?: string | null
           id?: string
+          image_sensitive?: boolean
           image_url?: string | null
           is_free?: boolean
           location: unknown
@@ -583,6 +588,7 @@ export type Database = {
           ends_at?: string | null
           external_id?: string | null
           id?: string
+          image_sensitive?: boolean
           image_url?: string | null
           is_free?: boolean
           location?: unknown
@@ -1287,6 +1293,7 @@ export type Database = {
           friends_going: Json
           going_count: number
           id: string
+          image_sensitive: boolean
           image_url: string
           interest_ids: number[]
           is_free: boolean
@@ -1320,6 +1327,7 @@ export type Database = {
           friends_going: Json
           going_count: number
           id: string
+          image_sensitive: boolean
           image_url: string
           interest_ids: number[]
           is_free: boolean

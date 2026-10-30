@@ -9,6 +9,7 @@ const row: FeedRow = {
   venue_name: 'Haberdish',
   neighborhood: 'NoDa',
   image_url: null as unknown as string,
+  image_sensitive: false,
   is_free: true,
   price_min: null as unknown as number,
   lat: 35.25,
@@ -54,6 +55,11 @@ describe('mapFeedRow', () => {
     const m = mapFeedRow({ ...row, my_status: 'going', friends_going: null }, DEMO_INTERESTS);
     expect(m.myStatus).toBe('going');
     expect(m.friends).toEqual([]);
+  });
+
+  it('carries the sensitive-image flag', () => {
+    expect(e.imageSensitive).toBe(false);
+    expect(mapFeedRow({ ...row, image_sensitive: true }, DEMO_INTERESTS).imageSensitive).toBe(true);
   });
 });
 

@@ -1,9 +1,9 @@
-import { Image } from 'expo-image';
 import { router, type Href } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
+  EventImage,
   Facepile,
   Icon,
   MeshArt,
@@ -48,7 +48,9 @@ export function MapEventCard({ event }: { event: EventCardData }) {
         }}
       >
         {event.imageUrl ? (
-          <Image source={{ uri: event.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <View style={StyleSheet.absoluteFill}>
+            <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
+          </View>
         ) : (
           <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} style={StyleSheet.absoluteFill} />
         )}

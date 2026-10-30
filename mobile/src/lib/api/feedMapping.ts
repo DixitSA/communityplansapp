@@ -34,6 +34,7 @@ export function mapFeedRow(row: FeedRow | FeedRangeRow, interests: Interest[]): 
     venue: row.venue_name ?? row.neighborhood ?? '',
     distanceMi: row.distance_m / METERS_PER_MILE,
     imageUrl: row.image_url ?? undefined,
+    imageSensitive: row.image_sensitive === true,
     interest: primary?.slug ?? 'community',
     categoryLabel: primary?.label ?? 'Event',
     // The symbol column holds an SF Symbol name; the database can't prove it exists in our symbol list.

@@ -32,6 +32,7 @@ export {
 export { PlanPill, planMenuOptions, planPillSpec, type PlanMenuOption } from './components/PlanPill';
 export { PlanMenu, type PlanMenuProps } from './components/PlanMenu';
 export { Facepile, formatFriendsLabel, formatAttendeeCount, type FacepileProps } from './components/Facepile';
+export { EventImage, useRevealedImages, useImageHidden, SENSITIVE_BLUR_RADIUS, type EventImageProps } from './components/EventImage';
 export { EventRow, eventRowTime, eventRowDistance, EVENT_ROW_THUMB, type EventRowProps } from './components/EventRow';
 export { GlassButton, type GlassButtonProps } from './components/GlassButton';
 export { GlassPill, type GlassPillProps } from './components/GlassPill';
