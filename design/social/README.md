@@ -1,5 +1,9 @@
 # yard. Instagram kit (@yard.irl)
 
+**Weekly draft (automatic, Thursdays):** `weekly-draft.cjs` pulls the coming weekend from the yard feed, sorts it into solo-friendly / free / no-drinking / nightlife, checks each event's own page for time and price, and writes `out/drafts/<friday>-weekend.md` (research list) + `.js` (carousel data). Render the carousel with `node design/social/render.cjs "native.html?data=out/drafts/<friday>-weekend.js"`. It needs `YARD_TEST_EMAIL` / `YARD_TEST_PASSWORD` (the throwaway test account). Nothing is posted automatically.
+
+**Native-style carousels:** `native.html` + a data file in `drafts/` (see `drafts/2026-10-30-halloween-party.js`). Real photo per slide (`photo: 'img/…'`, `credit`), Instagram-style text stickers, tiny yard. signature. This is the default look now; the designed `kit.html` / `carousels.html` pieces are secondary.
+
 **Start with [PLAYBOOK.md](PLAYBOOK.md):** the content strategy, series, filming scripts and 30-day plan. This file covers the graphics tooling.
 
 Graphics are built from `kit.html` with the app's own palette and type (DESIGN.md §3).
