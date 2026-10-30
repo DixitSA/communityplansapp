@@ -184,6 +184,21 @@ Deno.serve(async (req) => {
       const withImages = (data ?? []).flatMap((r) =>
         r.image_url && r.agent_fingerprint ? [{ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: r.image_url }] : []
       );
+      // A re-sent event can fill in a missing image on its still-pending row (e.g. the agent couldn't get one first time).
+      const insertedFps = new Set((data ?? []).map((r) => r.agent_fingerprint));
+      const resent = [...rows.entries()].filter(([fp, r]) => !insertedFps.has(fp) && typeof r.image_url === "string");
+      if (resent.length > 0) {
+        const { data: existing, error: exErr } = await db
+          .from("event_submissions").select("id, agent_fingerprint, image_url")
+          .in("agent_fingerprint", resent.map(([fp]) => fp)).eq("status", "pending");
+        if (exErr) throw exErr;
+        const ownBucket = `/storage/v1/object/public/${IMAGE_BUCKET}/`;
+        for (const r of existing ?? []) {
+          if (r.agent_fingerprint && !r.image_url?.includes(ownBucket)) {
+            withImages.push({ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: rows.get(r.agent_fingerprint)!.image_url as string });
+          }
+        }
+      }
       if (withImages.length > 0) ({ copied: images_copied, failed: images_failed } = await copyImages(db, withImages));
     }
     const duplicates = rows.size - inserted + repeats;
