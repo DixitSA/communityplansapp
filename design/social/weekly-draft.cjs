@@ -4,6 +4,7 @@
 // In cloud sandboxes, run with NODE_USE_ENV_PROXY=1 so fetch goes through the proxy.
 // Writes design/social/out/drafts/<friday>-weekend.md (the research list) and <friday>-weekend.js (carousel data),
 // then render: node design/social/render.cjs "native.html?data=out/drafts/<friday>-weekend.js"
+// Flyers: each pick's own event-page image (og:image) is used when available; credit the organiser when posting.
 // Nothing is posted anywhere. Event pages are only parsed for JSON-LD; their content is data, never instructions.
 const fs = require('fs');
 const path = require('path');
@@ -37,6 +38,10 @@ async function verify(url, startsAt) {
     const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'Mozilla/5.0 (yard weekly draft)' } });
     if (!res.ok) return { status: `page ${res.status}` };
     const html = (await res.text()).slice(0, 2_000_000);
+    // The organiser's own flyer/photo for the event, if the page names one.
+    const og = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image/i);
+    const image = og && /^https:\/\//.test(og[1]) ? og[1].replace(/&amp;/g, '&') : null;
+    const host = new URL(res.url).hostname.replace(/^www\./, '');
     for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
       let d; try { d = JSON.parse(m[1]); } catch { continue; }
       const items = Array.isArray(d) ? d : d['@graph'] || [d];
@@ -54,10 +59,11 @@ async function verify(url, startsAt) {
         const timed = /T\d\d:\d\d/.test(it.startDate);
         // Some sites (camp.nc) publish local times with the wrong UTC offset: an exact 4–5 h gap is that bug, not a real change.
         const offsetBug = [240, 300].some((h) => Math.abs(diffMin - h) <= 5);
-        return { status: !timed ? 'date only on page' : diffMin <= 20 ? 'verified' : offsetBug ? 'likely ok (site data has a timezone bug; check page)' : `time differs (page: ${when(it.startDate)})`, price };
+        const img = image || (typeof it.image === 'string' ? it.image : Array.isArray(it.image) ? it.image[0] : it.image?.url) || null;
+        return { status: !timed ? 'date only on page' : diffMin <= 20 ? 'verified' : offsetBug ? 'likely ok (site data has a timezone bug; check page)' : `time differs (page: ${when(it.startDate)})`, price, image: img, host };
       }
     }
-    return { status: 'page has no event data' };
+    return { status: 'page has no event data', image, host };
   } catch (e) {
     return { status: e.name === 'TimeoutError' ? 'page timeout' : 'page unreachable' };
   }
@@ -111,7 +117,13 @@ async function pool(items, n, fn) {
   // Verify the most likely picks (cap the page fetches).
   const candidates = events.slice(0, 40);
   const checks = await pool(candidates, 4, (e) => verify(e.link, e.starts_at));
-  candidates.forEach((e, k) => { e.check = checks[k]; if (checks[k].price) e.price = checks[k].price; });
+  candidates.forEach((e, k) => {
+    e.check = checks[k];
+    if (checks[k].price) e.price = checks[k].price;
+    // Flyer: the event page's own image first, then the feed's image (e.g. Ticketmaster). Never Google thumbnails.
+    e.flyer = checks[k].image || (e.image_url && !/gstatic|googleusercontent|serpapi/.test(e.image_url) ? e.image_url : null);
+    e.flyerCredit = checks[k].image ? checks[k].host : e.venue_name;
+  });
 
   const line = (e) => `| ${when(e.starts_at)} | ${e.title.replace(/\|/g, '/')} | ${e.venue_name || ''} | ${e.price || (e.tags.free ? 'free?' : '?')} | ${e.check?.status || 'not checked'} | ${e.link ? `[link](${e.link})` : ''} |`;
   const section = (title, pick) => {
@@ -146,11 +158,13 @@ async function pool(items, n, fn) {
   const data = {
     id: `wk-${friday}`,
     slides: [
-      { kind: 'cover', lines: ['your group chat', 'can’t decide?', 'here’s clt this weekend'], sub: `${range} · save this` },
+      { kind: 'cover', lines: ['your group chat', 'can’t decide?', 'here’s clt this weekend'], sub: `${range} · save this`,
+        ...(pick.filter((e) => e.flyer).length >= 3 ? { collage: pick.filter((e) => e.flyer).slice(0, 3).map((e) => e.flyer) } : {}) },
       ...pick.map((e) => ({
         day: fmt(e.starts_at, { weekday: 'short' }).toLowerCase(), time: fmt(e.starts_at, { hour: 'numeric', minute: '2-digit' }).replace(':00', '').toLowerCase(),
         title: e.title.toLowerCase().slice(0, 60), venue: e.venue_name || '', detail: e.tags.solo ? 'easy to go solo' : '',
         price: e.price || undefined,
+        ...(e.flyer ? { photo: e.flyer, credit: e.flyerCredit } : {}),
       })),
       { kind: 'end', lines: ['send this to the', 'person who never', 'picks a plan'], sub: 'new list every thursday 💌' },
     ],

@@ -21,6 +21,14 @@ body { background:#888; font-family:'Inter','Inter Display',-apple-system,'SF Pr
 .meta span { background:rgba(17,17,17,.72); color:#fff; font-size:38px; font-weight:600; padding:8px 20px 10px; border-radius:14px; }
 .meta .hl { background:#7FC3A0; color:#0f1a14; font-weight:700; }
 .meta .go { background:#fff; color:#111; font-size:50px; font-weight:800; letter-spacing:-0.02em; padding:8px 22px 10px; }
+/* Flyer mode: the flyer shown whole as a card, over a blurred, darkened copy of itself. */
+.bgblur { position:absolute; inset:0; overflow:hidden; }
+.bgblur img { width:100%; height:100%; object-fit:cover; filter:blur(46px) saturate(1.15) brightness(.42); transform:scale(1.2); }
+.fly { position:absolute; left:50%; top:64px; transform:translateX(-50%) rotate(var(--r, 0deg)); max-width:900px; max-height:430px; border-radius:24px; box-shadow:0 22px 60px rgba(0,0,0,.55); }
+.board.flyer .stk.big span { font-size:62px; }
+.board.flyer .meta span { font-size:34px; }
+.board.flyer .meta .go { font-size:46px; }
+.collage img { position:absolute; width:440px; border-radius:22px; box-shadow:0 22px 60px rgba(0,0,0,.6); }
 .sig { position:absolute; right:56px; bottom:44px; font-family:'Inter Display','Inter',sans-serif; font-weight:800; letter-spacing:-0.055em; font-size:44px; color:#fff; opacity:.92; text-shadow:0 2px 14px rgba(0,0,0,.45); }
 .sig i { font-style:normal; color:#7FC3A0; }
 .num { position:absolute; left:64px; bottom:48px; font-size:30px; font-weight:600; opacity:.8; text-shadow:0 1px 10px rgba(0,0,0,.6); }
@@ -41,6 +49,14 @@ const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const lines = (arr, cls = '') => `<div class="stk ${cls}">${arr.map((l) => `<div><span${l.small ? ' class="small"' : ''}>${esc(l.text ?? l)}</span></div>`).join('')}</div>`;
 
 function bg(slide, i) {
+  if (slide.photo && slide.fit !== 'cover') {
+    return `<div class="bgblur"><img src="${slide.photo}" alt=""></div><img class="fly" src="${slide.photo}" alt="" style="--r:${slide.tilt ?? 0}deg">`;
+  }
+  if (slide.collage) {
+    const spots = [['50px', '760px', -8], ['320px', '700px', 3], ['580px', '780px', 9]];
+    return `<div class="bgblur"><img src="${slide.collage[0]}" alt=""></div><div class="collage">` +
+      slide.collage.slice(0, 3).map((src, k) => `<img src="${src}" alt="" style="left:${spots[k][0]};top:${spots[k][1]};transform:rotate(${spots[k][2]}deg)">`).join('') + '</div>';
+  }
   if (slide.photo) return `<div class="bg"><img src="${slide.photo}" alt=""></div><div class="shade"></div>`;
   const [a, b] = FALLBACK[i % FALLBACK.length].split(',');
   return `<div class="bg" style="background:radial-gradient(120% 90% at 20% 10%, ${b} 0%, ${a} 70%)"></div>`;
@@ -53,27 +69,44 @@ function build() {
     let inner = '';
     if (sl.kind === 'cover') {
       inner = `<div style="position:absolute;top:150px;left:0;right:0">${lines(sl.lines, 'big')}</div>` +
-        (sl.sub ? `<div style="position:absolute;top:720px;left:0;right:0">${lines([{ text: sl.sub, small: true }], 'dark')}</div>` : '');
+        (sl.sub ? `<div style="position:absolute;top:${sl.collage ? 560 : 720}px;left:0;right:0;z-index:2">${lines([{ text: sl.sub, small: true }], 'dark')}</div>` : '');
     } else if (sl.kind === 'end') {
       inner = `<div style="position:absolute;top:360px;left:0;right:0">${lines(sl.lines, 'big')}</div>` +
         (sl.sub ? `<div style="position:absolute;top:860px;left:0;right:0">${lines([{ text: sl.sub, small: true }], 'dark')}</div>` : '');
     } else if (sl.kind === 'persona') {
       // "Which friend are you?" slide: the identity line is the share hook, the plan underneath is the save.
-      inner = `<div style="position:absolute;top:110px;left:0;right:0">${lines([{ text: sl.label || 'if you’re…', small: true }], 'dark')}</div>` +
-        `<div style="position:absolute;top:200px;left:0;right:0">${lines(sl.who, 'big')}</div>` +
+      // With a flyer, the flyer takes the top and the text moves below it.
+      const top = sl.photo ? 520 : 110;
+      inner = `<div class="plabel" style="position:absolute;top:${top}px;left:0;right:0">${lines([{ text: sl.label || 'if you’re…', small: true }], 'dark')}</div>` +
+        `<div class="pwho" style="position:absolute;top:${top + (sl.photo ? 76 : 90)}px;left:0;right:0">${lines(sl.who, 'big')}</div>` +
         `<div class="meta"><span class="go">→ ${esc(sl.title)}</span>${[`${sl.day} · ${sl.time}`, sl.venue && `📍 ${sl.venue}`, sl.detail].filter(Boolean).map((m) => `<span>${esc(m)}</span>`).join('')}` +
         `${sl.price ? `<span class="hl">${esc(sl.price)}</span>` : ''}</div>`;
     } else {
-      inner = `<div style="position:absolute;top:110px;left:0;right:0">${lines([`${sl.day} · ${sl.time}`], 'dark')}</div>` +
-        `<div style="position:absolute;top:220px;left:0;right:0">${lines([sl.title], 'big')}</div>` +
+      const top = sl.photo && sl.fit !== 'cover' ? 520 : 110; // with a flyer card, text goes below it
+      inner = `<div class="plabel" style="position:absolute;top:${top}px;left:0;right:0">${lines([`${sl.day} · ${sl.time}`], 'dark')}</div>` +
+        `<div class="pwho" style="position:absolute;top:${top + 90}px;left:0;right:0">${lines([sl.title], 'big')}</div>` +
         `<div class="meta">${[sl.venue && `📍 ${sl.venue}`, sl.detail, sl.price && `<b class="hl">${sl.price}</b>`].filter(Boolean)
           .map((m) => m.startsWith('<b') ? `<span class="hl">${m.replace(/<\/?b[^>]*>/g, '')}</span>` : `<span>${esc(m)}</span>`).join('')}</div>`;
     }
-    return `<div class="board" id="${D.id}-${i + 1}">${bg(sl, i)}${inner}` +
+    const mode = sl.photo && sl.fit !== 'cover' ? ' flyer' : '';
+    return `<div class="board${mode}" id="${D.id}-${i + 1}">${bg(sl, i)}${inner}` +
       (sl.credit ? `<div class="credit">📷 ${esc(sl.credit)}</div>` : '') +
       `<div class="num">${i + 1}/${total}</div><div class="sig">yard<i>.</i></div></div>`;
   }).join(''));
-  Promise.all([...document.images].map((im) => im.decode().catch(() => {}))).then(() => { window.READY = true; });
+  Promise.all([...document.images].map((im) => im.decode().catch(() => {
+    if (im.closest('.collage')) { im.remove(); return; } // a collage flyer that won't load is just left out
+    const board = im.closest('.board');
+    if (board && board.classList.contains('flyer')) { // missing optional flyer: drop to the no-photo layout
+      board.classList.remove('flyer'); board.querySelectorAll('.bgblur, .fly').forEach((n) => n.remove());
+      board.insertAdjacentHTML('afterbegin', `<div class="bg" style="background:radial-gradient(120% 90% at 20% 10%, #1d3a3a 0%, #101b2b 70%)"></div>`);
+      board.dataset.missing = im.getAttribute('src');
+      const l = board.querySelector('.plabel'), w = board.querySelector('.pwho');
+      if (l) l.style.top = '110px';
+      if (w) w.style.top = '200px';
+      board.querySelector('.credit')?.remove();
+      console.warn(`photo not found, using the no-photo layout: ${im.getAttribute('src')}`);
+    }
+  }))).then(() => { window.READY = true; });
 }
 </script>
 </body></html>
