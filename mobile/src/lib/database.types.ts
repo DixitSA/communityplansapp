@@ -1427,7 +1427,7 @@ export type Database = {
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
-      event_source: "ticketmaster" | "seatgeek" | "curated" | "ical" | "serpapi"
+      event_source: "ticketmaster" | "seatgeek" | "curated" | "ical" | "serpapi" | "agent"
       friendship_status: "pending" | "accepted"
       rsvp_status: "interested" | "down_if_friends" | "going"
       submission_status: "pending" | "approved" | "rejected"
@@ -1561,7 +1561,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      event_source: ["ticketmaster", "seatgeek", "curated", "ical", "serpapi"],
+      event_source: ["ticketmaster", "seatgeek", "curated", "ical", "serpapi", "agent"],
       friendship_status: ["pending", "accepted"],
       rsvp_status: ["interested", "down_if_friends", "going"],
       submission_status: ["pending", "approved", "rejected"],

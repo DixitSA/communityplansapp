@@ -52,3 +52,25 @@ where id = '<submission id>' and status = 'pending';
 This works the same for `user` and `agent` rows (`ends_at`, `address` and `image_url` are null for most user rows). Agent rows are unverified: open the link and check the date, venue and any image before publishing. Note the order is longitude first, then latitude. Add interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
 
 Submitters are not notified in this version. If a link looks abusive, reject it and consider a report against the user.
+
+## Auto-approved events
+
+The `review-inbox` function (see `docs/EVENT_INGESTION.md`) approves clear-cut agent submissions by rules. To review what it did:
+
+```sql
+select id, title, starts_at, venue, source_handle, event_id, reviewed_at
+from public.event_submissions
+where admin_note = 'auto-approved'
+order by reviewed_at desc;
+```
+
+To hide one (the event disappears from the app; the submission stays as a record):
+
+```sql
+update public.events set status = 'hidden' where id = '<event id>';
+```
+
+Rows it left pending carry an `auto: ...` note saying why (duplicates name the existing event id).
+
+**Kill switch.** Turn auto-approval off with `npx supabase secrets set AUTO_APPROVE=off` (or `npx supabase secrets unset AUTO_APPROVE`); the next run is a dry run. To stop it entirely, delete its Cron job. To undo a bad batch, hide the events with `update public.events set status = 'hidden' where source = 'agent' and created_at > now() - interval '1 day';`.
+

@@ -1,4 +1,5 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { isSafeImageUrl, MAX_IMAGE_BYTES, sniffImage } from "./image.ts";
 import { fingerprint, MAX_BODY_BYTES, MAX_EVENTS, validateEvent } from "./validate.ts";
 
 async function digest(s: string): Promise<Uint8Array> {
@@ -14,6 +15,98 @@ async function authorized(provided: string | null, secret: string | undefined): 
 }
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+const IMAGE_BUCKET = "event-images";
+const IMAGE_TIMEOUT_MS = 8_000;
+const IMAGE_BUDGET_MS = 60_000;
+const IMAGE_CONCURRENCY = 4;
+const MAX_REDIRECTS = 3;
+
+/** Download with manual redirects (each hop re-checked), a timeout and a streamed byte cap. Null on any failure. */
+async function downloadImage(start: string): Promise<Uint8Array | null> {
+  const signal = AbortSignal.timeout(IMAGE_TIMEOUT_MS);
+  let url = start;
+  try {
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      if (!isSafeImageUrl(url)) return null;
+      const res = await fetch(url, { redirect: "manual", signal, headers: { Accept: "image/*" } });
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("Location");
+        await res.body?.cancel();
+        if (!loc) return null;
+        url = new URL(loc, url).toString();
+        continue;
+      }
+      if (!res.ok || !res.body) {
+        await res.body?.cancel();
+        return null;
+      }
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > MAX_IMAGE_BYTES) {
+          await reader.cancel();
+          return null;
+        }
+        chunks.push(value);
+      }
+      const out = new Uint8Array(total);
+      let o = 0;
+      for (const c of chunks) {
+        out.set(c, o);
+        o += c.length;
+      }
+      return out;
+    }
+  } catch {
+    return null; // never log: the URL may carry tokens
+  }
+  return null; // too many redirects
+}
+
+/** Copy images for freshly inserted rows into Storage. Failures keep the original URL. */
+async function copyImages(
+  db: SupabaseClient,
+  rows: { id: string; agent_fingerprint: string; image_url: string }[],
+): Promise<{ copied: number; failed: number }> {
+  const t0 = Date.now();
+  let copied = 0, failed = 0, next = 0;
+  const worker = async () => {
+    while (next < rows.length) {
+      const row = rows[next++];
+      if (Date.now() - t0 > IMAGE_BUDGET_MS) {
+        failed++;
+        continue;
+      }
+      try {
+        const bytes = await downloadImage(row.image_url);
+        const type = bytes ? sniffImage(bytes) : null;
+        if (!bytes || !type) {
+          failed++;
+          continue;
+        }
+        const path = `inbox/${row.agent_fingerprint}.${type.ext}`;
+        const up = await db.storage.from(IMAGE_BUCKET).upload(path, bytes, { contentType: type.contentType, upsert: true });
+        if (up.error) {
+          failed++;
+          continue;
+        }
+        const publicUrl = db.storage.from(IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+        const { error } = await db.from("event_submissions").update({ image_url: publicUrl }).eq("id", row.id);
+        if (error) failed++;
+        else copied++;
+      } catch {
+        failed++;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: IMAGE_CONCURRENCY }, worker));
+  return { copied, failed };
+}
 
 Deno.serve(async (req) => {
   if (req.method !== "POST" || !(await authorized(req.headers.get("Authorization"), Deno.env.get("AGENT_INBOX_SECRET")))) {
@@ -80,18 +173,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    let inserted = 0;
+    let inserted = 0, images_copied = 0, images_failed = 0;
     if (rows.size > 0) {
       const { data, error } = await db
         .from("event_submissions")
         .upsert([...rows.values()], { onConflict: "agent_fingerprint", ignoreDuplicates: true })
-        .select("id");
+        .select("id, agent_fingerprint, image_url");
       if (error) throw error;
       inserted = data?.length ?? 0;
+      const withImages = (data ?? []).flatMap((r) =>
+        r.image_url && r.agent_fingerprint ? [{ id: r.id, agent_fingerprint: r.agent_fingerprint, image_url: r.image_url }] : []
+      );
+      if (withImages.length > 0) ({ copied: images_copied, failed: images_failed } = await copyImages(db, withImages));
     }
     const duplicates = rows.size - inserted + repeats;
-    console.log(`agent-inbox received=${events.length} inserted=${inserted} duplicates=${duplicates} rejected=${rejected.length}`);
-    return json({ received: events.length, inserted, duplicates, rejected });
+    console.log(`agent-inbox received=${events.length} inserted=${inserted} duplicates=${duplicates} rejected=${rejected.length} images_copied=${images_copied} images_failed=${images_failed}`);
+    return json({ received: events.length, inserted, duplicates, rejected, images_copied, images_failed });
   } catch (e) {
     console.error("agent-inbox failed:", e instanceof Error ? e.message.slice(0, 200) : "unknown");
     return json({ error: "inbox failed" }, 500);
