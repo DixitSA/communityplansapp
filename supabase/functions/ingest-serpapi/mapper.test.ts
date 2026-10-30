@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertNotEquals } from "jsr:@std/assert@1";
 import { externalId, interestSlugs, mapSerpapiEvent, type MapContext, parseWhen, pickImage, type SerpEvent } from "./mapper.ts";
 import { geocodeQuery } from "./mapper.ts";
-import { addressKey, parseGeoapify, parseNominatim, haversineKm, parseCensus, parseEwkbPoint, withinCity } from "./geo.ts";
+import { addressKey, parseGeoapify, parseNominatim, haversineKm, parseCensus, parseEwkbPoint, queryCity, sameVenue, withinCity } from "./geo.ts";
 
 // Thu 2026-10-29 12:00 EDT. Clocks fall back on Sun 2026-11-01, so Nov events are EST.
 const now = new Date("2026-10-29T16:00:00Z");
@@ -193,6 +193,28 @@ Deno.test("mapped row exposes geocode_has_street", async () => {
 Deno.test("parseGeoapify reads numeric lat/lon", () => {
   assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8, result_type: "amenity" }] }), { lat: 35.2, lng: -80.8 });
   assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8, result_type: "building" }] }), { lat: 35.2, lng: -80.8 });
+});
+
+Deno.test("parseGeoapify: a Charlotte query must resolve in Charlotte (same-named venue elsewhere is rejected)", () => {
+  const far = { results: [{ lat: 35.5, lon: -80.6, result_type: "amenity", city: "Kannapolis" }] };
+  const near = { results: [{ lat: 35.2, lon: -80.86, result_type: "amenity", city: "Charlotte" }] };
+  assertEquals(parseGeoapify(far, queryCity("the barrel room at triple c brewing, charlotte, nc")), null);
+  assertEquals(parseGeoapify(near, queryCity("the barrel room at triple c brewing, charlotte, nc")), { lat: 35.2, lng: -80.86 });
+  assertEquals(parseGeoapify(far, queryCity("some venue, kannapolis, nc")), { lat: 35.5, lng: -80.6 }); // other towns stay allowed
+  assertEquals(parseGeoapify({ results: [{ lat: 35.2, lon: -80.8, result_type: "amenity" }] }, "charlotte"), null); // no city: can't confirm
+});
+
+Deno.test("sameVenue: venue-name matches must really be the venue", () => {
+  assertEquals(sameVenue("the barrel room at triple c brewing", "Triple C Brewing Company"), true);
+  assertEquals(sameVenue("amos' southend", "Amos' Southend"), true);
+  assertEquals(sameVenue("blue door", "Blue Flowers"), false);
+  assertEquals(sameVenue("flora", "Flora"), true);
+  assertEquals(sameVenue("flora", "Fonta Flora"), false);
+  assertEquals(sameVenue("carolina theatre", "Carolina Theater"), true);
+  assertEquals(sameVenue("the barrel room", "The Bar"), false);
+  const blue = { results: [{ lat: 35.209, lon: -80.835, result_type: "amenity", city: "Charlotte", name: "Blue Flowers" }] };
+  assertEquals(parseGeoapify(blue, "charlotte", "blue door"), null);
+  assertEquals(parseGeoapify(blue, "charlotte"), { lat: 35.209, lng: -80.835 }); // street-address searches don't name-check
 });
 
 Deno.test("parseGeoapify rejects city-level fallbacks (they stack events on the city centre)", () => {
