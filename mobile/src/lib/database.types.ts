@@ -544,6 +544,7 @@ export type Database = {
           price_max: number | null
           price_min: number | null
           source: Database["public"]["Enums"]["event_source"]
+          spotlight_until: string | null
           starts_at: string
           status: string
           ticket_url: string | null
@@ -570,6 +571,7 @@ export type Database = {
           price_max?: number | null
           price_min?: number | null
           source: Database["public"]["Enums"]["event_source"]
+          spotlight_until?: string | null
           starts_at: string
           status?: string
           ticket_url?: string | null
@@ -596,6 +598,7 @@ export type Database = {
           price_max?: number | null
           price_min?: number | null
           source?: Database["public"]["Enums"]["event_source"]
+          spotlight_until?: string | null
           starts_at?: string
           status?: string
           ticket_url?: string | null
@@ -1335,6 +1338,36 @@ export type Database = {
           lng: number
           my_status: Database["public"]["Enums"]["rsvp_status"]
           neighborhood: string
+          price_min: number
+          score: number
+          starts_at: string
+          title: string
+          venue_name: string
+        }[]
+      }
+      get_spotlight: {
+        Args: {
+          p_city_id: number
+          p_days?: number
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+        }
+        Returns: {
+          distance_m: number
+          ends_at: string
+          friends_going: Json
+          going_count: number
+          id: string
+          image_sensitive: boolean
+          image_url: string
+          interest_ids: number[]
+          is_free: boolean
+          lat: number
+          lng: number
+          my_status: Database["public"]["Enums"]["rsvp_status"]
+          neighborhood: string
+          picked: boolean
           price_min: number
           score: number
           starts_at: string

@@ -22,7 +22,9 @@ import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } 
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
+import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
+import { useSpotlight } from '@/features/feed/useSpotlight';
 import { EventRowLink } from '@/features/event/EventCardLink';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { SuggestRow } from '@/features/submit/SuggestRow';
@@ -57,6 +59,9 @@ export default function FeedScreen() {
   const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, clearFilters } = useFiltersStore.getState();
 
   const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
+  const spotlight = useSpotlight();
+  // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
+  const spotlightEvents = scope === 'nearby' && (spotlight.data?.length ?? 0) >= 2 ? spotlight.data : undefined;
   const criteria = { timeOfDay, interests, distanceMi, price, scope };
   const chips = chipStates(criteria);
   const isMap = view === 'map';
@@ -76,6 +81,9 @@ export default function FeedScreen() {
   // (getItemLayout). Then jumping to a far-off day lands exactly without drawing every row first. If a row
   // ever measures differently (e.g. text size changed mid-session), fall back to unmeasured scrolling.
   const [sizes, setSizes] = useState<{ header?: number; row?: number; mixed?: boolean }>({});
+  // Height of the spotlight row above the first day (0 without it); day offsets start after it.
+  const [lead, setLead] = useState(0);
+  const leadHeight = spotlightEvents ? lead : 0;
   const measure = (kind: 'header' | 'row') => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
     // Returning the same object skips the re-render, so most rows' layouts cost nothing.
@@ -87,8 +95,11 @@ export default function FeedScreen() {
     });
   };
   const layouts = useMemo(
-    () => (sizes.header && sizes.row && !sizes.mixed ? agendaItemLayouts(sections, sizes.header, sizes.row) : null),
-    [sections, sizes],
+    () =>
+      sizes.header && sizes.row && !sizes.mixed && (!spotlightEvents || lead > 0)
+        ? agendaItemLayouts(sections, sizes.header, sizes.row, leadHeight)
+        : null,
+    [sections, sizes, spotlightEvents, lead, leadHeight],
   );
   const getItemLayout = useMemo(
     () => (layouts ? (_: unknown, index: number) => layouts[index] ?? { length: 0, offset: 0, index } : undefined),
@@ -97,10 +108,15 @@ export default function FeedScreen() {
   // A jump asked for before the list was measured waits here and runs once it is.
   const pendingSection = useRef<number | null>(null);
 
-  const scrollToSection = useCallback((index: number, animated: boolean) => {
-    lockUntil.current = Date.now() + SCROLL_LOCK_MS;
-    listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, animated });
-  }, []);
+  const scrollToSection = useCallback(
+    (index: number, animated: boolean) => {
+      lockUntil.current = Date.now() + SCROLL_LOCK_MS;
+      // The first day scrolls all the way up, so the spotlight above it shows too.
+      const viewOffset = index === 0 ? leadHeight : 0;
+      listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, viewOffset, animated });
+    },
+    [leadHeight],
+  );
 
   useEffect(() => {
     if (!layouts || pendingSection.current === null) return;
@@ -355,6 +371,13 @@ export default function FeedScreen() {
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
         ListEmptyComponent={empty}
+        ListHeaderComponent={
+          spotlightEvents ? (
+            <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
+              <SpotlightRail events={spotlightEvents} />
+            </View>
+          ) : undefined
+        }
         ListFooterComponent={
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{sections.length > 0 ? <SuggestRow /> : null}</View>
         }

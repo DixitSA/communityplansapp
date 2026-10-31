@@ -12,6 +12,7 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 // add a line here when you use a new SF Symbol.
 const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   sparkles: 'sparkles',
+  'flame.fill': 'flame',
   'eye.slash': 'eye-off-outline',
   'plus.bubble': 'chatbubble-ellipses-outline',
   'house.fill': 'home',

@@ -51,6 +51,9 @@ export type FeedRangeParams = Omit<FeedParams, 'day'> & {
   days: number;
 };
 
+/** Inputs of `get_spotlight`: the city, where the viewer is (for distances), and how far ahead to look. */
+export type SpotlightParams = { cityId: number; lat: number; lng: number; days?: number; limit?: number };
+
 /** A feed card plus what the map and the plan indicator need. */
 export type FeedEvent = EventCardData & {
   /** The event's local day, "YYYY-MM-DD". Missing means "derive it from `startsAt`". */
@@ -61,6 +64,9 @@ export type FeedEvent = EventCardData & {
   goingCount: number;
   myStatus: RsvpStatus | null;
 };
+
+/** A spotlight card. `picked` means yard chose it, rather than it earning its place with Going RSVPs. */
+export type SpotlightEvent = FeedEvent & { picked: boolean };
 
 /** The event page's data. `goingCount` is null in demo mode, where `othersGoing` is already final. */
 export type EventPage = EventDetail & {
@@ -154,6 +160,8 @@ export type Api = {
   getFeed(params: FeedParams): Promise<FeedEvent[]>;
   /** Events over a range of days (the agenda feed), earliest first. Each carries its local `day`. */
   getFeedRange(params: FeedRangeParams): Promise<FeedEvent[]>;
+  /** "Popping this week": picks first, then events with the most Going momentum. */
+  getSpotlight(params: SpotlightParams): Promise<SpotlightEvent[]>;
   /** One event, or null when it doesn't exist (or isn't visible). */
   getEvent(id: string): Promise<EventPage | null>;
   /** Sets the viewer's plan; null clears it. */

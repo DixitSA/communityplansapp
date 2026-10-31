@@ -97,6 +97,11 @@ describe('agendaItemLayouts', () => {
     expect(layouts.map((l) => l.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
+  it('starts after the list header', () => {
+    const layouts = agendaItemLayouts([{ data: [1] }], 40, 100, 300);
+    expect(layouts.map((l) => l.offset)).toEqual([300, 340, 440]);
+  });
+
   it('is empty for no sections', () => {
     expect(agendaItemLayouts([], 40, 100)).toEqual([]);
   });
