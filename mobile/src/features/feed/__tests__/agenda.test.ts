@@ -1,4 +1,4 @@
-import { dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, sectionIndexForDay } from '../agenda';
+import { agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, sectionIndexForDay } from '../agenda';
 
 const ev = (id: string, y: number, mo: number, d: number, h: number, extra: { day?: string; friendsGoing?: number } = {}) => ({
   id,
@@ -79,5 +79,42 @@ describe('sectionIndexForDay', () => {
     expect(sectionIndexForDay(sections, '2026-10-27')).toBe(0);
     expect(sectionIndexForDay(sections, '2026-11-03')).toBe(-1);
     expect(sectionIndexForDay([], '2026-10-29')).toBe(-1);
+  });
+});
+
+describe('agendaItemLayouts', () => {
+  const sections = [
+    { day: '2026-10-29', data: [{ id: 'a' }, { id: 'b' }] },
+    { day: '2026-10-30', data: [{ id: 'c' }] },
+  ];
+  const header = () => 40;
+
+  it('places headers, rows and empty footers back to back', () => {
+    const layouts = agendaItemLayouts(sections, header, () => 100);
+    expect(layouts.map((l) => [l.offset, l.length])).toEqual([
+      [0, 40], // day 1 header
+      [40, 100],
+      [140, 100],
+      [240, 0], // day 1 footer
+      [240, 40], // day 2 header
+      [280, 100],
+      [380, 0],
+    ]);
+    expect(layouts.map((l) => l.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it('uses each row\'s own height', () => {
+    const heights: Record<string, number> = { a: 100, b: 120, c: 90 };
+    const layouts = agendaItemLayouts(sections, header, (e) => heights[e.id]);
+    expect(layouts.map((l) => l.offset)).toEqual([0, 40, 140, 260, 260, 300, 390]);
+  });
+
+  it('starts after the list header', () => {
+    const layouts = agendaItemLayouts([sections[1]], header, () => 100, 300);
+    expect(layouts.map((l) => l.offset)).toEqual([300, 340, 440]);
+  });
+
+  it('is empty for no sections', () => {
+    expect(agendaItemLayouts([], header, () => 100)).toEqual([]);
   });
 });

@@ -65,3 +65,32 @@ export function dayMetaFrom(events: AgendaEvent[]): Record<string, DayMeta> {
 export function sectionIndexForDay(sections: { day: string }[], day: string): number {
   return sections.findIndex((s) => s.day >= day);
 }
+
+export type ItemLayout = { length: number; offset: number; index: number };
+
+/**
+ * Where every entry of the agenda's SectionList sits, for its `getItemLayout`. A SectionList counts a header,
+ * the rows and a footer for each section (we draw no footers, so they take no space). Heights come from the
+ * rows and headers measured so far; ones not drawn yet use an estimate. Jumping to a far-off day then lands
+ * on it (exactly once the rows around it have drawn) without drawing every row in between. `leading` is the
+ * height of anything above the first day (the list's header, e.g. the spotlight row).
+ */
+export function agendaItemLayouts<T extends { id: string }>(
+  sections: { day: string; data: T[] }[],
+  headerHeight: (day: string) => number,
+  rowHeight: (item: T) => number,
+  leading = 0,
+): ItemLayout[] {
+  const out: ItemLayout[] = [];
+  let offset = leading;
+  const push = (length: number) => {
+    out.push({ length, offset, index: out.length });
+    offset += length;
+  };
+  for (const s of sections) {
+    push(headerHeight(s.day));
+    for (const item of s.data) push(rowHeight(item));
+    push(0);
+  }
+  return out;
+}
