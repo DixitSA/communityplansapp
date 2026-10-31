@@ -16,7 +16,8 @@ jest.mock('@/lib/api', () => ({
 const searchProfiles = api.searchProfiles as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // gcTime Infinity: no 5-minute cache-cleanup timers left running after the test (they kept Jest workers alive).
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 

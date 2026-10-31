@@ -20,7 +20,8 @@ const person = { id: 'u1', username: 'maya', displayName: 'Maya', avatarUrl: nul
 const mock = api as unknown as Record<'sendFriendRequest' | 'respondFriendRequest' | 'removeFriend', jest.Mock>;
 
 function setup() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  // gcTime Infinity: no 5-minute cache-cleanup timers left running after the test (they kept Jest workers alive).
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
   client.setQueryData<PersonSearchResult[]>(friendKeys.search('may'), [{ ...person, friendship: 'incoming' }]);
   client.setQueryData<FriendRequest[]>(friendKeys.requests, [{ ...person, direction: 'incoming', createdAt: new Date() }]);
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
