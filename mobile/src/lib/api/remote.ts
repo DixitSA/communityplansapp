@@ -201,6 +201,21 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       return (data ?? []).map((row) => mapFeedRow(row, interests));
     },
 
+    async getSpotlight(params) {
+      const [{ data, error }, interests] = await Promise.all([
+        supabase.rpc('get_spotlight', {
+          p_city_id: params.cityId,
+          p_lat: params.lat,
+          p_lng: params.lng,
+          p_days: params.days,
+          p_limit: params.limit,
+        }),
+        cachedInterests(),
+      ]);
+      if (error) fail(error);
+      return (data ?? []).map((row) => ({ ...mapFeedRow(row, interests), picked: row.picked === true }));
+    },
+
     async getEvent(id) {
       // Not a UUID, so it can't be an event here (and Postgres would reject it with a type error).
       if (!UUID.test(id)) return null;

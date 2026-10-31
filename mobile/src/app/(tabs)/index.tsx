@@ -22,7 +22,9 @@ import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } 
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
+import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
+import { useSpotlight } from '@/features/feed/useSpotlight';
 import { EventRowLink } from '@/features/event/EventCardLink';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { SuggestRow } from '@/features/submit/SuggestRow';
@@ -57,6 +59,9 @@ export default function FeedScreen() {
   const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, clearFilters } = useFiltersStore.getState();
 
   const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
+  const spotlight = useSpotlight();
+  // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
+  const spotlightEvents = scope === 'nearby' && (spotlight.data?.length ?? 0) >= 2 ? spotlight.data : undefined;
   const criteria = { timeOfDay, interests, distanceMi, price, scope };
   const chips = chipStates(criteria);
   const isMap = view === 'map';
@@ -76,6 +81,9 @@ export default function FeedScreen() {
   // were. That gives the list exact offsets (getItemLayout), so a far-off day is one jump away without drawing
   // every row in between. Rows differ a little (a "N going" line, text size), so a jump re-aims once the rows
   // around its target have drawn and measured.
+  // Height of the spotlight row above the first day (0 without it); day offsets start after it.
+  const [lead, setLead] = useState(0);
+  const leadHeight = spotlightEvents ? lead : 0;
   const [heights, setHeights] = useState<{ rows: Record<string, number>; headers: Record<string, number> }>({
     rows: {},
     headers: {},
@@ -88,15 +96,16 @@ export default function FeedScreen() {
   const layouts = useMemo(() => {
     const rowValues = Object.values(heights.rows);
     const headerValues = Object.values(heights.headers);
-    if (rowValues.length === 0 || headerValues.length === 0) return null;
+    if (rowValues.length === 0 || headerValues.length === 0 || (spotlightEvents && lead === 0)) return null;
     const typicalRow = rowValues[0];
     const typicalHeader = headerValues[0];
     return agendaItemLayouts(
       sections,
       (day) => heights.headers[day] ?? typicalHeader,
       (e) => heights.rows[e.id] ?? typicalRow,
+      leadHeight,
     );
-  }, [sections, heights]);
+  }, [sections, heights, spotlightEvents, lead, leadHeight]);
   const getItemLayout = useMemo(
     () => (layouts ? (_: unknown, index: number) => layouts[index] ?? { length: 0, offset: 0, index } : undefined),
     [layouts],
@@ -106,11 +115,26 @@ export default function FeedScreen() {
   // The last jump, re-aimed while rows near it finish measuring (estimates turn into real heights).
   const lastJump = useRef<{ index: number; until: number } | null>(null);
 
-  const scrollToSection = useCallback((index: number, animated: boolean) => {
-    lockUntil.current = Date.now() + SCROLL_LOCK_MS;
-    lastJump.current = { index, until: Date.now() + SCROLL_LOCK_MS };
-    listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, animated });
-  }, []);
+  const scrollToSection = useCallback(
+    (index: number, animated: boolean) => {
+      lockUntil.current = Date.now() + SCROLL_LOCK_MS;
+      lastJump.current = { index, until: Date.now() + SCROLL_LOCK_MS };
+      // The first day scrolls all the way up, so the spotlight above it shows too.
+      const viewOffset = index === 0 ? leadHeight : 0;
+      listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, viewOffset, animated });
+    },
+    [leadHeight],
+  );
+
+  // The spotlight can arrive after the list scrolled to the selected day; keep that day in place.
+  const prevLead = useRef(leadHeight);
+  useEffect(() => {
+    if (prevLead.current === leadHeight) return;
+    prevLead.current = leadHeight;
+    if (!placed.current) return;
+    const index = sectionIndexForDay(sectionsRef.current, toISODate(useFiltersStore.getState().selectedDay));
+    if (index > 0) scrollToSection(index, false);
+  }, [leadHeight, scrollToSection]);
 
   useEffect(() => {
     if (!layouts) return;
@@ -373,6 +397,13 @@ export default function FeedScreen() {
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
         ListEmptyComponent={empty}
+        ListHeaderComponent={
+          spotlightEvents ? (
+            <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
+              <SpotlightRail events={spotlightEvents} />
+            </View>
+          ) : undefined
+        }
         ListFooterComponent={
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{sections.length > 0 ? <SuggestRow /> : null}</View>
         }

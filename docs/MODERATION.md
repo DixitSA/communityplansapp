@@ -51,6 +51,8 @@ where id = '<submission id>' and status = 'pending';
 
 This works the same for `user` and `agent` rows (`ends_at`, `address` and `image_url` are null for most user rows). Agent rows are unverified: open the link and check the date, venue and any image before publishing. Note the order is longitude first, then latitude. Add interests (`event_interests`) or an end time on the new event afterwards if needed. Studio runs as a privileged role, so these statements bypass RLS; that is expected.
 
+**Spotlight ("Popping this week").** Picks lead the feed's spotlight row until the time you set, then events with at least three Going fill it (friends going first, then Going in the last 48 hours, then total Going). Pick an event with `update public.events set spotlight_until = now() + interval '3 days' where id = '<event id>';` and drop it with `spotlight_until = null`. The 10:47 daily review picks 5-8 standouts each morning.
+
 **Sensitive images.** A racy or explicit flyer can stay, blurred behind "Sensitive image · Tap to view". Flag a published event with `update public.events set image_sensitive = true where id = '<event id>';` (set it back to `false` to unblur).
 
 Submitters are not notified in this version. If a link looks abusive, reject it and consider a report against the user.

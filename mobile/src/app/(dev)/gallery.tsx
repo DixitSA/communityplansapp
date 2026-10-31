@@ -40,6 +40,8 @@ import {
 } from '@/design';
 import { EventCardLink, EventRowLink } from '@/features/event/EventCardLink';
 import { getFixtureEvents } from '@/features/feed/fixtures';
+import { SpotlightRail } from '@/features/feed/SpotlightRail';
+import { demoSpotlight } from '@/lib/api';
 import { startOfDay, toISODate } from '@/lib/dates';
 
 // Any picture works to show the blur; the app icon ships with the bundle, so the gallery works offline.
@@ -356,6 +358,12 @@ export default function Gallery() {
         <EventCard event={events[3]} plan="going" />
         {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
         <EventCardLink event={events[2]} />
+      </Section>
+
+      <Section title="SpotlightRail (top of the feed: picks, then events with Going momentum)">
+        <View style={{ marginHorizontal: -space.lg }}>
+          <SpotlightRail events={demoSpotlight()} />
+        </View>
       </Section>
 
       <Section title="EventImage (flagged images blur until revealed; tap the label to reveal both)">

@@ -16,6 +16,7 @@ import {
   type FeedParams,
   type FeedRangeParams,
   type Interest,
+  type SpotlightEvent,
   type MyProfile,
   type MySubmission,
   type OnboardingInput,
@@ -88,6 +89,25 @@ export function demoFeedRange(params: FeedRangeParams): FeedEvent[] {
   const start = parseDateOnly(params.start) ?? new Date();
   const days = Math.max(1, Math.min(Math.round(params.days), 14));
   return applyDemoFilters(getFixtureEventsInRange(start, days), params);
+}
+
+/** Sample spotlight: this week's sample events with the most friends going; the top one stands in for a pick. */
+export function demoSpotlight(): SpotlightEvent[] {
+  const week = demoFeedRange({
+    cityId: CHARLOTTE_CITY_ID,
+    start: toISODate(new Date()),
+    days: 7,
+    lat: 35.2271,
+    lng: -80.8431,
+    radiusM: 40_000,
+    price: 'any',
+    mode: 'nearby',
+  });
+  return week
+    .slice()
+    .sort((a, b) => b.friendsGoing - a.friendsGoing || a.startsAt.getTime() - b.startsAt.getTime())
+    .slice(0, 6)
+    .map((e, i) => ({ ...e, picked: i === 0 }));
 }
 
 /** A sample event for the event page, or null for an unknown id. */
@@ -189,6 +209,9 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
     },
     async getFeedRange(params) {
       return demoFeedRange(params);
+    },
+    async getSpotlight() {
+      return demoSpotlight();
     },
     async getEvent(id) {
       return demoEvent(id);

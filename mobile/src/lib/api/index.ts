@@ -9,7 +9,7 @@ export * from './errors';
 export * from './friendTypes';
 export { normalizeSearchQuery } from './friendsMapping';
 export { chatIsOpen, normalizeMessageBody } from './chatMapping';
-export { DEMO_INTERESTS, DEMO_PROFILE, createDemoApi, demoEvent, demoFeed, demoFeedRange } from './demo';
+export { DEMO_INTERESTS, DEMO_PROFILE, createDemoApi, demoEvent, demoFeed, demoFeedRange, demoSpotlight } from './demo';
 export { METERS_PER_MILE } from './feedMapping';
 
 /**
