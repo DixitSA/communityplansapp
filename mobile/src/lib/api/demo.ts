@@ -155,6 +155,9 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       if (!isCompleteCode(code) || code === DEMO_BAD_CODE) throw new ApiError('otp_invalid');
       setSession({ userId: 'demo-user', email: email.trim().toLowerCase() });
     },
+    async signInWithRefreshToken() {
+      throw new ApiError('validation_failed'); // demo mode has no server sessions
+    },
     async signInWithApple() {
       await wait();
       setSession({ userId: 'demo-user', email: null });

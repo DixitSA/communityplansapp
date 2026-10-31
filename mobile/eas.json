@@ -1,0 +1,17 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "simulator": {
+      "ios": {
+        "simulator": true
+      },
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_DEV_SESSION_LINK": "1"
+      }
+    }
+  }
+}
