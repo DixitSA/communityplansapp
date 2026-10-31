@@ -65,3 +65,26 @@ export function dayMetaFrom(events: AgendaEvent[]): Record<string, DayMeta> {
 export function sectionIndexForDay(sections: { day: string }[], day: string): number {
   return sections.findIndex((s) => s.day >= day);
 }
+
+export type ItemLayout = { length: number; offset: number; index: number };
+
+/**
+ * Where every entry of the agenda's SectionList sits, for its `getItemLayout`. A SectionList counts a header,
+ * the rows and a footer for each section (we draw no footers, so they take no space). Every header is the same
+ * height and so is every row, so two measurements place the whole list: tapping a far-off day then scrolls
+ * there exactly, without drawing every row first.
+ */
+export function agendaItemLayouts(sections: { data: unknown[] }[], headerHeight: number, rowHeight: number): ItemLayout[] {
+  const out: ItemLayout[] = [];
+  let offset = 0;
+  const push = (length: number) => {
+    out.push({ length, offset, index: out.length });
+    offset += length;
+  };
+  for (const s of sections) {
+    push(headerHeight);
+    for (let i = 0; i < s.data.length; i++) push(rowHeight);
+    push(0);
+  }
+  return out;
+}

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, SectionList, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,7 +18,7 @@ import {
   Skeleton,
   useTheme,
 } from '@/design';
-import { dayToDate, sectionIndexForDay, type AgendaSection } from '@/features/feed/agenda';
+import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } from '@/features/feed/agenda';
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
@@ -72,17 +72,51 @@ export default function FeedScreen() {
     sectionsRef.current = sections;
   });
 
+  // Every day header is one height and every row another, so measuring one of each places the whole list
+  // (getItemLayout). Then jumping to a far-off day lands exactly without drawing every row first. If a row
+  // ever measures differently (e.g. text size changed mid-session), fall back to unmeasured scrolling.
+  const [sizes, setSizes] = useState<{ header?: number; row?: number; mixed?: boolean }>({});
+  const measure = (kind: 'header' | 'row') => (e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    // Returning the same object skips the re-render, so most rows' layouts cost nothing.
+    setSizes((s) => {
+      const known = s[kind];
+      if (known === undefined) return { ...s, [kind]: h };
+      if (!s.mixed && Math.abs(known - h) > 0.5) return { ...s, mixed: true };
+      return s;
+    });
+  };
+  const layouts = useMemo(
+    () => (sizes.header && sizes.row && !sizes.mixed ? agendaItemLayouts(sections, sizes.header, sizes.row) : null),
+    [sections, sizes],
+  );
+  const getItemLayout = useMemo(
+    () => (layouts ? (_: unknown, index: number) => layouts[index] ?? { length: 0, offset: 0, index } : undefined),
+    [layouts],
+  );
+  // A jump asked for before the list was measured waits here and runs once it is.
+  const pendingSection = useRef<number | null>(null);
+
   const scrollToSection = useCallback((index: number, animated: boolean) => {
     lockUntil.current = Date.now() + SCROLL_LOCK_MS;
     listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, animated });
   }, []);
+
+  useEffect(() => {
+    if (!layouts || pendingSection.current === null) return;
+    const index = pendingSection.current;
+    pendingSection.current = null;
+    scrollToSection(index, false);
+  }, [layouts, scrollToSection]);
 
   // Tapping a day in the strip: select it and scroll to it, or to the next day that has events.
   const onSelectDay = (day: Date) => {
     setSelectedDay(day);
     if (isMap) return;
     const index = sectionIndexForDay(sections, toISODate(day));
-    if (index >= 0) scrollToSection(index, true);
+    if (index < 0) return;
+    if (layouts || index === 0) scrollToSection(index, true);
+    else pendingSection.current = index;
   };
 
   const onToday = () => {
@@ -111,7 +145,9 @@ export default function FeedScreen() {
     if (placed.current || sections.length === 0) return;
     placed.current = true;
     const index = sectionIndexForDay(sections, toISODate(selected));
-    if (index > 0) scrollToSection(index, false);
+    if (index <= 0) return;
+    if (layouts) scrollToSection(index, false);
+    else pendingSection.current = index;
   };
 
   const scopeControl = (
@@ -306,14 +342,15 @@ export default function FeedScreen() {
         stickySectionHeadersEnabled
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
-        // At most 14 days of events, so render them all up front: scrolling to a day then never lands on an unrendered row.
-        initialNumToRender={80}
-        windowSize={21}
+        // Draw about two screens of rows and keep a few screens around; getItemLayout makes far jumps exact anyway.
+        getItemLayout={getItemLayout}
+        initialNumToRender={12}
+        windowSize={7}
         viewabilityConfig={VIEWABILITY}
         onViewableItemsChanged={onViewableItemsChanged}
         onContentSizeChange={onContentSizeChange}
         onScrollToIndexFailed={() => {
-          // Only reachable if the list outgrew the render window; fall back to the top rather than throwing.
+          // Only reachable before the list is measured (or if rows differ in height); fall back to the top.
           listRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: false });
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
@@ -322,7 +359,10 @@ export default function FeedScreen() {
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{sections.length > 0 ? <SuggestRow /> : null}</View>
         }
         renderSectionHeader={({ section }) => (
-          <View style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}>
+          <View
+            onLayout={measure('header')}
+            style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}
+          >
             <AppText
               variant="title2"
               color={section.isToday ? 'accent' : 'ink'}
@@ -334,7 +374,7 @@ export default function FeedScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
+          <View onLayout={measure('row')} style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
             <EventRowLink event={item} />
           </View>
         )}
