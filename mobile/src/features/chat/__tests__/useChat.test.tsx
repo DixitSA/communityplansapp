@@ -34,7 +34,8 @@ const msg = (id: string, over: Partial<ChatMessage> = {}): ChatMessage => ({
 
 let handlers: ChatSubscription;
 const wrapper = ({ children }: { children: ReactNode }) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // gcTime Infinity: no 5-minute cache-cleanup timers left running after the test (they kept Jest workers alive).
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
 

@@ -26,7 +26,8 @@ const card = (id: string, over: Partial<FeedEvent> = {}): FeedEvent => ({
 const FEED_KEY = ['feed', 1, '2026-10-29'];
 
 function setup() {
-  const qc = new QueryClient();
+  // gcTime Infinity: no 5-minute cache-cleanup timers left running after the test (they kept Jest workers alive).
+  const qc = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity }, mutations: { gcTime: Infinity } } });
   qc.setQueryData(FEED_KEY, [card('a'), card('b')]);
   qc.setQueryData(['event', 'a'], { ...card('a'), goingCount: 4, myStatus: null } as unknown as EventPage);
   return qc;
