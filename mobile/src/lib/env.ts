@@ -24,3 +24,10 @@ export function backendHost(): string {
  * every onboarding screen reachable (see docs/SUPABASE_SETUP.md to switch it on).
  */
 export const isBackendConfigured = hasBackendConfig(url, anonKey);
+
+/**
+ * Only the iOS Simulator build used for automated screenshots sets this (eas.json, `simulator` profile). It
+ * turns on the `yard://dev-session` sign-in link. It must never be set for a build people install: with it, a
+ * link from anyone could sign a person into that sender's account.
+ */
+export const devSessionLinkEnabled = process.env.EXPO_PUBLIC_DEV_SESSION_LINK === '1';

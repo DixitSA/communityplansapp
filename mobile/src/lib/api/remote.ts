@@ -80,6 +80,11 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error) fail(error);
     },
 
+    async signInWithRefreshToken(refreshToken) {
+      const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+      if (error) fail(error);
+    },
+
     async signInWithApple() {
       // Loaded on demand: the module only exists as a native module on iOS.
       const AppleAuthentication = await import('expo-apple-authentication');

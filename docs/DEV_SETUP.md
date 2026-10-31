@@ -64,6 +64,20 @@ Read each plugin's files before installing. They run inside your agent.
 
 **Showing Claude the app:** take a screenshot on your iPhone, AirDrop or sync it to your PC, and drag the image file into the Claude Code prompt. Do this after every UI change. It's the visual check Claude can't do on its own on Windows.
 
+**Real iPhone screenshots Claude takes itself (free, for checkpoints).** The `simulator` build in `mobile/eas.json` runs on a cloud iPhone at [Appetize](https://appetize.io), and `mobile/scripts/sim-screenshot.cjs` drives it: it signs the test account in through the `yard://dev-session` link (switched on only in that build) and screenshots each route in light and dark. Free limits: 15 EAS iOS builds and a few dozen Appetize minutes a month, so use it for checkpoints, not every tweak.
+- One-time setup (owner):
+  - Make a free Appetize account and create an API token.
+  - Make a new personal Expo access token.
+  - Add both to the Claude Code cloud environment (environment menu → Edit → secrets or environment variables) as `APPETIZE_API_TOKEN` and `EXPO_TOKEN`. They take effect in a new session. Never paste tokens into chat.
+- One-time setup (Claude, in that session):
+  - `npx eas-cli init` links the project (add the printed `projectId` to `app.config.ts` under `extra.eas`).
+  - `npx eas-cli env:create --environment preview` for `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (both public-safe), so the cloud build isn't in demo mode.
+- Each checkpoint:
+  - `npx eas-cli build --profile simulator --platform ios --non-interactive`, about 20-30 minutes on the free queue.
+  - `node scripts/sim-screenshot.cjs upload <build artifact URL>`.
+  - `node scripts/sim-screenshot.cjs / /profile /event/<id>`.
+- Never set `EXPO_PUBLIC_DEV_SESSION_LINK` for a build people install.
+
 ## 5. Create the app (week 0)
 Claude can do these steps for you; they're listed so you know what's happening.
 ```powershell

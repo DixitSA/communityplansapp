@@ -148,6 +148,8 @@ export type Api = {
   verifyEmailCode(email: string, code: string): Promise<void>;
   /** Resolves with the name Apple shared (first sign-in only), for prefilling the profile step. */
   signInWithApple(): Promise<{ givenName: string | null }>;
+  /** Signs in with an existing session's refresh token. Only the simulator screenshot build uses it. */
+  signInWithRefreshToken(refreshToken: string): Promise<void>;
   signOut(): Promise<void>;
   getSession(): Promise<AuthSession | null>;
   /** Calls back on sign-in and sign-out. Returns the unsubscribe function. */
