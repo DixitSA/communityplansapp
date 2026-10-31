@@ -77,3 +77,12 @@ Deno.test("non-https urls are dropped; truncation adds ellipsis", async () => {
   assertEquals([r.ticket_url, r.image_url], [null, null]);
   assert(r.description!.endsWith("…"));
 });
+
+Deno.test("picks the smallest 16:9 image that is still sharp on a phone", async () => {
+  const raw = await load("concert");
+  const img = (width: number, ratio = "16_9") => ({ ratio, url: `https://s1.ticketm.net/${width}.jpg`, width });
+  raw.images = [img(2048), img(1024), img(640), img(305), img(3000, "3_2")];
+  assertEquals(mapTicketmasterEvent(raw, ctx)!.image_url, "https://s1.ticketm.net/1024.jpg");
+  raw.images = [img(640), img(305)];
+  assertEquals(mapTicketmasterEvent(raw, ctx)!.image_url, "https://s1.ticketm.net/640.jpg");
+});

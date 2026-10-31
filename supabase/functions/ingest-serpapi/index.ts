@@ -1,6 +1,8 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { downloadLimited, MAX_IMAGE_BYTES, sniffImage } from "../agent-inbox/image.ts";
 import { addressKey, FALLBACK_CENTER, parseCensus, parseGeoapify, parseNominatim, parseEwkbPoint, queryCity, withinCity } from "./geo.ts";
-import { mapSerpapiEvent, type SerpEvent, type SerpRow } from "./mapper.ts";
+import { mapSerpapiEvent, pickImage, type SerpEvent, type SerpRow } from "./mapper.ts";
+import { ogImageUrl, skipsPreview } from "./ogImage.ts";
 
 const SERP_URL = "https://serpapi.com/search.json";
 const CENSUS_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress";
@@ -18,6 +20,13 @@ const MISS_TTL_MS = 7 * 86_400_000;
 const MAX_FRESH_GEOCODES = 60; // per run; the rest are retried tomorrow
 const GEOCODE_BUDGET_MS = 90_000; // free plan wall clock is 150 s; stop geocoding early
 const ACCOUNT_URL = "https://serpapi.com/account.json";
+// Google only gives us its own cached thumbnails, which we don't use, so pictures come from each event's own page.
+const IMAGE_BUCKET = "event-images";
+const PREVIEW_DEADLINE_MS = 140_000; // stop starting new previews before the 150 s wall clock
+const PREVIEW_CONCURRENCY = 4;
+const PREVIEW_CANDIDATES = 200;
+const PAGE_MAX_BYTES = 512 * 1024; // the <head> is all we need
+const MIN_IMAGE_BYTES = 10 * 1024; // smaller is a logo or icon, not an event picture
 const MIN_SEARCHES_LEFT = 8;
 
 // Free plan = 250 searches/month and every page is one search. 2+1+1+1+1+1+1 = 8 per run, daily = ~240/month.
@@ -64,6 +73,52 @@ async function fetchPage(params: URLSearchParams): Promise<SerpEvent[]> {
     throw new Error(`SerpApi error: ${scrub(String(body.error)).slice(0, 200)}`);
   }
   return Array.isArray(body?.events_results) ? body.events_results : [];
+}
+
+/**
+ * Gives upcoming Google events without a picture one try at their page's share image (og:image), copied into
+ * our bucket. Pages that fail are simply retried on a later run; candidates are shuffled so none starve.
+ */
+async function addPreviewImages(db: SupabaseClient, t0: number): Promise<{ added: number; failed: number }> {
+  const { data, error } = await db.from("events").select("id, external_id, ticket_url")
+    .eq("source", "serpapi").eq("status", "active").is("image_url", null).not("ticket_url", "is", null)
+    .gt("starts_at", new Date().toISOString()).limit(PREVIEW_CANDIDATES);
+  if (error) throw error;
+  const queue = (data ?? []).filter((e) => e.ticket_url && e.external_id && !skipsPreview(e.ticket_url));
+  for (let i = queue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [queue[i], queue[j]] = [queue[j], queue[i]];
+  }
+  let added = 0, failed = 0, next = 0;
+  const worker = async () => {
+    while (next < queue.length && Date.now() - t0 < PREVIEW_DEADLINE_MS) {
+      const e = queue[next++];
+      try {
+        const page = await downloadLimited(e.ticket_url!, { maxBytes: PAGE_MAX_BYTES, accept: "text/html", timeoutMs: 6_000, truncate: true });
+        const src = page ? pickImage(ogImageUrl(new TextDecoder().decode(page), e.ticket_url!) ?? undefined) : null;
+        const bytes = src ? await downloadLimited(src, { maxBytes: MAX_IMAGE_BYTES, accept: "image/*", timeoutMs: 8_000 }) : null;
+        const type = bytes && bytes.length >= MIN_IMAGE_BYTES ? sniffImage(bytes) : null;
+        if (!bytes || !type) {
+          failed++;
+          continue;
+        }
+        const path = `serpapi/${e.external_id}.${type.ext}`;
+        const up = await db.storage.from(IMAGE_BUCKET).upload(path, bytes, { contentType: type.contentType, upsert: true });
+        if (up.error) {
+          failed++;
+          continue;
+        }
+        const url = db.storage.from(IMAGE_BUCKET).getPublicUrl(path).data.publicUrl;
+        const { error: upErr } = await db.from("events").update({ image_url: url }).eq("id", e.id).is("image_url", null);
+        if (upErr) failed++;
+        else added++;
+      } catch {
+        failed++; // never log: page URLs can carry tracking tokens
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: PREVIEW_CONCURRENCY }, worker));
+  return { added, failed };
 }
 
 Deno.serve(async (req) => {
@@ -302,12 +357,15 @@ Deno.serve(async (req) => {
     if (ready.length > 0) {
       const idByExternal = new Map<string | null, string>();
       for (const part of chunk(ready, 100)) {
-        const { data, error } = await db
-          .from("events")
-          .upsert(part.map(({ interest_ids: _i, ...r }) => r), { onConflict: "source,external_id" })
-          .select("id, external_id");
-        if (error) throw error;
-        for (const e of data ?? []) idByExternal.set(e.external_id, e.id);
+        // Rows without an image leave image_url out, so a picture added from the event's page survives later runs.
+        const rows = part.map(({ interest_ids: _i, ...r }) => r);
+        const groups = [rows.filter((r) => r.image_url), rows.filter((r) => !r.image_url).map(({ image_url: _u, ...r }) => r)];
+        for (const group of groups) {
+          if (group.length === 0) continue;
+          const { data, error } = await db.from("events").upsert(group, { onConflict: "source,external_id" }).select("id, external_id");
+          if (error) throw error;
+          for (const e of data ?? []) idByExternal.set(e.external_id, e.id);
+        }
       }
       const links = ready.flatMap((r) =>
         r.interest_ids.map((interest_id) => ({ event_id: idByExternal.get(r.external_id)!, interest_id }))
@@ -323,7 +381,11 @@ Deno.serve(async (req) => {
       upserted = ready.length;
     }
 
+    // 6. Pictures for events that have none yet.
+    const previews = await addPreviewImages(db, t0);
+
     return json({ searches, fetched, upserted, skipped, duplicates, geocoded, geocode_misses, errors,
+      images_added: previews.added, images_failed: previews.failed,
       geocode_attempted, geocode_errors, geocode_nomatch, venue_hits, census_hits, geoapify_hits, nominatim_hits, sample_misses,
       geocode_error_samples });
   } catch (e) {

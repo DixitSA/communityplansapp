@@ -1,4 +1,4 @@
-// Pure helpers for copying agent-submitted images into Storage.
+// Helpers for copying remote images into Storage (agent-inbox, and ingest-serpapi's link-preview images).
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -33,4 +33,65 @@ export function sniffImage(b: Uint8Array): ImageType | null {
   if (b.length >= 12 && at(0, "RIFF") && at(8, "WEBP")) return { ext: "webp", contentType: "image/webp" };
   if (b.length >= 6 && (at(0, "GIF87a") || at(0, "GIF89a"))) return { ext: "gif", contentType: "image/gif" };
   return null;
+}
+
+const MAX_REDIRECTS = 3;
+
+/**
+ * GET with manual redirects (every hop re-checked by isSafeImageUrl), a timeout and a streamed byte cap.
+ * Null on any failure. Never logs: the URL may carry tokens.
+ */
+export async function downloadLimited(
+  start: string,
+  opts: { maxBytes: number; accept: string; timeoutMs: number; truncate?: boolean },
+): Promise<Uint8Array | null> {
+  const signal = AbortSignal.timeout(opts.timeoutMs);
+  let url = start;
+  try {
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      if (!isSafeImageUrl(url)) return null;
+      const res = await fetch(url, {
+        redirect: "manual",
+        signal,
+        headers: { Accept: opts.accept, "User-Agent": "Mozilla/5.0 (compatible; yard-link-preview/1.0)" },
+      });
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get("Location");
+        await res.body?.cancel();
+        if (!loc) return null;
+        url = new URL(loc, url).toString();
+        continue;
+      }
+      if (!res.ok || !res.body) {
+        await res.body?.cancel();
+        return null;
+      }
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (total + value.length > opts.maxBytes) {
+          await reader.cancel();
+          if (!opts.truncate) return null; // images: too big is a failure
+          chunks.push(value.subarray(0, opts.maxBytes - total)); // pages: the head is all we need
+          total = opts.maxBytes;
+          break;
+        }
+        total += value.length;
+        chunks.push(value);
+      }
+      const out = new Uint8Array(total);
+      let o = 0;
+      for (const c of chunks) {
+        out.set(c, o);
+        o += c.length;
+      }
+      return out;
+    }
+  } catch {
+    return null;
+  }
+  return null; // too many redirects
 }
