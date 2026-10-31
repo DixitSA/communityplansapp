@@ -83,8 +83,14 @@ describe('sectionIndexForDay', () => {
 });
 
 describe('agendaItemLayouts', () => {
+  const sections = [
+    { day: '2026-10-29', data: [{ id: 'a' }, { id: 'b' }] },
+    { day: '2026-10-30', data: [{ id: 'c' }] },
+  ];
+  const header = () => 40;
+
   it('places headers, rows and empty footers back to back', () => {
-    const layouts = agendaItemLayouts([{ data: [1, 2] }, { data: [3] }], 40, 100);
+    const layouts = agendaItemLayouts(sections, header, () => 100);
     expect(layouts.map((l) => [l.offset, l.length])).toEqual([
       [0, 40], // day 1 header
       [40, 100],
@@ -97,7 +103,18 @@ describe('agendaItemLayouts', () => {
     expect(layouts.map((l) => l.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
+  it('uses each row\'s own height', () => {
+    const heights: Record<string, number> = { a: 100, b: 120, c: 90 };
+    const layouts = agendaItemLayouts(sections, header, (e) => heights[e.id]);
+    expect(layouts.map((l) => l.offset)).toEqual([0, 40, 140, 260, 260, 300, 390]);
+  });
+
+  it('starts after the list header', () => {
+    const layouts = agendaItemLayouts([sections[1]], header, () => 100, 300);
+    expect(layouts.map((l) => l.offset)).toEqual([300, 340, 440]);
+  });
+
   it('is empty for no sections', () => {
-    expect(agendaItemLayouts([], 40, 100)).toEqual([]);
+    expect(agendaItemLayouts([], header, () => 100)).toEqual([]);
   });
 });
