@@ -77,40 +77,48 @@ export default function FeedScreen() {
     sectionsRef.current = sections;
   });
 
-  // Every day header is one height and every row another, so measuring one of each places the whole list
-  // (getItemLayout). Then jumping to a far-off day lands exactly without drawing every row first. If a row
-  // ever measures differently (e.g. text size changed mid-session), fall back to unmeasured scrolling.
-  const [sizes, setSizes] = useState<{ header?: number; row?: number; mixed?: boolean }>({});
+  // Rows and day headers record their height as they draw; ones not drawn yet are estimated from those that
+  // were. That gives the list exact offsets (getItemLayout), so a far-off day is one jump away without drawing
+  // every row in between. Rows differ a little (a "N going" line, text size), so a jump re-aims once the rows
+  // around its target have drawn and measured.
   // Height of the spotlight row above the first day (0 without it); day offsets start after it.
   const [lead, setLead] = useState(0);
   const leadHeight = spotlightEvents ? lead : 0;
-  const measure = (kind: 'header' | 'row') => (e: LayoutChangeEvent) => {
+  const [heights, setHeights] = useState<{ rows: Record<string, number>; headers: Record<string, number> }>({
+    rows: {},
+    headers: {},
+  });
+  const measure = (kind: 'rows' | 'headers', key: string) => (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
-    // Returning the same object skips the re-render, so most rows' layouts cost nothing.
-    setSizes((s) => {
-      const known = s[kind];
-      if (known === undefined) return { ...s, [kind]: h };
-      if (!s.mixed && Math.abs(known - h) > 0.5) return { ...s, mixed: true };
-      return s;
-    });
+    // Returning the same object skips the re-render, so unchanged layouts cost nothing.
+    setHeights((s) => (Math.abs((s[kind][key] ?? -1) - h) < 0.5 ? s : { ...s, [kind]: { ...s[kind], [key]: h } }));
   };
-  const layouts = useMemo(
-    () =>
-      sizes.header && sizes.row && !sizes.mixed && (!spotlightEvents || lead > 0)
-        ? agendaItemLayouts(sections, sizes.header, sizes.row, leadHeight)
-        : null,
-    [sections, sizes, spotlightEvents, lead, leadHeight],
-  );
+  const layouts = useMemo(() => {
+    const rowValues = Object.values(heights.rows);
+    const headerValues = Object.values(heights.headers);
+    if (rowValues.length === 0 || headerValues.length === 0 || (spotlightEvents && lead === 0)) return null;
+    const typicalRow = rowValues[0];
+    const typicalHeader = headerValues[0];
+    return agendaItemLayouts(
+      sections,
+      (day) => heights.headers[day] ?? typicalHeader,
+      (e) => heights.rows[e.id] ?? typicalRow,
+      leadHeight,
+    );
+  }, [sections, heights, spotlightEvents, lead, leadHeight]);
   const getItemLayout = useMemo(
     () => (layouts ? (_: unknown, index: number) => layouts[index] ?? { length: 0, offset: 0, index } : undefined),
     [layouts],
   );
   // A jump asked for before the list was measured waits here and runs once it is.
   const pendingSection = useRef<number | null>(null);
+  // The last jump, re-aimed while rows near it finish measuring (estimates turn into real heights).
+  const lastJump = useRef<{ index: number; until: number } | null>(null);
 
   const scrollToSection = useCallback(
     (index: number, animated: boolean) => {
       lockUntil.current = Date.now() + SCROLL_LOCK_MS;
+      lastJump.current = { index, until: Date.now() + SCROLL_LOCK_MS };
       // The first day scrolls all the way up, so the spotlight above it shows too.
       const viewOffset = index === 0 ? leadHeight : 0;
       listRef.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewPosition: 0, viewOffset, animated });
@@ -118,11 +126,29 @@ export default function FeedScreen() {
     [leadHeight],
   );
 
+  // The spotlight can arrive after the list scrolled to the selected day; keep that day in place.
+  const prevLead = useRef(leadHeight);
   useEffect(() => {
-    if (!layouts || pendingSection.current === null) return;
-    const index = pendingSection.current;
-    pendingSection.current = null;
-    scrollToSection(index, false);
+    if (prevLead.current === leadHeight) return;
+    prevLead.current = leadHeight;
+    if (!placed.current) return;
+    const index = sectionIndexForDay(sectionsRef.current, toISODate(useFiltersStore.getState().selectedDay));
+    if (index > 0) scrollToSection(index, false);
+  }, [leadHeight, scrollToSection]);
+
+  useEffect(() => {
+    if (!layouts) return;
+    if (pendingSection.current !== null) {
+      const index = pendingSection.current;
+      pendingSection.current = null;
+      scrollToSection(index, false);
+      return;
+    }
+    // New measurements moved things: land the last jump exactly where it was aimed.
+    const jump = lastJump.current;
+    if (jump && Date.now() < jump.until && jump.index > 0) {
+      listRef.current?.scrollToLocation({ sectionIndex: jump.index, itemIndex: 0, viewPosition: 0, animated: false });
+    }
   }, [layouts, scrollToSection]);
 
   // Tapping a day in the strip: select it and scroll to it, or to the next day that has events.
@@ -366,7 +392,7 @@ export default function FeedScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         onContentSizeChange={onContentSizeChange}
         onScrollToIndexFailed={() => {
-          // Only reachable before the list is measured (or if rows differ in height); fall back to the top.
+          // Only reachable before anything was measured; fall back to the top.
           listRef.current?.scrollToLocation({ sectionIndex: 0, itemIndex: 0, animated: false });
         }}
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
@@ -383,7 +409,7 @@ export default function FeedScreen() {
         }
         renderSectionHeader={({ section }) => (
           <View
-            onLayout={measure('header')}
+            onLayout={measure('headers', section.day)}
             style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}
           >
             <AppText
@@ -397,7 +423,7 @@ export default function FeedScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <View onLayout={measure('row')} style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
+          <View onLayout={measure('rows', item.id)} style={{ paddingHorizontal: space.lg, paddingBottom: space.sm }}>
             <EventRowLink event={item} />
           </View>
         )}

@@ -35,7 +35,7 @@ select pg_temp.ev('33333333-3333-3333-3333-333333333333', 'Two Going', now() + i
 select pg_temp.ev('44444444-4444-4444-4444-444444444444', 'Expired Pick', now() + interval '1 day', now() - interval '1 hour');
 select pg_temp.ev('55555555-5555-5555-5555-555555555555', 'Already Over', now() - interval '5 hours', now() + interval '1 day');
 select pg_temp.ev('66666666-6666-6666-6666-666666666666', 'Only Interested', now() + interval '1 day');
-select pg_temp.ev('77777777-7777-7777-7777-777777777777', 'Far Future Pick', now() + interval '20 days', now() + interval '30 days');
+select pg_temp.ev('77777777-7777-7777-7777-777777777777', 'Far Future Pick', now() + interval '10 days', now() + interval '30 days');
 
 create function pg_temp.login(u uuid) returns void language plpgsql as $$
 begin
@@ -80,7 +80,7 @@ select is((select jsonb_path_query_array(friends_going, '$[*].display_name') fro
 select ok(not exists (select 1 from public.get_spotlight((select id from public.cities where slug = 'charlotte'), 35.2271, -80.8431)
     where title = 'Only Interested'), 'Interested and "Down if friends go" never make an event popping');
 select is((select count(*) from public.get_spotlight((select id from public.cities where slug = 'charlotte'), 35.2271, -80.8431,
-    p_days => 30))::int, 3, 'a wider window takes in the far-off pick');
+    p_days => 14))::int, 3, 'a wider window takes in the far-off pick');
 select is((select count(*) from public.get_spotlight((select id from public.cities where slug = 'charlotte'), 35.2271, -80.8431,
     p_limit => 1))::int, 1, 'p_limit caps the row');
 

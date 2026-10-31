@@ -70,15 +70,15 @@ export type ItemLayout = { length: number; offset: number; index: number };
 
 /**
  * Where every entry of the agenda's SectionList sits, for its `getItemLayout`. A SectionList counts a header,
- * the rows and a footer for each section (we draw no footers, so they take no space). Every header is the same
- * height and so is every row, so two measurements place the whole list: tapping a far-off day then scrolls
- * there exactly, without drawing every row first. `leading` is the height of anything above the first day (the
- * list's header, e.g. the spotlight row).
+ * the rows and a footer for each section (we draw no footers, so they take no space). Heights come from the
+ * rows and headers measured so far; ones not drawn yet use an estimate. Jumping to a far-off day then lands
+ * on it (exactly once the rows around it have drawn) without drawing every row in between. `leading` is the
+ * height of anything above the first day (the list's header, e.g. the spotlight row).
  */
-export function agendaItemLayouts(
-  sections: { data: unknown[] }[],
-  headerHeight: number,
-  rowHeight: number,
+export function agendaItemLayouts<T extends { id: string }>(
+  sections: { day: string; data: T[] }[],
+  headerHeight: (day: string) => number,
+  rowHeight: (item: T) => number,
   leading = 0,
 ): ItemLayout[] {
   const out: ItemLayout[] = [];
@@ -88,8 +88,8 @@ export function agendaItemLayouts(
     offset += length;
   };
   for (const s of sections) {
-    push(headerHeight);
-    for (let i = 0; i < s.data.length; i++) push(rowHeight);
+    push(headerHeight(s.day));
+    for (const item of s.data) push(rowHeight(item));
     push(0);
   }
   return out;
