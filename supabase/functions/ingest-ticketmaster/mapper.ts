@@ -100,9 +100,15 @@ function httpsOnly(url: string | null | undefined): string | null {
   }
 }
 
+/** Sharp on a full-width iPhone hero, about a quarter of the pixels of Ticketmaster's 2048 px original. */
+const IMAGE_MIN_WIDTH = 1000;
+
+/** The smallest 16:9 image at least IMAGE_MIN_WIDTH wide; failing that, the widest one there is. */
 function pickImage(images: TmImage[] | undefined): string | null {
   const wide = (images ?? []).filter((i) => i.ratio === "16_9" && i.url);
   if (wide.length === 0) return null;
+  const sharp = wide.filter((i) => (i.width ?? 0) >= IMAGE_MIN_WIDTH);
+  if (sharp.length > 0) return sharp.reduce((a, b) => ((b.width ?? 0) < (a.width ?? 0) ? b : a)).url;
   return wide.reduce((a, b) => ((b.width ?? 0) > (a.width ?? 0) ? b : a)).url;
 }
 
