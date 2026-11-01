@@ -16,11 +16,10 @@ import {
   Button,
   Chip,
   EmptyState,
-  EventImage,
+  EventArt,
   Facepile,
   GlassButton,
   Icon,
-  MeshArt,
   useImageHidden,
   useRevealedImages,
   useTheme,
@@ -153,11 +152,7 @@ export default function EventScreen() {
       <Animated.View style={[styles.hero, { height: heroHeight }, heroStyle]}>
         <Link.AppleZoomTarget>
           <View style={{ height: heroHeight }}>
-            {event.imageUrl ? (
-              <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} overlay="label" />
-            ) : (
-              <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={170} />
-            )}
+            <EventArt event={event} symbolSize={170} overlay="label" />
           </View>
         </Link.AppleZoomTarget>
       </Animated.View>

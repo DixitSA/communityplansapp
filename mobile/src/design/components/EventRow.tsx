@@ -8,10 +8,9 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
-import { EventImage } from './EventImage';
+import { EventArt } from './EventArt';
 import { Facepile } from './Facepile';
 import { Icon } from './Icon';
-import { MeshArt } from './MeshArt';
 import { PlanMenu } from './PlanMenu';
 
 export const EVENT_ROW_THUMB = 64;
@@ -55,11 +54,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
         overflow: 'hidden',
       }}
     >
-      {event.imageUrl ? (
-        <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
-      ) : (
-        <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={36} />
-      )}
+      <EventArt event={event} symbolSize={36} />
     </View>
   );
 

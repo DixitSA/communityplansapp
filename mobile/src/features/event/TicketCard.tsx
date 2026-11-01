@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Chip, EventImage, MeshArt, useTheme } from '@/design';
+import { AppText, Chip, EventArt, useTheme } from '@/design';
 import { linearGradient } from '@/design/components/meshFallback';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
@@ -29,11 +29,7 @@ export function TicketCard({ event }: { event: EventDetail }) {
     >
       <View style={{ height: ART_HEIGHT, justifyContent: 'flex-end' }}>
         <View style={StyleSheet.absoluteFill}>
-          {event.imageUrl ? (
-            <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
-          ) : (
-            <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={96} />
-          )}
+          <EventArt event={event} symbolSize={96} />
         </View>
         <View
           pointerEvents="none"

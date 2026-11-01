@@ -9,6 +9,7 @@ import {
   CodeField,
   DateStrip,
   EmptyState,
+  EventArt,
   EventCard,
   EventImage,
   EventRow,
@@ -358,6 +359,16 @@ export default function Gallery() {
         <EventCard event={events[3]} plan="going" />
         {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
         <EventCardLink event={events[2]} />
+      </Section>
+
+      <Section title="EventArt (own image, else a stock photo for the category, else generated art)">
+        <View style={row}>
+          {(['music', 'community', 'unknown_category'] as const).map((interest) => (
+            <View key={interest} style={{ width: 96, height: 96, borderRadius: radius.thumb, borderCurve: 'continuous', overflow: 'hidden' }}>
+              <EventArt event={{ id: `gallery-art-${interest}`, interest, symbol: 'sparkles' }} symbolSize={36} />
+            </View>
+          ))}
+        </View>
       </Section>
 
       <Section title="SpotlightRail (top of the feed: picks, then events with Going momentum)">

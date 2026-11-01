@@ -98,7 +98,10 @@ The system font (SF Pro), with a scale that mirrors iOS text styles (largeTitle 
 **SF Symbols** via `expo-symbols`, using the `interests.symbol` column from the database. Use symbol animations (bounce on toggle, replace on state change). The ✦ sparkle is the brand motif: use it for celebration, not decoration.
 
 ### Placeholder art
-Curated events often lack good images. Generate art with **`expo-mesh-gradient`**, seeded from the event ID, using the interest's palette and a large SF Symbol. Every card then looks intentional, and the gradient vibe from the mockups carries over.
+Many events arrive without a usable image. In order, `EventArt` shows:
+1. The event's own image.
+2. A **stock photo for its category**: three free Pexels photos per category in `mobile/assets/stock/` (credits in `CREDITS.md`), picked from the event ID so an event always gets the same one. They show the kind of event, never a specific one: no readable text, logos, landmarks or close-up faces.
+3. For a category without stock photos, generated art made with **`expo-mesh-gradient`**, seeded from the event ID, using the interest's palette and a large SF Symbol.
 
 ## 4. Signature interactions
 
