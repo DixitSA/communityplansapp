@@ -1,6 +1,6 @@
 import { eventRowDistance, eventRowTime } from '../components/EventRow';
 import { formatAttendeeCount } from '../components/Facepile';
-import { planMenuOptions, planPillSpec } from '../components/PlanPill';
+import { planButtonLabel, planMenuOptions, planPillSpec } from '../components/PlanPill';
 
 describe('EventRow text', () => {
   it('shows a time range when the end is known, else just the start', () => {
@@ -30,10 +30,15 @@ describe('formatAttendeeCount', () => {
 
 describe('quick plan button', () => {
   it('reflects the plan', () => {
-    expect(planPillSpec(null)).toMatchObject({ label: 'Join', bg: 'accent' });
-    expect(planPillSpec('interested')).toMatchObject({ label: 'Interested', bg: 'surfaceMuted' });
-    expect(planPillSpec('down_if_friends').label).toBe('Down if');
-    expect(planPillSpec('going')).toMatchObject({ label: 'Going', check: true });
+    expect(planPillSpec(null)).toMatchObject({ symbol: 'plus', bg: 'surfaceMuted' });
+    expect(planPillSpec('interested')).toMatchObject({ label: 'Interested', symbol: 'heart.fill' });
+    expect(planPillSpec('down_if_friends')).toMatchObject({ label: 'Down if friends go', symbol: 'person.2.fill' });
+    expect(planPillSpec('going')).toMatchObject({ label: 'Going', symbol: 'checkmark', bg: 'accent' });
+  });
+
+  it('says what it does to VoiceOver, since it shows only an icon', () => {
+    expect(planButtonLabel(null, 'Trivia Night')).toBe('Make a plan for Trivia Night');
+    expect(planButtonLabel('going', 'Trivia Night')).toBe('Trivia Night: Going. Change plan');
   });
 
   it('offers Clear only once there is a plan', () => {
