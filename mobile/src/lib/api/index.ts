@@ -10,7 +10,7 @@ export * from './friendTypes';
 export { normalizeSearchQuery } from './friendsMapping';
 export { chatIsOpen, normalizeMessageBody } from './chatMapping';
 export { DEMO_INTERESTS, DEMO_PROFILE, createDemoApi, demoEvent, demoFeed, demoFeedRange, demoSpotlight } from './demo';
-export { METERS_PER_MILE } from './feedMapping';
+export { METERS_PER_MILE, UNKNOWN_PRICE_LABEL } from './feedMapping';
 
 /**
  * The app's only door to the backend. Screens call feature hooks, hooks call this.

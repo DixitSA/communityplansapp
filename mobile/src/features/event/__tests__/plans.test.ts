@@ -88,4 +88,11 @@ describe('attributionLine', () => {
     expect(attributionLine({ name: 'yard', curated: true })).toBe('Curated by yard');
     expect(attributionLine({ name: 'Eventbrite' })).toBe('Listed via Eventbrite');
   });
+
+  it('drops the lead-in some sources store with their name', () => {
+    expect(attributionLine({ name: 'via charlotte-theater.com' })).toBe('Listed via charlotte-theater.com');
+    expect(attributionLine({ name: 'Tickets on Ticketmaster' })).toBe('Listed via Ticketmaster');
+    expect(attributionLine({ name: 'Source: camp.nc' })).toBe('Listed via camp.nc');
+    expect(attributionLine({ name: 'via' })).toBe('Listed via via'); // nothing after it: keep the name as is
+  });
 });
