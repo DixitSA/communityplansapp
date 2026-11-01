@@ -8,11 +8,10 @@ import { light } from '@/lib/haptics';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
-import { EventImage } from './EventImage';
+import { EventArt } from './EventArt';
 import { Facepile, formatFriendsLabel } from './Facepile';
 import { GlassButton } from './GlassButton';
 import type { SymbolName } from './Icon';
-import { MeshArt } from './MeshArt';
 import { linearGradient } from './meshFallback';
 
 export type EventCardData = {
@@ -126,11 +125,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
   const cardContent = (
     <View style={{ minHeight: 170, justifyContent: 'flex-end' }}>
       <View style={StyleSheet.absoluteFill}>
-        {event.imageUrl ? (
-          <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
-        ) : (
-          <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} />
-        )}
+        <EventArt event={event} />
       </View>
       {/* Bottom scrim so white text stays readable on any image. */}
       <View

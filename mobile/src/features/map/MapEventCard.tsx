@@ -3,11 +3,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
   AppText,
-  EventImage,
+  eventA11yLabel,
+  EventArt,
   Facepile,
   Icon,
-  MeshArt,
-  eventA11yLabel,
   useTheme,
   type EventCardData,
 } from '@/design';
@@ -47,13 +46,9 @@ export function MapEventCard({ event }: { event: EventCardData }) {
           overflow: 'hidden',
         }}
       >
-        {event.imageUrl ? (
-          <View style={StyleSheet.absoluteFill}>
-            <EventImage eventId={event.id} source={event.imageUrl} sensitive={event.imageSensitive} />
-          </View>
-        ) : (
-          <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} style={StyleSheet.absoluteFill} />
-        )}
+        <View style={StyleSheet.absoluteFill}>
+          <EventArt event={event} />
+        </View>
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <AppText variant="headline" numberOfLines={2}>
