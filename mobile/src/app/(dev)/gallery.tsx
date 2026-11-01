@@ -42,6 +42,8 @@ import {
 } from '@/design';
 import { EventCardLink, EventRowLink } from '@/features/event/EventCardLink';
 import { getFixtureEvents } from '@/features/feed/fixtures';
+import { NeighborhoodChips } from '@/features/feed/NeighborhoodChips';
+import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
 import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { demoSpotlight } from '@/lib/api';
 import { startOfDay, toISODate } from '@/lib/dates';
@@ -80,6 +82,7 @@ export default function Gallery() {
   const { colors, space, scheme, radius } = useTheme();
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
   const [seg, setSeg] = useState('a');
+  const [hood, setHood] = useState<string | null>('noda');
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
   const [interested, setInterested] = useState(false);
   const [rowPlan, setRowPlan] = useState<CardPlan>(null);
@@ -387,6 +390,16 @@ export default function Gallery() {
       <Section title="SpotlightRail (top of the feed: picks, then events with Going momentum)">
         <View style={{ marginHorizontal: -space.lg }}>
           <SpotlightRail events={demoSpotlight()} />
+        </View>
+      </Section>
+
+      <Section title="NeighborhoodChips (feed: browse by area, one color each)">
+        <View style={{ marginHorizontal: -space.lg }}>
+          <NeighborhoodChips
+            hoods={NEIGHBORHOODS.map((h, i) => ({ hood: h, count: 12 - i * 2 }))}
+            selected={hood}
+            onSelect={setHood}
+          />
         </View>
       </Section>
 

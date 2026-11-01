@@ -21,6 +21,8 @@ type FiltersState = {
   view: FeedView;
   scope: Scope;
   selectedDay: Date;
+  /** A neighborhood slug (see neighborhoods.ts), or null for all of Charlotte. Applied on the device. */
+  neighborhood: string | null;
   setTimeOfDay: (v: TimeOfDay) => void;
   toggleInterest: (slug: string) => void;
   setDistance: (v: DistanceMi) => void;
@@ -28,7 +30,8 @@ type FiltersState = {
   setView: (v: FeedView) => void;
   setScope: (v: Scope) => void;
   setSelectedDay: (d: Date) => void;
-  /** Resets time, interests, distance and price. Leaves Nearby/Friends, the view and the day alone. */
+  setNeighborhood: (slug: string | null) => void;
+  /** Resets time, interests, distance, price and neighborhood. Leaves Nearby/Friends, the view and the day alone. */
   clearFilters: () => void;
 };
 
@@ -36,6 +39,7 @@ export const useFiltersStore = create<FiltersState>()((set) => ({
   ...DEFAULT_CRITERIA,
   view: 'list',
   selectedDay: startOfDay(new Date()),
+  neighborhood: null,
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   toggleInterest: (slug) =>
     set((s) => ({
@@ -48,11 +52,13 @@ export const useFiltersStore = create<FiltersState>()((set) => ({
   setView: (view) => set({ view }),
   setScope: (scope) => set({ scope }),
   setSelectedDay: (selectedDay) => set({ selectedDay }),
+  setNeighborhood: (neighborhood) => set({ neighborhood }),
   clearFilters: () =>
     set({
       timeOfDay: DEFAULT_CRITERIA.timeOfDay,
       interests: [],
       distanceMi: DEFAULT_CRITERIA.distanceMi,
       price: DEFAULT_CRITERIA.price,
+      neighborhood: null,
     }),
 }));
