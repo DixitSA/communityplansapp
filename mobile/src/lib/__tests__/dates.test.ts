@@ -1,4 +1,4 @@
-import { formatEventTime } from '../dates';
+import { countdownLabel, formatEventTime } from '../dates';
 
 const d = (m: number, day: number, h: number, min = 0) => new Date(2026, m - 1, day, h, min);
 
@@ -56,5 +56,26 @@ describe('formatEventTime (America/New_York)', () => {
     // Spring forward Mar 8 2026: 10 PM Mar 7 to 10 AM Mar 8 is 11 real hours (12 clock).
     expect(formatEventTime(d(3, 7, 22), d(3, 8, 10))).toBe('10:00 PM – 10:00 AM');
     expect(formatEventTime(d(3, 7, 22), d(3, 8, 11))).toBe('10:00 PM – 11:00 AM');
+  });
+});
+
+describe('countdownLabel', () => {
+  const now = d(10, 31, 14); // Sat 2:00 PM
+  it('counts minutes, then hours, inside the next half day', () => {
+    expect(countdownLabel(d(10, 31, 14, 25), null, now)).toBe('Starts in 25 min');
+    expect(countdownLabel(d(10, 31, 15), null, now)).toBe('Starts in 1 hour');
+    expect(countdownLabel(d(10, 31, 19), null, now)).toBe('Starts in 5 hours');
+  });
+  it('names the day further out', () => {
+    expect(countdownLabel(d(11, 1, 9), null, d(10, 31, 8))).toBe('Tomorrow at 9 AM');
+    expect(countdownLabel(d(11, 1, 19), null, now)).toBe('Tomorrow at 7 PM'); // across the DST change
+    expect(countdownLabel(d(11, 4, 19, 30), null, now)).toBe('Wednesday at 7:30 PM');
+    expect(countdownLabel(d(11, 12, 19), null, now)).toBe('In 12 days');
+  });
+  it('says the event is on while it runs, and nothing once it is over', () => {
+    expect(countdownLabel(d(10, 31, 13), d(10, 31, 16), now)).toBe('Happening now');
+    expect(countdownLabel(d(10, 31, 12), null, now)).toBe('Happening now'); // no end: three hours
+    expect(countdownLabel(d(10, 31, 10), null, now)).toBeNull();
+    expect(countdownLabel(d(10, 31, 12), d(10, 31, 13), now)).toBeNull();
   });
 });
