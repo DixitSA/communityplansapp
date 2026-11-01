@@ -9,6 +9,7 @@ import { categoryColors, isCategory } from '../tokens';
 import { AppText } from './AppText';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
 import { EventArt } from './EventArt';
+import { LiveDot } from './LiveDot';
 import { Facepile } from './Facepile';
 import { Icon } from './Icon';
 import { PlanMenu } from './PlanMenu';
@@ -75,23 +76,27 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
             {event.title}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-            {/* The category's color as a dot; the art already says the rest, so no chip. */}
-            <View
-              style={{
-                width: CATEGORY_DOT,
-                height: CATEGORY_DOT,
-                borderRadius: CATEGORY_DOT / 2,
-                backgroundColor: isCategory(event.interest) ? categoryColors[event.interest].solid : colors.inkSecondary,
-              }}
-            />
+            {event.live ? (
+              <LiveDot color={colors.accent} size={CATEGORY_DOT} />
+            ) : (
+              // The category's color as a dot; the art already says the rest, so no chip.
+              <View
+                style={{
+                  width: CATEGORY_DOT,
+                  height: CATEGORY_DOT,
+                  borderRadius: CATEGORY_DOT / 2,
+                  backgroundColor: isCategory(event.interest) ? categoryColors[event.interest].solid : colors.inkSecondary,
+                }}
+              />
+            )}
             <AppText
               variant="footnote"
-              color="inkSecondary"
+              color={event.live ? 'accent' : 'inkSecondary'}
               numberOfLines={1}
               maxFontSizeMultiplier={1.4}
-              style={{ flexShrink: 1, lineHeight: 16 }}
+              style={{ flexShrink: 1, lineHeight: 16, fontWeight: event.live ? '600' : undefined }}
             >
-              {event.categoryLabel} · {eventRowTime(event)}
+              {event.live ? `Live now · ${event.categoryLabel}` : `${event.categoryLabel} · ${eventRowTime(event)}`}
             </AppText>
           </View>
           <View

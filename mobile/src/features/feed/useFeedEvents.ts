@@ -5,8 +5,9 @@ import type { DayMeta } from '@/design';
 import { api, CHARLOTTE_CITY_ID, METERS_PER_MILE, demoFeedRange, type FeedEvent, type FeedRangeParams } from '@/lib/api';
 import { toISODate } from '@/lib/dates';
 import { isBackendConfigured } from '@/lib/env';
+import { useNow } from '@/lib/useNow';
 
-import { dayMetaFrom, groupByDay, type AgendaSection } from './agenda';
+import { dayMetaFrom, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
 import { CHARLOTTE_CENTER, getOrigin } from './origin';
@@ -108,16 +109,20 @@ export function useFeedEvents(): {
   const data = feed.data;
   const baselineData = baseline.data;
   const selectedISO = toISODate(selectedDay);
+  // Ticks every minute: ended events drop out, "Live now" comes and goes, and "This afternoon" becomes "Tonight".
+  const now = useNow();
 
   const derived = useMemo(() => {
     const all = data ?? [];
     // The time-of-day chip is applied here, so changing it never refetches.
-    const filtered = all.filter((e) => matchesTimeOfDay(e.startsAt, timeOfDay));
-    const sections = groupByDay(filtered, today);
+    const filtered = all
+      .filter((e) => matchesTimeOfDay(e.startsAt, timeOfDay) && !hasEnded(e, now))
+      .map((e) => ({ ...e, live: isLive(e, now) }));
+    const sections = groupByDay(filtered, today, now);
     const dayEvents = sections.find((s) => s.day === selectedISO)?.data ?? [];
     const total = (filtersActive ? (baselineData ?? all) : all).length;
     return { filtered, sections, dayEvents, total, dayMeta: dayMetaFrom(filtered) };
-  }, [data, baselineData, timeOfDay, selectedISO, filtersActive, today]);
+  }, [data, baselineData, timeOfDay, selectedISO, filtersActive, today, now]);
 
   return {
     ...derived,

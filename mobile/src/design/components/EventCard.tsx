@@ -9,6 +9,7 @@ import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
 import { EventArt } from './EventArt';
+import { LiveDot } from './LiveDot';
 import { Facepile, formatFriendsLabel } from './Facepile';
 import { GlassButton } from './GlassButton';
 import type { SymbolName } from './Icon';
@@ -18,6 +19,8 @@ export type EventCardData = {
   id: string;
   title: string;
   startsAt: Date;
+  /** Happening right now (the feed works this out from the clock). */
+  live?: boolean;
   /** When known; rows fall back to the start time without it. */
   endsAt?: Date;
   venue: string;
@@ -91,6 +94,7 @@ export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string 
     e.friendsGoing,
   );
   return [
+    e.live ? 'Happening now.' : '',
     `${e.title}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
     friends ? `${friends}.` : '',
     plan ? PLAN_A11Y[plan] : '',
@@ -135,6 +139,28 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
           linearGradient('linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.75) 100%)'),
         ]}
       />
+      {event.live ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: space.md,
+            left: space.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space.xs,
+            paddingHorizontal: space.sm,
+            paddingVertical: space.xs,
+            borderRadius: radius.pill,
+            backgroundColor: 'rgba(0,0,0,0.45)',
+          }}
+        >
+          <LiveDot color={colors.onImage} />
+          <AppText variant="footnote" color="onImage" style={{ fontWeight: '600' }}>
+            Live now
+          </AppText>
+        </View>
+      ) : null}
       <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl * 2 }}>
         <AppText variant="title2" color="onImage">
           {event.title}

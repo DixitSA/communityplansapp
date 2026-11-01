@@ -32,6 +32,7 @@ export {
 export { PlanPill, planMenuOptions, planPillSpec, type PlanMenuOption } from './components/PlanPill';
 export { PlanMenu, type PlanMenuProps } from './components/PlanMenu';
 export { Facepile, formatFriendsLabel, formatAttendeeCount, type FacepileProps } from './components/Facepile';
+export { LiveDot, type LiveDotProps } from './components/LiveDot';
 export { EventArt, type EventArtProps } from './components/EventArt';
 export { stockImageFor } from './stockImages';
 export { EventImage, useRevealedImages, useImageHidden, SENSITIVE_BLUR_RADIUS, type EventImageProps } from './components/EventImage';

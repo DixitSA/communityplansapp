@@ -412,14 +412,15 @@ export default function FeedScreen() {
             onLayout={measure('headers', section.day)}
             style={{ backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm }}
           >
-            <AppText
-              variant="title2"
-              color={section.isToday ? 'accent' : 'ink'}
-              accessibilityRole="header"
-              style={{ fontWeight: '700' }}
-            >
-              {section.title}
-            </AppText>
+            {/* A mood line ("Tonight", "Tomorrow", "Thursday") over the date and count. */}
+            <View accessible accessibilityRole="header" accessibilityLabel={`${section.headline}, ${section.detail}`}>
+              <AppText variant="title2" color={section.isToday ? 'accent' : 'ink'} style={{ fontWeight: '700' }}>
+                {section.headline}
+              </AppText>
+              <AppText variant="footnote" color="inkSecondary">
+                {section.detail}
+              </AppText>
+            </View>
           </View>
         )}
         renderItem={({ item }) => (

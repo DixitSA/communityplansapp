@@ -1,4 +1,4 @@
-import { agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, sectionIndexForDay } from '../agenda';
+import { agendaDetail, agendaHeadline, agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, hasEnded, isLive, sectionIndexForDay } from '../agenda';
 
 const ev = (id: string, y: number, mo: number, d: number, h: number, extra: { day?: string; friendsGoing?: number } = {}) => ({
   id,
@@ -116,5 +116,48 @@ describe('agendaItemLayouts', () => {
 
   it('is empty for no sections', () => {
     expect(agendaItemLayouts([], header, () => 100)).toEqual([]);
+  });
+});
+
+describe('day headers', () => {
+  const today = '2026-10-31';
+  const at = (h: number) => new Date(2026, 9, 31, h, 0);
+
+  it('gives today a mood for the time of day', () => {
+    expect(agendaHeadline(today, today, at(9))).toBe('This morning');
+    expect(agendaHeadline(today, today, at(14))).toBe('This afternoon');
+    expect(agendaHeadline(today, today, at(20))).toBe('Tonight');
+  });
+
+  it('names tomorrow and the rest of the week, then falls back to the date', () => {
+    expect(agendaHeadline('2026-11-01', today, at(20))).toBe('Tomorrow'); // across the clock change
+    expect(agendaHeadline('2026-11-05', today, at(20))).toBe('Thursday');
+    expect(agendaHeadline('2026-11-07', today, at(20))).toBe('Sat, Nov 7');
+  });
+
+  it('keeps the date in the detail line unless the headline is the date', () => {
+    expect(agendaDetail('2026-11-05', 'Thursday', 9)).toBe('Thu, Nov 5 · 9 events');
+    expect(agendaDetail('2026-11-07', 'Sat, Nov 7', 1)).toBe('1 event');
+  });
+});
+
+describe('live and ended', () => {
+  const now = new Date(2026, 9, 31, 20, 0);
+  const ev = (startH: number, endH?: number) => ({
+    startsAt: new Date(2026, 9, 31, startH, 0),
+    endsAt: endH === undefined ? undefined : new Date(2026, 9, 31, endH, 0),
+  });
+
+  it('is live between its start and end', () => {
+    expect(isLive(ev(19, 22), now)).toBe(true);
+    expect(isLive(ev(21, 23), now)).toBe(false);
+    expect(isLive(ev(18), now)).toBe(true); // no end: three hours assumed
+    expect(isLive(ev(16), now)).toBe(false);
+  });
+
+  it('has ended once its end (or three hours) has passed', () => {
+    expect(hasEnded(ev(8, 12), now)).toBe(true);
+    expect(hasEnded(ev(16), now)).toBe(true);
+    expect(hasEnded(ev(19, 22), now)).toBe(false);
   });
 });

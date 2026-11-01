@@ -20,6 +20,7 @@ import {
   GlassSurface,
   Icon,
   InterestTile,
+  LiveDot,
   MeshArt,
   NavRow,
   PersonRow,
@@ -328,6 +329,13 @@ export default function Gallery() {
         </View>
       </Section>
 
+      <Section title="LiveDot (pulses; still under Reduce Motion)">
+        <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
+          <LiveDot color={colors.accent} />
+          <LiveDot color={colors.accent} size={12} />
+        </View>
+      </Section>
+
       <Section title="EmptyState">
         <EmptyState symbol="sparkles" title="Nothing planned yet" message="Try another date." />
       </Section>
@@ -335,6 +343,8 @@ export default function Gallery() {
       <Section title="EventRow (agenda row; quick plan menu on the right)">
         <EventRow event={{ ...events[4], goingCount: 14 }} plan={rowPlan} onSetPlan={setRowPlan} />
         <EventRow event={events[1]} plan="interested" />
+        {/* Happening right now: a pulsing dot and "Live now" replace the time. */}
+        <EventRow event={{ ...events[0], live: true }} />
         {/* Time line variants: past-midnight range above, no end time here. */}
         <EventRow event={{ ...events[3], endsAt: undefined }} />
         <EventRow event={events[3]} plan="down_if_friends" />
@@ -357,6 +367,7 @@ export default function Gallery() {
         />
         <EventCard event={events[1]} plan="down_if_friends" />
         <EventCard event={events[3]} plan="going" />
+        <EventCard event={{ ...events[0], live: true }} />
         {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
         <EventCardLink event={events[2]} />
       </Section>

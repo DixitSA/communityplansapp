@@ -10,6 +10,10 @@ export type AgendaSection<T extends AgendaEvent> = {
   day: string;
   /** "Wed, Oct 28 · 5 events" */
   title: string;
+  /** The header's big line: "Tonight", "Tomorrow", "Thursday" or "Thu, Nov 12". */
+  headline: string;
+  /** The small line under it: "Sat, Oct 31 · 49 events" (just the count when the headline is the date). */
+  detail: string;
   isToday: boolean;
   data: T[];
 };
@@ -24,17 +28,57 @@ export function dayToDate(day: string): Date {
   return parseDateOnly(day) ?? startOfDay(new Date());
 }
 
-/** "Wed, Oct 28 · 5 events": the sticky section header. */
+const shortDate = (d: Date) => `${WEEKDAYS_LONG[d.getDay()].slice(0, 3)}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+const eventCount = (count: number) => `${count} ${count === 1 ? 'event' : 'events'}`;
+
+/** "Wed, Oct 28 · 5 events": the section's plain title (VoiceOver reads the headline and detail instead). */
 export function formatAgendaTitle(day: string, count: number): string {
+  return `${shortDate(dayToDate(day))} · ${eventCount(count)}`;
+}
+
+/** The day header's big line: a mood for today, "Tomorrow", the weekday within the week, else the date. */
+export function agendaHeadline(day: string, today: string, now: Date): string {
+  if (day === today) {
+    const h = now.getHours();
+    return h < 12 ? 'This morning' : h < 17 ? 'This afternoon' : 'Tonight';
+  }
   const d = dayToDate(day);
-  return `${WEEKDAYS_LONG[d.getDay()].slice(0, 3)}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()} · ${count} ${count === 1 ? 'event' : 'events'}`;
+  // Rounded, so a day with a daylight-saving change (23 or 25 hours) still counts as one.
+  const daysAway = Math.round((d.getTime() - dayToDate(today).getTime()) / 86_400_000);
+  if (daysAway === 1) return 'Tomorrow';
+  if (daysAway > 1 && daysAway < 7) return WEEKDAYS_LONG[d.getDay()];
+  return shortDate(d);
+}
+
+/** The small line under the headline: the date and the count, or just the count when the headline is the date. */
+export function agendaDetail(day: string, headline: string, count: number): string {
+  const date = shortDate(dayToDate(day));
+  return headline === date ? eventCount(count) : `${date} · ${eventCount(count)}`;
+}
+
+/** Events without an end time count as three hours long. */
+const ASSUMED_LENGTH_MS = 3 * 3_600_000;
+
+/** When the event is over: its end, or three hours after it starts. */
+export function eventEndsAt(e: { startsAt: Date; endsAt?: Date }): number {
+  return e.endsAt ? e.endsAt.getTime() : e.startsAt.getTime() + ASSUMED_LENGTH_MS;
+}
+
+/** Happening right now. */
+export function isLive(e: { startsAt: Date; endsAt?: Date }, now: Date): boolean {
+  return e.startsAt.getTime() <= now.getTime() && now.getTime() < eventEndsAt(e);
+}
+
+/** Already over, so the feed leaves it out. */
+export function hasEnded(e: { startsAt: Date; endsAt?: Date }, now: Date): boolean {
+  return eventEndsAt(e) <= now.getTime();
 }
 
 /**
  * Groups events into one section per local day, earliest day first and earliest event first within
  * a day. Days with no events get no section. `today` is "YYYY-MM-DD" (marks the accent-colored header).
  */
-export function groupByDay<T extends AgendaEvent>(events: T[], today: string): AgendaSection<T>[] {
+export function groupByDay<T extends AgendaEvent>(events: T[], today: string, now: Date = new Date()): AgendaSection<T>[] {
   const byDay = new Map<string, T[]>();
   for (const e of [...events].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())) {
     const key = eventDay(e);
@@ -44,7 +88,18 @@ export function groupByDay<T extends AgendaEvent>(events: T[], today: string): A
   }
   return [...byDay.keys()]
     .sort()
-    .map((day) => ({ day, title: formatAgendaTitle(day, byDay.get(day)?.length ?? 0), isToday: day === today, data: byDay.get(day) ?? [] }));
+    .map((day) => {
+      const data = byDay.get(day) ?? [];
+      const headline = agendaHeadline(day, today, now);
+      return {
+        day,
+        title: formatAgendaTitle(day, data.length),
+        headline,
+        detail: agendaDetail(day, headline, data.length),
+        isToday: day === today,
+        data,
+      };
+    });
 }
 
 /** Per-day counts for the date strip's density dots. */
