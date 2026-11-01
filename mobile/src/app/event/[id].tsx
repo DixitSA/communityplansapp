@@ -25,12 +25,13 @@ import {
   useTheme,
 } from '@/design';
 import { openDirections, openEventMenu, shareEvent } from '@/features/event/actions';
-import { attributionLine, nextStatus, othersCount, othersRevealed } from '@/features/event/plansLogic';
+import { attributionLine, nextStatus, othersCount, othersRevealed, sourceName } from '@/features/event/plansLogic';
 import type { PlanStatus } from '@/features/event/plansStore';
 import { useEvent } from '@/features/event/useEvent';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { RsvpBar } from '@/features/event/RsvpBar';
 import { WhosGoing } from '@/features/event/WhosGoing';
+import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
 import { formatEventTime, formatShortDate } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
@@ -228,25 +229,30 @@ export default function EventScreen() {
               {event.tags.map((t) => (
                 <Chip key={t.label} label={t.label} category={t.interest} />
               ))}
-              <Chip label={event.priceLabel} symbol="ticket.fill" />
+              {/* With no price known the chip would only say "See listing"; the listing link below covers that. */}
+              {event.priceLabel !== UNKNOWN_PRICE_LABEL ? <Chip label={event.priceLabel} symbol="ticket.fill" /> : null}
             </View>
           </View>
 
-          <Divider />
-
-          <View
-            accessible
-            accessibilityLabel={`${hostLabel} ${event.host.name}`}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
-          >
-            <Avatar name={event.host.name} size={44} />
-            <View style={{ flexShrink: 1 }}>
-              <AppText variant="footnote" color="inkSecondary">
-                {hostLabel}
-              </AppText>
-              <AppText variant="headline">{event.host.name}</AppText>
-            </View>
-          </View>
+          {/* For a venue this row would only repeat the location line above; it earns its place for a real host. */}
+          {event.host.kind !== 'venue' ? (
+            <>
+              <Divider />
+              <View
+                accessible
+                accessibilityLabel={`${hostLabel} ${event.host.name}`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
+              >
+                <Avatar name={event.host.name} size={44} />
+                <View style={{ flexShrink: 1 }}>
+                  <AppText variant="footnote" color="inkSecondary">
+                    {hostLabel}
+                  </AppText>
+                  <AppText variant="headline">{event.host.name}</AppText>
+                </View>
+              </View>
+            </>
+          ) : null}
 
           {event.friendsGoing > 0 ? (
             <>
@@ -277,7 +283,7 @@ export default function EventScreen() {
               <Pressable
                 onPress={() => Linking.openURL(event.source.url as string).catch(() => {})}
                 accessibilityRole="link"
-                accessibilityLabel={`View original listing on ${event.source.name}`}
+                accessibilityLabel={`View original listing on ${sourceName(event.source.name)}`}
                 hitSlop={space.sm}
               >
                 <AppText variant="footnote" color="accent" style={{ fontWeight: '600' }}>

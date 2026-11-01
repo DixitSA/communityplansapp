@@ -51,10 +51,13 @@ export function mapFeedRow(row: FeedRow | FeedRangeRow | SpotlightRow, interests
   };
 }
 
+/** What the price chip says when the listing has no price; the event page leaves the chip out instead. */
+export const UNKNOWN_PRICE_LABEL = 'See listing';
+
 export function priceLabel(e: Pick<Tables<'events'>, 'is_free' | 'price_min' | 'price_max'>): string {
   if (e.is_free) return 'Free';
   const fmt = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
-  if (e.price_min == null) return 'See listing';
+  if (e.price_min == null) return UNKNOWN_PRICE_LABEL;
   if (e.price_max != null && e.price_max > e.price_min) return `${fmt(e.price_min)} to ${fmt(e.price_max)}`;
   return fmt(e.price_min);
 }
