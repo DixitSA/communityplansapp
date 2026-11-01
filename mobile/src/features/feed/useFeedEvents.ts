@@ -7,6 +7,7 @@ import { toISODate } from '@/lib/dates';
 import { isBackendConfigured } from '@/lib/env';
 import { useNow } from '@/lib/useNow';
 
+import { neighborhoodCounts, neighborhoodFor, type Neighborhood } from './neighborhoods';
 import { dayMetaFrom, eventEndsAt, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
@@ -38,6 +39,8 @@ export function useFeedEvents(): {
   /** The 14 days with the filters off: tells "nothing planned" apart from "filters removed it all". */
   total: number;
   dayMeta: Record<string, DayMeta>;
+  /** Neighborhoods with events under the other filters, for the chips (the neighborhood filter itself not applied). */
+  hoods: { hood: Neighborhood; count: number }[];
   /** First load, nothing to show yet. */
   isLoading: boolean;
   isError: boolean;
@@ -49,6 +52,7 @@ export function useFeedEvents(): {
   const price = useFiltersStore((s) => s.price);
   const scope = useFiltersStore((s) => s.scope);
   const selectedDay = useFiltersStore((s) => s.selectedDay);
+  const neighborhood = useFiltersStore((s) => s.neighborhood);
 
   // Origin: the device's position if permission was already granted, else Charlotte's center.
   const origin = useQuery({ queryKey: ['origin'], queryFn: getOrigin, staleTime: FIVE_MINUTES, enabled: isBackendConfigured });
@@ -115,14 +119,16 @@ export function useFeedEvents(): {
   const derived = useMemo(() => {
     const all = data ?? [];
     // The time-of-day chip is applied here, so changing it never refetches.
-    const filtered = all
+    const timed = all
       .filter((e) => matchesTimeOfDay(e.startsAt, timeOfDay) && !hasEnded(e, now))
       .map((e) => ({ ...e, liveUntil: isLive(e, now) ? new Date(eventEndsAt(e)) : undefined }));
+    // Like time of day, the neighborhood is applied here, so picking one never refetches.
+    const filtered = neighborhood ? timed.filter((e) => neighborhoodFor(e)?.slug === neighborhood) : timed;
     const sections = groupByDay(filtered, today, now);
     const dayEvents = sections.find((s) => s.day === selectedISO)?.data ?? [];
     const total = (filtersActive ? (baselineData ?? all) : all).length;
-    return { filtered, sections, dayEvents, total, dayMeta: dayMetaFrom(filtered) };
-  }, [data, baselineData, timeOfDay, selectedISO, filtersActive, today, now]);
+    return { filtered, sections, dayEvents, total, dayMeta: dayMetaFrom(filtered), hoods: neighborhoodCounts(timed) };
+  }, [data, baselineData, timeOfDay, neighborhood, selectedISO, filtersActive, today, now]);
 
   return {
     ...derived,

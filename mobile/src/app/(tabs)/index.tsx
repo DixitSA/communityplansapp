@@ -22,6 +22,8 @@ import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } 
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
+import { NeighborhoodChips } from '@/features/feed/NeighborhoodChips';
+import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
 import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { useSpotlight } from '@/features/feed/useSpotlight';
@@ -56,9 +58,11 @@ export default function FeedScreen() {
   const scope = useFiltersStore((s) => s.scope);
   const view = useFiltersStore((s) => s.view);
   const selected = useFiltersStore((s) => s.selectedDay);
-  const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, clearFilters } = useFiltersStore.getState();
+  const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, setNeighborhood, clearFilters } =
+    useFiltersStore.getState();
 
-  const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
+  const { sections, dayEvents, total, dayMeta, hoods, isLoading, isError, refetch } = useFeedEvents();
+  const neighborhood = useFiltersStore((s) => s.neighborhood);
   const spotlight = useSpotlight();
   // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
   const spotlightEvents = scope === 'nearby' && (spotlight.data?.length ?? 0) >= 2 ? spotlight.data : undefined;
@@ -255,6 +259,18 @@ export default function FeedScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={{ gap: space.xs + 2, paddingLeft: space.lg, paddingRight: space.sm, alignItems: 'center' }}
       >
+        {neighborhood ? (
+          <Chip
+            label={NEIGHBORHOODS.find((h) => h.slug === neighborhood)?.name ?? 'Neighborhood'}
+            symbol="mappin"
+            trailingSymbol="xmark"
+            dense
+            selected
+            filled
+            accessibilityLabel={`Showing ${NEIGHBORHOODS.find((h) => h.slug === neighborhood)?.name ?? 'one neighborhood'} only. Show all of Charlotte`}
+            onPress={() => setNeighborhood(null)}
+          />
+        ) : null}
         <FilterMenuChip
           label={chips.time.label}
           symbol="clock"
@@ -398,11 +414,10 @@ export default function FeedScreen() {
         contentContainerStyle={{ paddingBottom: space.xxxl * 4, flexGrow: 1 }}
         ListEmptyComponent={empty}
         ListHeaderComponent={
-          spotlightEvents ? (
-            <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
-              <SpotlightRail events={spotlightEvents} />
-            </View>
-          ) : undefined
+          <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
+            {spotlightEvents ? <SpotlightRail events={spotlightEvents} /> : null}
+            <NeighborhoodChips hoods={hoods} selected={neighborhood} onSelect={setNeighborhood} />
+          </View>
         }
         ListFooterComponent={
           <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{sections.length > 0 ? <SuggestRow /> : null}</View>
