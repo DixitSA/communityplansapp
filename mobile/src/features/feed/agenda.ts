@@ -50,10 +50,14 @@ export function agendaHeadline(day: string, today: string, now: Date): string {
   return shortDate(d);
 }
 
-/** The small line under the headline: the date and the count, or just the count when the headline is the date. */
-export function agendaDetail(day: string, headline: string, count: number): string {
+/**
+ * The small line under the headline: the date and the count (or just the count when the headline is the date),
+ * plus how many are on right now: "Sat, Oct 31 · 8 events · 3 live".
+ */
+export function agendaDetail(day: string, headline: string, count: number, live = 0): string {
   const date = shortDate(dayToDate(day));
-  return headline === date ? eventCount(count) : `${date} · ${eventCount(count)}`;
+  const counts = live > 0 ? `${eventCount(count)} · ${live} live` : eventCount(count);
+  return headline === date ? counts : `${date} · ${counts}`;
 }
 
 /** Events without an end time count as three hours long. */
@@ -95,7 +99,7 @@ export function groupByDay<T extends AgendaEvent>(events: T[], today: string, no
         day,
         title: formatAgendaTitle(day, data.length),
         headline,
-        detail: agendaDetail(day, headline, data.length),
+        detail: agendaDetail(day, headline, data.length, data.filter((e) => isLive(e, now)).length),
         isToday: day === today,
         data,
       };

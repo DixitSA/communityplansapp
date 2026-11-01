@@ -7,7 +7,7 @@ import { toISODate } from '@/lib/dates';
 import { isBackendConfigured } from '@/lib/env';
 import { useNow } from '@/lib/useNow';
 
-import { dayMetaFrom, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
+import { dayMetaFrom, eventEndsAt, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
 import { CHARLOTTE_CENTER, getOrigin } from './origin';
@@ -117,7 +117,7 @@ export function useFeedEvents(): {
     // The time-of-day chip is applied here, so changing it never refetches.
     const filtered = all
       .filter((e) => matchesTimeOfDay(e.startsAt, timeOfDay) && !hasEnded(e, now))
-      .map((e) => ({ ...e, live: isLive(e, now) }));
+      .map((e) => ({ ...e, liveUntil: isLive(e, now) ? new Date(eventEndsAt(e)) : undefined }));
     const sections = groupByDay(filtered, today, now);
     const dayEvents = sections.find((s) => s.day === selectedISO)?.data ?? [];
     const total = (filtersActive ? (baselineData ?? all) : all).length;

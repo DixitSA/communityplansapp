@@ -2,7 +2,7 @@ import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { formatEventTime } from '@/lib/dates';
+import { formatEventTime, formatTime } from '@/lib/dates';
 
 import { useTheme } from '../theme';
 import { categoryColors, isCategory } from '../tokens';
@@ -76,7 +76,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
             {event.title}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-            {event.live ? (
+            {event.liveUntil ? (
               <LiveDot color={colors.accent} size={CATEGORY_DOT} />
             ) : (
               // The category's color as a dot; the art already says the rest, so no chip.
@@ -91,12 +91,22 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
             )}
             <AppText
               variant="footnote"
-              color={event.live ? 'accent' : 'inkSecondary'}
+              color="inkSecondary"
               numberOfLines={1}
               maxFontSizeMultiplier={1.4}
-              style={{ flexShrink: 1, lineHeight: 16, fontWeight: event.live ? '600' : undefined }}
+              style={{ flexShrink: 1, lineHeight: 16 }}
             >
-              {event.live ? `Live now · ${event.categoryLabel}` : `${event.categoryLabel} · ${eventRowTime(event)}`}
+              {event.liveUntil ? (
+                // Only the dot is accent, so a busy night doesn't turn into a wall of green.
+                <>
+                  <AppText variant="footnote" color="ink" style={{ fontWeight: '600', lineHeight: 16 }}>
+                    {`Live · until ${formatTime(event.liveUntil, true)}`}
+                  </AppText>
+                  {` · ${event.categoryLabel}`}
+                </>
+              ) : (
+                `${event.categoryLabel} · ${eventRowTime(event)}`
+              )}
             </AppText>
           </View>
           <View

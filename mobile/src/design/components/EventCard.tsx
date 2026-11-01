@@ -20,7 +20,8 @@ export type EventCardData = {
   title: string;
   startsAt: Date;
   /** Happening right now (the feed works this out from the clock). */
-  live?: boolean;
+  /** Set while the event is happening: when it ends (its end time, or three hours after the start). */
+  liveUntil?: Date;
   /** When known; rows fall back to the start time without it. */
   endsAt?: Date;
   venue: string;
@@ -94,7 +95,7 @@ export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string 
     e.friendsGoing,
   );
   return [
-    e.live ? 'Happening now.' : '',
+    e.liveUntil ? 'Happening now.' : '',
     `${e.title}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
     friends ? `${friends}.` : '',
     plan ? PLAN_A11Y[plan] : '',
@@ -139,7 +140,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
           linearGradient('linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.75) 100%)'),
         ]}
       />
-      {event.live ? (
+      {event.liveUntil ? (
         <View
           pointerEvents="none"
           style={{

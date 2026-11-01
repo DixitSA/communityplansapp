@@ -138,6 +138,7 @@ describe('day headers', () => {
   it('keeps the date in the detail line unless the headline is the date', () => {
     expect(agendaDetail('2026-11-05', 'Thursday', 9)).toBe('Thu, Nov 5 · 9 events');
     expect(agendaDetail('2026-11-07', 'Sat, Nov 7', 1)).toBe('1 event');
+    expect(agendaDetail('2026-10-31', 'Tonight', 8, 3)).toBe('Sat, Oct 31 · 8 events · 3 live');
   });
 });
 
