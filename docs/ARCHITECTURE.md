@@ -84,6 +84,7 @@ Rules:
 | Sheets, pickers, sliders, menus | `@expo/ui` (native SwiftUI). Expo's official guidance prefers it over `@gorhom/bottom-sheet` |
 | Chat | `stream-chat-expo` |
 | Ops | `@sentry/react-native`, `posthog-react-native` |
+| Edge Functions (server only) | `npm:@supabase/supabase-js@2`; `npm:jpeg-js` and `npm:pngjs` (pure-JS image decoding for `image-colors`) |
 
 ## Backend (Supabase)
 
@@ -102,6 +103,7 @@ Rules:
 | `delete-account` | Client call | Deletes the Stream user and the auth user; cascades remove everything else |
 | `archive-chats` | Cron, hourly | Freezes channels 48 h after events end |
 | `who-did-you-meet` | Cron, daily 10:00 ET | Creates Activity items for yesterday's attendees |
+| `image-colors` | Cron, every 5 min | Saves each upcoming event's tint color (`events.image_color`): the flyer's most prominent vivid color, or none for gray images. A few images per run (about 2 s of CPU per call) |
 
 **Environments:** two hosted free-tier projects: `staging` (development builds + TestFlight) and `prod` (App Store). Local Supabase (`supabase start`) is optional and needs Docker Desktop. The app reads `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` from `.env` locally and from EAS environment variables in builds.
 

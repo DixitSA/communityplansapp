@@ -536,6 +536,8 @@ export type Database = {
           ends_at: string | null
           external_id: string | null
           id: string
+          image_color: string | null
+          image_color_checked_at: string | null
           image_sensitive: boolean
           image_url: string | null
           is_free: boolean
@@ -563,6 +565,8 @@ export type Database = {
           ends_at?: string | null
           external_id?: string | null
           id?: string
+          image_color?: string | null
+          image_color_checked_at?: string | null
           image_sensitive?: boolean
           image_url?: string | null
           is_free?: boolean
@@ -590,6 +594,8 @@ export type Database = {
           ends_at?: string | null
           external_id?: string | null
           id?: string
+          image_color?: string | null
+          image_color_checked_at?: string | null
           image_sensitive?: boolean
           image_url?: string | null
           is_free?: boolean
