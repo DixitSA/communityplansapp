@@ -13,6 +13,8 @@ export type EventDetail = EventCardData & {
   tags: { label: string; interest: string }[];
   /** Where we got the listing from. */
   source: { name: string; url?: string; /** Picked by us rather than pulled from a listing site. */ curated?: boolean };
+  /** The flyer's most prominent vivid color ("#rrggbb"), for the page's tint. Missing until the server has read it. */
+  imageColor?: string;
   /** Other people going (not friends). Only shown once the viewer is Going. */
   otherAttendees: { id: string; name: string }[];
   /** All other people going (>= otherAttendees.length). */

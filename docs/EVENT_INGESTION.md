@@ -147,3 +147,21 @@ npx supabase secrets set AUTO_APPROVE=on
 
 Schedule it daily in dashboard > Integrations > Cron, after the agents have posted, for example `20 15 * * *` UTC, POST with the `Authorization: Bearer <INGEST_SECRET>` header. To stop it, see the kill switch in `docs/MODERATION.md`.
 
+
+## Event page tint: `image-colors`
+
+The event page takes a soft wash of its flyer's main color. `image-colors` decodes each upcoming event's image (JPEG or PNG; WebP and GIF get no tint) and saves the most prominent vivid color as `events.image_color` (`#rrggbb`), or nothing for gray or muted images. `image_color_checked_at` marks an image as done, and changing `image_url` clears both, so a new picture gets a new color. Decoding is pure JavaScript and Edge Functions get about 2 s of CPU per call, so each run does only a few images, soonest events first.
+
+Deploy (PowerShell, from the repo root). Run `db push` before starting the app from this code: the event page reads `image_color` and fails to load without the column.
+
+```powershell
+npx supabase db push
+npx supabase functions deploy image-colors --no-verify-jwt
+```
+
+Run it once to check (`checked`, `colored`, `plain`, `failed`), then schedule it every 5 minutes in dashboard > Integrations > Cron (`*/5 * * * *`), POST with the `Authorization: Bearer <INGEST_SECRET>` header. The first pass through today's backlog takes a few hours; after that each new event is colored within minutes.
+
+```powershell
+$h = @{ Authorization = "Bearer <INGEST_SECRET>" }
+Invoke-RestMethod -Method Post -Headers $h "https://<project-ref>.supabase.co/functions/v1/image-colors"
+```

@@ -35,6 +35,7 @@ export { Facepile, formatFriendsLabel, formatAttendeeCount, type FacepileProps }
 export { LiveDot, type LiveDotProps } from './components/LiveDot';
 export { EventArt, type EventArtProps } from './components/EventArt';
 export { stockImageFor } from './stockImages';
+export { mixHex, tintedCanvas } from './tint';
 export { EventImage, useRevealedImages, useImageHidden, SENSITIVE_BLUR_RADIUS, type EventImageProps } from './components/EventImage';
 export { EventRow, eventRowTime, eventRowDistance, EVENT_ROW_THUMB, type EventRowProps } from './components/EventRow';
 export { GlassButton, type GlassButtonProps } from './components/GlassButton';

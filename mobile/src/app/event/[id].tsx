@@ -20,6 +20,7 @@ import {
   Facepile,
   GlassButton,
   Icon,
+  tintedCanvas,
   useImageHidden,
   useRevealedImages,
   useTheme,
@@ -32,9 +33,10 @@ import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { RsvpBar } from '@/features/event/RsvpBar';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
-import { formatEventTime, formatShortDate } from '@/lib/dates';
+import { countdownLabel, formatEventTime, formatShortDate } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
+import { useNow } from '@/lib/useNow';
 import { linearGradient } from '@/design/components/meshFallback';
 
 /** Size of the glass back / share / more buttons (GlassButton's default). */
@@ -54,7 +56,9 @@ function Divider() {
 export default function EventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: event, isPending, isError, refetch } = useEvent(id);
-  const { colors, space, radius, type } = useTheme();
+  const { colors, space, radius, type, scheme } = useTheme();
+  // Ticks every minute so the countdown chip stays current.
+  const now = useNow();
   const router = useRouter();
   const goBack = useGoBack();
   const insets = useSafeAreaInsets();
@@ -141,12 +145,15 @@ export default function EventScreen() {
   const othersGoing =
     event.goingCount === null ? event.othersGoing : othersCount(event.goingCount, event.friendsGoing, status === 'going');
   const hasDistance = event.distanceMi > 0;
+  // A soft wash of the flyer's own color, so every event page looks like its event.
+  const pageBg = tintedCanvas(event.imageColor, colors.canvas, scheme);
+  const countdown = countdownLabel(event.startsAt, event.endsAt, now);
   const timeText = formatEventTime(event.startsAt, event.endsAt, true);
   // A multi-day event reads "Fri 7:00 PM – Sun 5:00 PM", which already says the days.
   const dateLine = /^[A-Z][a-z]{2} \d/.test(timeText) ? timeText : `${formatShortDate(event.startsAt)} · ${timeText}`;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <View style={{ flex: 1, backgroundColor: pageBg }}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Full-bleed hero. It sits behind the scroll view, which starts below it. */}
@@ -189,7 +196,7 @@ export default function EventScreen() {
         ) : null}
         <View
           style={{
-            backgroundColor: colors.canvas,
+            backgroundColor: pageBg,
             borderTopLeftRadius: radius.hero,
             borderTopRightRadius: radius.hero,
             borderCurve: 'continuous',
@@ -201,6 +208,11 @@ export default function EventScreen() {
           }}
         >
           <View style={{ gap: space.sm }}>
+            {countdown ? (
+              <View style={{ flexDirection: 'row' }}>
+                <Chip label={countdown} symbol="clock" tone="accent" selected size="small" />
+              </View>
+            ) : null}
             <AppText variant="title" accessibilityRole="header" selectable style={{ letterSpacing: -0.6 }}>
               {event.title}
             </AppText>
@@ -313,7 +325,7 @@ export default function EventScreen() {
           styles.hero,
           {
             height: stripHeight,
-            backgroundColor: colors.canvas,
+            backgroundColor: pageBg,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.line,
             justifyContent: 'flex-end',
@@ -366,7 +378,7 @@ export default function EventScreen() {
         style={[
           styles.fade,
           { bottom: barHeight, height: space.xxl },
-          linearGradient(`linear-gradient(to bottom, ${colors.canvas}00 0%, ${colors.canvas} 100%)`),
+          linearGradient(`linear-gradient(to bottom, ${pageBg}00 0%, ${pageBg} 100%)`),
         ]}
       />
       <RsvpBar status={status} onChoose={choose} onGoing={onGoing} onLayoutHeight={setBarHeight} />
