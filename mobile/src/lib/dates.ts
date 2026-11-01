@@ -93,3 +93,27 @@ export function formatEventTime(start: Date, end?: Date | null, long = false): s
   const first = meridiem(start) === meridiem(end) ? formatTime(start).replace(/ [AP]M$/, '') : startText;
   return `${first} – ${formatTime(end)}`;
 }
+
+/** Events without an end count as this long, the same rule the server uses for spotlight. */
+const ASSUMED_EVENT_MS = 3 * 3_600_000;
+
+/**
+ * How soon an event starts, for the Going ticket: "Happening now", "Starts in 25 min", "Starts in 3 hours",
+ * "Tomorrow at 7 PM", "Saturday at 7 PM", then "In 12 days". `null` once it's over.
+ */
+export function countdownLabel(start: Date, end: Date | null | undefined, now: Date): string | null {
+  const ends = end && end > start ? end.getTime() : start.getTime() + ASSUMED_EVENT_MS;
+  if (now.getTime() >= ends) return null;
+  const ms = start.getTime() - now.getTime();
+  if (ms <= 0) return 'Happening now';
+  const minutes = Math.ceil(ms / 60_000);
+  if (minutes < 60) return `Starts in ${minutes} min`;
+  const hours = Math.round(ms / 3_600_000);
+  if (hours < 12) return `Starts in ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  // Calendar days, so DST changes and late-night starts still count as one day.
+  const days = Math.round((startOfDay(start).getTime() - startOfDay(now).getTime()) / 86_400_000);
+  if (days === 0) return `Today at ${formatTime(start, true)}`;
+  if (days === 1) return `Tomorrow at ${formatTime(start, true)}`;
+  if (days < 7) return `${WEEKDAYS_LONG[start.getDay()]} at ${formatTime(start, true)}`;
+  return `In ${days} days`;
+}

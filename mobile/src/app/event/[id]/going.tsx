@@ -1,15 +1,20 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { ScrollView, View } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
-import { AppText, Button, EmptyState, Icon, useTheme } from '@/design';
+import { AppText, Avatar, Button, EmptyState, Icon, useTheme } from '@/design';
 import { shareEvent } from '@/features/event/actions';
 import { addToCalendarWithAlert } from '@/features/event/calendar';
 import { GoingBurst } from '@/features/event/GoingBurst';
+import { goingTogetherLine, othersCount } from '@/features/event/plansLogic';
 import { TicketCard } from '@/features/event/TicketCard';
 import { useEvent } from '@/features/event/useEvent';
+import { countdownLabel } from '@/lib/dates';
 import { success } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
+
+const BADGE = 64;
 
 /** The Going moment (DESIGN.md 4.5): a celebratory sheet over the event page, not a new page. */
 export default function GoingSheet() {
@@ -26,6 +31,13 @@ export default function GoingSheet() {
 
   if (!hydrated) return null;
 
+  // myStatus and goingCount change together in the RSVP cache, so you're never counted among the others.
+  const others = !event
+    ? 0
+    : event.goingCount === null
+      ? event.othersGoing
+      : othersCount(event.goingCount, event.friendsGoing, event.myStatus === 'going');
+
   return (
     <>
       {event ? (
@@ -35,30 +47,52 @@ export default function GoingSheet() {
           showsVerticalScrollIndicator={false}
         >
           <View style={{ alignItems: 'center', gap: space.md }}>
-            <View
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: radius.pill,
-                backgroundColor: colors.accent,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name="checkmark" size={30} color="onAccent" weight="bold" />
+            <View style={{ width: BADGE, height: BADGE }}>
+              {/* Layout animations follow the system Reduce Motion setting, so the badge just appears there. */}
+              <Animated.View
+                entering={ZoomIn.springify().damping(12)}
+                style={{
+                  width: BADGE,
+                  height: BADGE,
+                  borderRadius: radius.pill,
+                  backgroundColor: colors.accent,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon name="checkmark" size={30} color="onAccent" weight="bold" />
+              </Animated.View>
               <GoingBurst />
             </View>
-            <View style={{ alignItems: 'center', gap: space.xs }}>
+            <View style={{ alignItems: 'center', gap: space.sm }}>
               <AppText variant="title" accessibilityRole="header">
                 You&apos;re going
               </AppText>
-              <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }}>
-                A good plan just became a real plan.
-              </AppText>
+              {/* Who you'll see there. Fellow attendees are only counted, never named; friends get faces. */}
+              <View accessible style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                {event.friends.length > 0 ? (
+                  <View style={{ flexDirection: 'row' }}>
+                    {event.friends.slice(0, 3).map((f, i) => (
+                      <View key={f.id} style={{ marginLeft: i === 0 ? 0 : -space.sm }}>
+                        <Avatar name={f.name} size={28} ring ringColor="canvas" />
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+                <AppText variant="subheadline" color="inkSecondary" style={{ flexShrink: 1, textAlign: 'center' }}>
+                  {goingTogetherLine(
+                    event.friends.map((f) => f.name),
+                    event.friendsGoing,
+                    others,
+                  )}
+                </AppText>
+              </View>
             </View>
           </View>
 
-          <TicketCard event={event} />
+          <Animated.View entering={FadeInDown.delay(150).springify().damping(16)}>
+            <TicketCard event={event} countdown={countdownLabel(event.startsAt, event.endsAt, new Date())} />
+          </Animated.View>
 
           <View style={{ gap: space.sm }}>
             <Button

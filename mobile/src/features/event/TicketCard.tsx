@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Chip, EventArt, useTheme } from '@/design';
+import { AppText, Chip, EventArt, Icon, useTheme } from '@/design';
 import { linearGradient } from '@/design/components/meshFallback';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
@@ -11,12 +11,12 @@ const NOTCH = 20;
 const DASHES = 24;
 
 /** Ticket-style summary of the event for the Going moment: art on top, perforation, details below. */
-export function TicketCard({ event }: { event: EventDetail }) {
+export function TicketCard({ event, countdown }: { event: EventDetail; /** "Starts in 3 hours"; hidden when null. */ countdown?: string | null }) {
   const { colors, space, radius, shadow } = useTheme();
   return (
     <View
       accessible
-      accessibilityLabel={`Ticket. ${event.title}. ${formatShortDate(event.startsAt)} at ${formatTime(event.startsAt)}. ${event.venue}.`}
+      accessibilityLabel={`Ticket. ${event.title}. ${formatShortDate(event.startsAt)} at ${formatTime(event.startsAt)}. ${event.venue}.${countdown ? ` ${countdown}.` : ''}`}
       style={[
         {
           backgroundColor: colors.surface,
@@ -80,11 +80,32 @@ export function TicketCard({ event }: { event: EventDetail }) {
           <AppText variant="headline" numberOfLines={2}>
             {event.venue}
           </AppText>
-          <AppText variant="subheadline" color="inkSecondary" numberOfLines={1}>
-            {event.distanceMi.toFixed(1)} mi away
-          </AppText>
+          {event.distanceMi > 0 ? (
+            <AppText variant="subheadline" color="inkSecondary" numberOfLines={1}>
+              {event.distanceMi.toFixed(1)} mi away
+            </AppText>
+          ) : null}
         </View>
       </View>
+
+      {countdown ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space.xs,
+            marginHorizontal: space.md,
+            paddingVertical: space.sm,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.line,
+          }}
+        >
+          <Icon name="clock" size={14} color="accent" />
+          <AppText variant="subheadline" color="accent" style={{ fontWeight: '600' }}>
+            {countdown}
+          </AppText>
+        </View>
+      ) : null}
     </View>
   );
 }

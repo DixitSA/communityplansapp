@@ -55,3 +55,18 @@ export function toggleInterestedChoice(current: PlanChoice): PlanChoice {
   if (current && current !== 'interested') return current;
   return current === 'interested' ? null : 'interested';
 }
+
+/**
+ * The social line on the Going sheet, now that the viewer is going too: "Maya and Sam are going too",
+ * "Maya and 14 others are going too", "You and 6 others are going", or a nudge when nobody else is in yet.
+ * `friendNames` are friends we can show; `friendsGoing` is every friend going; `others` everyone else but you.
+ */
+export function goingTogetherLine(friendNames: string[], friendsGoing: number, others: number): string {
+  const friends = Math.max(friendsGoing, friendNames.length);
+  const shown = friendNames.slice(0, 2);
+  const rest = friends - shown.length + Math.max(others, 0);
+  const people = (n: number) => `${n} ${n === 1 ? 'other' : 'others'}`;
+  if (shown.length === 0) return rest > 0 ? `You and ${people(rest)} are going` : "You're the first one in. Bring a friend?";
+  if (rest === 0) return shown.length === 1 ? `${shown[0]} is going too` : `${shown[0]} and ${shown[1]} are going too`;
+  return `${shown.join(', ')} and ${people(rest)} are going too`;
+}

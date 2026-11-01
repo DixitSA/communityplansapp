@@ -1,4 +1,4 @@
-import { attributionLine, nextStatus, othersLabel, othersRevealed, privacyHint } from '../plansLogic';
+import { attributionLine, goingTogetherLine, nextStatus, othersLabel, othersRevealed, privacyHint } from '../plansLogic';
 import { usePlansStore } from '../plansStore';
 
 const reset = () => usePlansStore.setState({ statuses: {} });
@@ -94,5 +94,21 @@ describe('attributionLine', () => {
     expect(attributionLine({ name: 'Tickets on Ticketmaster' })).toBe('Listed via Ticketmaster');
     expect(attributionLine({ name: 'Source: camp.nc' })).toBe('Listed via camp.nc');
     expect(attributionLine({ name: 'via' })).toBe('Listed via via'); // nothing after it: keep the name as is
+  });
+});
+
+describe('goingTogetherLine', () => {
+  it('leads with friends', () => {
+    expect(goingTogetherLine(['Maya'], 1, 0)).toBe('Maya is going too');
+    expect(goingTogetherLine(['Maya', 'Sam'], 2, 0)).toBe('Maya and Sam are going too');
+    expect(goingTogetherLine(['Maya', 'Sam', 'Jo'], 3, 10)).toBe('Maya, Sam and 11 others are going too');
+    expect(goingTogetherLine(['Maya'], 1, 1)).toBe('Maya and 1 other are going too');
+  });
+  it('counts strangers without naming them', () => {
+    expect(goingTogetherLine([], 0, 6)).toBe('You and 6 others are going');
+    expect(goingTogetherLine([], 0, 1)).toBe('You and 1 other are going');
+  });
+  it('nudges when nobody else is in yet', () => {
+    expect(goingTogetherLine([], 0, 0)).toBe("You're the first one in. Bring a friend?");
   });
 });
