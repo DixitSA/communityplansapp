@@ -2,22 +2,29 @@ import { View } from 'react-native';
 
 import { useTheme } from '../theme';
 import type { ColorToken } from '../tokens';
-import { AppText } from './AppText';
 import type { CardPlan } from './EventCard';
-import { Icon } from './Icon';
+import { Icon, type SymbolName } from './Icon';
 
-/** What the row's quick plan button says and looks like for each plan. A pure function so it can be tested. */
-export function planPillSpec(plan: CardPlan): { label: string; bg: ColorToken; fg: ColorToken; check: boolean } {
+/** Size of the round quick plan button: Apple's minimum touch target. */
+export const PLAN_BUTTON_SIZE = 44;
+
+/** What the round plan button shows for each plan. `label` is what VoiceOver says. */
+export function planPillSpec(plan: CardPlan): { label: string; symbol: SymbolName; bg: ColorToken; fg: ColorToken } {
   switch (plan) {
     case 'going':
-      return { label: 'Going', bg: 'accent', fg: 'onAccent', check: true };
+      return { label: 'Going', symbol: 'checkmark', bg: 'accent', fg: 'onAccent' };
     case 'down_if_friends':
-      return { label: 'Down if', bg: 'accentSoft', fg: 'accent', check: false };
+      return { label: 'Down if friends go', symbol: 'person.2.fill', bg: 'accentSoft', fg: 'accent' };
     case 'interested':
-      return { label: 'Interested', bg: 'surfaceMuted', fg: 'ink', check: false };
+      return { label: 'Interested', symbol: 'heart.fill', bg: 'accentSoft', fg: 'accent' };
     default:
-      return { label: 'Join', bg: 'accent', fg: 'onAccent', check: false };
+      return { label: 'No plan yet', symbol: 'plus', bg: 'surfaceMuted', fg: 'ink' };
   }
+}
+
+/** The quick plan button's spoken label, e.g. "Trivia Night: Going. Change plan". */
+export function planButtonLabel(plan: CardPlan, title: string): string {
+  return plan ? `${title}: ${planPillSpec(plan).label}. Change plan` : `Make a plan for ${title}`;
 }
 
 export type PlanMenuOption = { plan: Exclude<CardPlan, null> | null; label: string; symbol: 'checkmark.circle' | 'person.2' | 'heart' | 'xmark' };
@@ -33,29 +40,22 @@ export function planMenuOptions(plan: CardPlan): PlanMenuOption[] {
   return options;
 }
 
-/** The quick plan button's face. Not interactive by itself: wrap it in a menu (see PlanMenu). */
+/** The quick plan button's face: a circle with the plan's symbol. Not interactive by itself (see PlanMenu). */
 export function PlanPill({ plan }: { plan: CardPlan }) {
-  const { colors, space, radius } = useTheme();
+  const { colors } = useTheme();
   const spec = planPillSpec(plan);
   return (
     <View
       style={{
-        minWidth: 72,
-        height: 34,
-        paddingHorizontal: space.md,
-        flexDirection: 'row',
+        width: PLAN_BUTTON_SIZE,
+        height: PLAN_BUTTON_SIZE,
+        borderRadius: PLAN_BUTTON_SIZE / 2,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: space.xs,
-        borderRadius: radius.pill,
-        borderCurve: 'continuous',
         backgroundColor: colors[spec.bg],
       }}
     >
-      <AppText variant="footnote" color={spec.fg} maxFontSizeMultiplier={1.3} style={{ fontWeight: '600' }}>
-        {spec.label}
-      </AppText>
-      {spec.check ? <Icon name="checkmark" size={12} color={spec.fg} weight="bold" /> : null}
+      <Icon name={spec.symbol} size={17} color={spec.fg} weight="semibold" />
     </View>
   );
 }

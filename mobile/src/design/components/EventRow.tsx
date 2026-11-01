@@ -5,8 +5,8 @@ import { Pressable, View } from 'react-native';
 import { formatEventTime } from '@/lib/dates';
 
 import { useTheme } from '../theme';
+import { categoryColors, isCategory } from '../tokens';
 import { AppText } from './AppText';
-import { Chip } from './Chip';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
 import { EventImage } from './EventImage';
 import { Facepile } from './Facepile';
@@ -15,6 +15,7 @@ import { MeshArt } from './MeshArt';
 import { PlanMenu } from './PlanMenu';
 
 export const EVENT_ROW_THUMB = 64;
+const CATEGORY_DOT = 7;
 
 /** "6:00 – 9:00 PM" (just the start without an end time). */
 export function eventRowTime(e: Pick<EventCardData, 'startsAt' | 'endsAt'>): string {
@@ -39,7 +40,7 @@ export type EventRowProps = {
 };
 
 /**
- * An agenda row card: thumbnail, category tag, bold title, time range and place on the left;
+ * An agenda row card: thumbnail, a title of up to two lines, category and time, then place on the left;
  * friends going and the quick plan button on the right.
  */
 export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuActions }: EventRowProps) {
@@ -75,21 +76,29 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         {href ? <Link.AppleZoom>{thumb}</Link.AppleZoom> : thumb}
         <View style={{ flex: 1, gap: 1 }}>
-          <View style={{ alignSelf: 'flex-start' }}>
-            <Chip label={event.categoryLabel} size="small" category={event.interest} />
-          </View>
-          <AppText variant="headline" numberOfLines={1}>
+          <AppText variant="headline" numberOfLines={2}>
             {event.title}
           </AppText>
-          <AppText
-            variant="footnote"
-            color="inkSecondary"
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.4}
-            style={{ lineHeight: 16 }}
-          >
-            {eventRowTime(event)}
-          </AppText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+            {/* The category's color as a dot; the art already says the rest, so no chip. */}
+            <View
+              style={{
+                width: CATEGORY_DOT,
+                height: CATEGORY_DOT,
+                borderRadius: CATEGORY_DOT / 2,
+                backgroundColor: isCategory(event.interest) ? categoryColors[event.interest].solid : colors.inkSecondary,
+              }}
+            />
+            <AppText
+              variant="footnote"
+              color="inkSecondary"
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.4}
+              style={{ flexShrink: 1, lineHeight: 16 }}
+            >
+              {event.categoryLabel} · {eventRowTime(event)}
+            </AppText>
+          </View>
           <View
             style={{
               flexDirection: 'row',

@@ -6,7 +6,7 @@ import { selection } from '@/lib/haptics';
 import { useTheme } from '../theme';
 import { AppText } from './AppText';
 import type { CardPlan } from './EventCard';
-import { PlanPill, planMenuOptions, planPillSpec } from './PlanPill';
+import { PlanPill, planButtonLabel, planMenuOptions } from './PlanPill';
 
 export type PlanMenuProps = {
   plan: CardPlan;
@@ -23,7 +23,7 @@ export function PlanMenu({ plan, title, onChange }: PlanMenuProps) {
     <View style={{ zIndex: open ? 10 : 0 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${title}: your plan is ${planPillSpec(plan).label}. Change plan`}
+        accessibilityLabel={planButtonLabel(plan, title)}
         onPress={() => setOpen((o) => !o)}
       >
         <PlanPill plan={plan} />
