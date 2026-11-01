@@ -10,7 +10,6 @@ import {
   EmptyState,
   GlassButton,
   Icon,
-  NavRow,
   Screen,
   Skeleton,
   UnreadDot,
@@ -28,20 +27,25 @@ import { deriveProfileStats, upcomingPlans } from '@/features/profile/stats';
 import { useMyProfile } from '@/features/profile/useMyProfile';
 import { isBackendConfigured } from '@/lib/env';
 
-/** The top row of Profile: opens Activity (friend requests, "who did you meet"), with a dot while there is something new. */
-function ActivityRow() {
+/** The bell in Profile's header: opens Activity (friend requests, "who did you meet"), with a dot while there is something new. */
+function ActivityButton() {
   // With a backend, Activity shows real friend requests; in demo mode it is sample data. Either way "unread" means there are items.
   const requests = useFriendRequests();
   const incoming = (requests.data ?? []).filter((r) => r.direction === 'incoming').length;
   const unread = isBackendConfigured ? incoming > 0 : incoming > 0 || getActivityItems().length > 0;
   return (
-    <NavRow
-      symbol="bell"
-      label="Activity"
-      unread={unread}
-      accessibilityLabel={unread ? 'Activity, new updates' : 'Activity'}
-      onPress={() => router.push('/activity')}
-    />
+    <View>
+      <GlassButton
+        symbol="bell"
+        accessibilityLabel={unread ? 'Activity, new updates' : 'Activity'}
+        onPress={() => router.push('/activity')}
+      />
+      {unread ? (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 2, right: 2 }}>
+          <UnreadDot />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -113,7 +117,10 @@ export default function ProfileScreen() {
       <AppText variant="largeTitle" accessibilityRole="header">
         Profile
       </AppText>
-      <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <ActivityButton />
+        <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+      </View>
     </View>
   );
 
@@ -159,7 +166,6 @@ export default function ProfileScreen() {
       {header}
 
       <View style={{ gap: space.xl, paddingTop: space.xl }}>
-        <ActivityRow />
         <View
           accessible
           accessibilityLabel={`${me.displayName}, @${me.username}`}

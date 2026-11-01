@@ -1,14 +1,30 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AppText, Icon, useTheme } from '@/design';
+import { AppText, Icon, useTheme, type SymbolName } from '@/design';
 import { MySuggestions } from '@/features/submit/MySuggestions';
 import { SuggestRow } from '@/features/submit/SuggestRow';
 import { api } from '@/lib/api';
 import { isBackendConfigured } from '@/lib/env';
 import { warning } from '@/lib/haptics';
 
-/** Settings placeholder (DESIGN.md 6 row 17 comes later): sign out, plus the demo-mode note. */
+/** Who can see each thing you do: the privacy rules from DATA_MODEL.md, in plain words. */
+const PRIVACY: { symbol: SymbolName; title: string; detail: string }[] = [
+  { symbol: 'heart', title: 'Interested and Down if friends go', detail: 'Only you. Your friends never see these.' },
+  { symbol: 'checkmark.circle', title: 'Going', detail: 'Your friends, and other people going to the same event.' },
+  { symbol: 'location.fill', title: 'Your location', detail: 'Used only to find what’s nearby. Never saved.' },
+];
+
+function SectionLabel({ children }: { children: string }) {
+  const { space } = useTheme();
+  return (
+    <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingLeft: space.xs }}>
+      {children}
+    </AppText>
+  );
+}
+
+/** Settings: who sees what, suggesting events, and sign out. Notifications and blocking arrive with their features. */
 export default function SettingsSheet() {
   const { colors, space, radius } = useTheme();
   const router = useRouter();
@@ -51,12 +67,51 @@ export default function SettingsSheet() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl, gap: space.xl }}>
-        <AppText variant="subheadline" color="inkSecondary">
-          Privacy, notifications and blocked users are coming soon.
-        </AppText>
+        <View style={{ gap: space.sm }}>
+          <SectionLabel>Who sees what</SectionLabel>
+          <View
+            style={{
+              borderRadius: radius.card,
+              borderCurve: 'continuous',
+              backgroundColor: colors.surface,
+              paddingHorizontal: space.lg,
+            }}
+          >
+            {PRIVACY.map((row, i) => (
+              <View
+                key={row.title}
+                accessible
+                accessibilityLabel={`${row.title}: ${row.detail}`}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: space.md,
+                  paddingVertical: space.md,
+                  borderTopWidth: i === 0 ? 0 : StyleSheet.hairlineWidth,
+                  borderTopColor: colors.line,
+                }}
+              >
+                <View style={{ paddingTop: 2 }}>
+                  <Icon name={row.symbol} size={18} color="accent" />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText variant="body" style={{ fontWeight: '600' }}>
+                    {row.title}
+                  </AppText>
+                  <AppText variant="subheadline" color="inkSecondary">
+                    {row.detail}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
 
-        <SuggestRow surface />
-        <MySuggestions />
+        <View style={{ gap: space.sm }}>
+          <SectionLabel>Help yard grow</SectionLabel>
+          <SuggestRow surface />
+          <MySuggestions />
+        </View>
 
         {isBackendConfigured ? (
           <Pressable

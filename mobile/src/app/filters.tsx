@@ -18,6 +18,7 @@ import {
   isDefaultFilters,
 } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
+import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { selection } from '@/lib/haptics';
 
@@ -48,10 +49,11 @@ export default function FiltersSheet() {
   const distanceMi = useFiltersStore((s) => s.distanceMi);
   const price = useFiltersStore((s) => s.price);
   const scope = useFiltersStore((s) => s.scope);
-  const { toggleInterest, setDistance, setPrice, clearFilters } = useFiltersStore.getState();
+  const neighborhood = useFiltersStore((s) => s.neighborhood);
+  const { toggleInterest, setDistance, setPrice, setNeighborhood, clearFilters } = useFiltersStore.getState();
   const { filtered } = useFeedEvents();
 
-  const isDefault = isDefaultFilters({ timeOfDay, interests, distanceMi, price, scope });
+  const isDefault = isDefaultFilters({ timeOfDay, interests, distanceMi, price, scope }) && neighborhood === null;
   // The agenda lists every matching event in the next two weeks, so the button counts those.
   const count = filtered.length;
   const distanceIndex = DISTANCES.indexOf(distanceMi);
@@ -134,6 +136,25 @@ export default function FiltersSheet() {
                   selected={on}
                   ring={on}
                   onPress={() => toggleInterest(o.slug)}
+                />
+              );
+            })}
+          </View>
+        </Section>
+
+        <Section title="Neighborhood">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+            {NEIGHBORHOODS.map((h) => {
+              const on = neighborhood === h.slug;
+              return (
+                <Chip
+                  key={h.slug}
+                  label={h.name}
+                  symbol="mappin"
+                  category={on ? h.tint : undefined}
+                  selected={on}
+                  ring={on}
+                  onPress={() => setNeighborhood(on ? null : h.slug)}
                 />
               );
             })}
