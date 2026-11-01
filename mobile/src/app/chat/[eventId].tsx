@@ -10,7 +10,7 @@ import { MessageRow } from '@/features/chat/MessageRow';
 import { openMessageMenu } from '@/features/chat/messageActions';
 import { buildChatItems, chatSubtitle, type ChatItem } from '@/features/chat/messages';
 import { useChat } from '@/features/chat/useChat';
-import { useNow } from '@/features/chat/useNow';
+import { useNow } from '@/lib/useNow';
 import { openDirections } from '@/features/event/actions';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { useEvent } from '@/features/event/useEvent';

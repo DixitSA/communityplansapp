@@ -5,7 +5,7 @@ import { Platform, Pressable, ScrollView, View } from 'react-native';
 import { AppText, Avatar, Chip, EmptyState, useTheme } from '@/design';
 import { formatAgo } from '@/features/activity/format';
 import { getActivityItems, type ActivityItem, type Person } from '@/features/activity/fixtures';
-import { useNow } from '@/features/chat/useNow';
+import { useNow } from '@/lib/useNow';
 import { userHref } from '@/features/friends/routes';
 import { alertFriendFailure, useFriendAction } from '@/features/friends/useFriendAction';
 import { useFriendRequests } from '@/features/friends/useFriends';

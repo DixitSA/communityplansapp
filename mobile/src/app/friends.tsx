@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@/design';
 import { formatAgo } from '@/features/activity/format';
-import { useNow } from '@/features/chat/useNow';
+import { useNow } from '@/lib/useNow';
 import { userHref } from '@/features/friends/routes';
 import { useFriendButton } from '@/features/friends/useFriendButton';
 import { useFriendRequests, useFriends } from '@/features/friends/useFriends';
