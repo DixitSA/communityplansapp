@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatShortDate, formatTime, WEEKDAYS_LONG } from '@/lib/dates';
-import { light } from '@/lib/haptics';
 
 import { useTheme } from '../theme';
 import { scrim } from '../tokens';
@@ -12,7 +11,7 @@ import { Chip } from './Chip';
 import { EventArt } from './EventArt';
 import { LiveDot } from './LiveDot';
 import { Facepile, formatFriendsLabel } from './Facepile';
-import { GlassButton } from './GlassButton';
+import { PlanMenu } from './PlanMenu';
 import type { SymbolName } from './Icon';
 import { linearGradient } from './meshFallback';
 
@@ -46,34 +45,6 @@ export type EventCardData = {
 
 /** The viewer's own plan for an event. `null` means no plan. Mirrors the plans store. */
 export type CardPlan = 'interested' | 'down_if_friends' | 'going' | null;
-
-export type PlanIndicator = {
-  symbol: SymbolName;
-  /** Solid accent circle (Going) instead of glass. */
-  accentFill: boolean;
-  /** Tapping toggles Interested, or opens the event page for the two stronger plans. */
-  action: 'toggle' | 'open';
-  accessibilityLabel: string;
-};
-
-/** What the card's corner button shows for each plan (a pure function so it can be tested). */
-export function planIndicator(plan: CardPlan, title: string): PlanIndicator {
-  switch (plan) {
-    case 'going':
-      return { symbol: 'checkmark', accentFill: true, action: 'open', accessibilityLabel: `You're going to ${title}. Open event` };
-    case 'down_if_friends':
-      return {
-        symbol: 'person.2.fill',
-        accentFill: false,
-        action: 'open',
-        accessibilityLabel: `You're down if friends go to ${title}. Open event`,
-      };
-    case 'interested':
-      return { symbol: 'heart.fill', accentFill: false, action: 'toggle', accessibilityLabel: `Remove interest in ${title}` };
-    default:
-      return { symbol: 'heart', accentFill: false, action: 'toggle', accessibilityLabel: `Mark ${title} as interesting` };
-  }
-}
 
 const PLAN_A11Y: Record<Exclude<CardPlan, null>, string> = {
   interested: 'Interested.',
@@ -109,13 +80,11 @@ export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string 
 
 export type EventCardProps = {
   event: EventCardData;
-  /** The viewer's plan. Drives the corner indicator (heart, people, or check). */
+  /** The viewer's plan. Drives the corner plan button (same as the agenda rows). */
   plan?: CardPlan;
   onPress?: () => void;
-  /** The heart: toggles Interested. */
-  onToggleInterested?: () => void;
-  /** Tapping the people / check indicator (Down if friends go, Going) opens the event page. */
-  onOpenPlan?: () => void;
+  /** The corner plan menu (Going / Down if friends go / Interested / Clear). `null` clears the plan. */
+  onSetPlan?: (plan: CardPlan) => void;
   /**
    * Makes the card a link to this route, with the native iOS zoom transition (iOS 18+; a plain
    * push elsewhere). Don't also pass `onPress`.
@@ -125,10 +94,9 @@ export type EventCardProps = {
   menuActions?: ReactNode;
 };
 
-export function EventCard({ event, plan = null, onPress, onToggleInterested, onOpenPlan, href, menuActions }: EventCardProps) {
+export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuActions }: EventCardProps) {
   const { space, radius, colors, scheme } = useTheme();
   const [dateLine, venueLine] = eventMetaLines(event);
-  const indicator = planIndicator(plan, event.title);
 
   const cardContent = (
     <View style={{ minHeight: 170, justifyContent: 'flex-end' }}>
@@ -194,14 +162,6 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
       accessible
       accessibilityRole={href ? 'link' : 'button'}
       accessibilityLabel={eventA11yLabel(event, plan)}
-      accessibilityActions={
-        plan === null || plan === 'interested'
-          ? [{ name: 'interested', label: plan === 'interested' ? 'Remove interest' : 'Mark interested' }]
-          : []
-      }
-      onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'interested') onToggleInterested?.();
-      }}
       onPress={onPress}
       style={({ pressed }) => [{ minHeight: 170 }, pressed && { opacity: 0.92 }]}
     >
@@ -210,7 +170,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
   );
 
   return (
-    // The plan indicator is a sibling of the card Pressable (not a child) so buttons never nest on web.
+    // The plan button is a sibling of the card Pressable (not a child) so buttons never nest on web.
     <View
       style={{
         minHeight: 170,
@@ -238,18 +198,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
       )}
 
       <View style={{ position: 'absolute', top: space.sm, right: space.sm }}>
-        <GlassButton
-          symbol={indicator.symbol}
-          iconColor={indicator.accentFill ? 'onAccent' : 'onImage'}
-          fill={indicator.accentFill ? 'accent' : undefined}
-          overImage
-          accessibilityLabel={indicator.accessibilityLabel}
-          onPress={() => {
-            light();
-            if (indicator.action === 'toggle') onToggleInterested?.();
-            else onOpenPlan?.();
-          }}
-        />
+        <PlanMenu plan={plan} title={event.title} onChange={(p) => onSetPlan?.(p)} overImage />
       </View>
     </View>
   );

@@ -13,10 +13,12 @@ export type PlanMenuProps = {
   title: string;
   /** `null` clears the plan. */
   onChange: (plan: CardPlan) => void;
+  /** Sits on a photo (event cards): glass / dark pill instead of the row's tinted one. */
+  overImage?: boolean;
 };
 
 /** Web / Android fallback for the native iOS menu (see PlanMenu.ios.tsx): the pill opens a small popover list. */
-export function PlanMenu({ plan, title, onChange }: PlanMenuProps) {
+export function PlanMenu({ plan, title, onChange, overImage }: PlanMenuProps) {
   const { colors, space, radius } = useTheme();
   const [open, setOpen] = useState(false);
   return (
@@ -26,7 +28,7 @@ export function PlanMenu({ plan, title, onChange }: PlanMenuProps) {
         accessibilityLabel={planButtonLabel(plan, title)}
         onPress={() => setOpen((o) => !o)}
       >
-        <PlanPill plan={plan} />
+        <PlanPill plan={plan} overImage={overImage} />
       </Pressable>
       {open ? (
         <View

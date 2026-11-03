@@ -33,8 +33,6 @@ function useEventLink(event: LinkableEvent) {
         if (!going) goingAction();
       } else setStatus(event.id, next);
     },
-    onToggleInterested: () => toggleInterested(event.id, status),
-    onOpenPlan: () => router.push({ pathname: '/event/[id]', params: { id: event.id } }),
     href: { pathname: '/event/[id]', params: { id: event.id } } as const,
     menuActions: [
       <Link.MenuAction key="going" title={going ? 'Open chat' : 'Going'} icon="checkmark.circle" onPress={goingAction} />,
@@ -59,7 +57,7 @@ function useEventLink(event: LinkableEvent) {
 
 /**
  * An EventCard that opens the event page (zoom transition on iOS 18+) and shares the plans store,
- * so the corner indicator and the event page always agree. Long-press shows a preview and quick actions.
+ * so the corner plan button and the event page always agree. Long-press shows a preview and quick actions.
  */
 export function EventCardLink({ event }: { event: LinkableEvent }) {
   const l = useEventLink(event);
@@ -67,8 +65,7 @@ export function EventCardLink({ event }: { event: LinkableEvent }) {
     <EventCard
       event={event}
       plan={l.plan}
-      onToggleInterested={l.onToggleInterested}
-      onOpenPlan={l.onOpenPlan}
+      onSetPlan={l.onSetPlan}
       href={l.href}
       menuActions={l.menuActions}
     />

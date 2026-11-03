@@ -11,7 +11,7 @@ import type { PlanMenuProps } from './PlanMenu';
  * The row's quick plan button as a real iOS menu (SwiftUI Menu via @expo/ui), like the filter chips:
  * the pill is a React Native view shown as the menu's label, and `pointerEvents="none"` lets the menu take the tap.
  */
-export function PlanMenu({ plan, title, onChange }: PlanMenuProps) {
+export function PlanMenu({ plan, title, onChange, overImage }: PlanMenuProps) {
   return (
     <Host matchContents>
       <Menu
@@ -19,7 +19,7 @@ export function PlanMenu({ plan, title, onChange }: PlanMenuProps) {
           <RNHostView matchContents>
             {/* The face is an icon, so it carries the words VoiceOver reads for the menu button. */}
             <View pointerEvents="none" accessible accessibilityRole="button" accessibilityLabel={planButtonLabel(plan, title)}>
-              <PlanPill plan={plan} />
+              <PlanPill plan={plan} overImage={overImage} />
             </View>
           </RNHostView>
         }
