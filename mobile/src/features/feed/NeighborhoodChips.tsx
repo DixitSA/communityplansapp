@@ -12,7 +12,7 @@ export type NeighborhoodChipsProps = {
 };
 
 /**
- * "Around Charlotte": one chip per launch neighborhood that has events, each in its own color.
+ * "Around Charlotte": one chip per launch neighborhood that has events, all in one neutral map-pin style (color is reserved for event categories).
  * Tapping one narrows the agenda below to it; tapping it again shows everything.
  */
 export function NeighborhoodChips({ hoods, selected, onSelect }: NeighborhoodChipsProps) {
@@ -34,8 +34,9 @@ export function NeighborhoodChips({ hoods, selected, onSelect }: NeighborhoodChi
             <Chip
               key={hood.slug}
               label={`${hood.name} · ${count}`}
-              category={hood.tint}
+              symbol="mappin"
               selected={on}
+              filled={on}
               ring={on}
               accessibilityLabel={`${hood.name}, ${count} ${count === 1 ? 'event' : 'events'}`}
               onPress={() => onSelect(on ? null : hood.slug)}

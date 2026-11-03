@@ -393,7 +393,7 @@ export default function Gallery() {
         </View>
       </Section>
 
-      <Section title="NeighborhoodChips (feed: browse by area, one color each)">
+      <Section title="NeighborhoodChips (feed: browse by area, neutral map-pin chips)">
         <View style={{ marginHorizontal: -space.lg }}>
           <NeighborhoodChips
             hoods={NEIGHBORHOODS.map((h, i) => ({ hood: h, count: 12 - i * 2 }))}
