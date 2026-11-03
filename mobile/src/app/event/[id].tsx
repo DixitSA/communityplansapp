@@ -46,7 +46,7 @@ import { RsvpBar } from '@/features/event/RsvpBar';
 import { hasEnded } from '@/features/feed/agenda';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
-import { countdownLabel, formatEventTime, formatShortDate, formatTime } from '@/lib/dates';
+import { WEEKDAYS_LONG, countdownLabel, formatEventTime, formatShortDate, formatTime, isSameDay } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 import { useNow } from '@/lib/useNow';
@@ -164,7 +164,8 @@ export default function EventScreen() {
   // A soft wash of the flyer's own color, so every event page looks like its event.
   const pageBg = tintedCanvas(event.imageColor, colors.canvas, scheme);
   const ended = hasEnded(event, now);
-  const listingUrl = event.source.url;
+  // Only real web links get a button or link.
+  const listingUrl = event.source.url && /^https?:\/\//i.test(event.source.url) ? event.source.url : undefined;
   // Curated and ended events keep the quiet footnote link; everything else gets a real button.
   const showListingButton = Boolean(listingUrl) && !event.source.curated && !ended;
   const knownPrice = event.priceLabel !== UNKNOWN_PRICE_LABEL ? event.priceLabel : null;
@@ -174,7 +175,12 @@ export default function EventScreen() {
     eventSummary({
       category: event.tags[0]?.label,
       venue: event.venue,
-      endText: event.endsAt ? formatTime(event.endsAt) : null,
+      // An end on a later day names the day ("Sun 5:00 PM"), so it never reads as the same evening.
+      endText: event.endsAt
+        ? isSameDay(event.startsAt, event.endsAt)
+          ? formatTime(event.endsAt)
+          : `${WEEKDAYS_LONG[event.endsAt.getDay()].slice(0, 3)} ${formatTime(event.endsAt)}`
+        : null,
     });
   const countdown = countdownLabel(event.startsAt, event.endsAt, now);
   const timeText = formatEventTime(event.startsAt, event.endsAt, true);

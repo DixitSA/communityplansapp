@@ -29,12 +29,12 @@ export function nextStatus(current: PlanChoice, tapped: Exclude<PlanChoice, null
   return current === tapped ? null : tapped;
 }
 
-/** "Curated by yard", "Listed via Eventbrite". */
 /** The source's name without the lead-in some sources store with it ("via Eventbrite", "Source: camp.nc", "Tickets on Ticketmaster"). */
 export function sourceName(name: string): string {
   return name.replace(/^\s*(listed via|via|source:|tickets on)\s+/i, '').trim() || name;
 }
 
+/** "Curated by yard", "Listed via Eventbrite". */
 export function attributionLine(source: { name: string; curated?: boolean }): string {
   return source.curated ? `Curated by ${sourceName(source.name)}` : `Listed via ${sourceName(source.name)}`;
 }
