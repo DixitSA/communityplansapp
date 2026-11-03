@@ -1,4 +1,4 @@
-import { Link, router, useLocalSearchParams, type Href } from 'expo-router';
+import { Link, Stack, router, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
@@ -14,6 +14,7 @@ import {
   Skeleton,
   UnreadDot,
   asSymbol,
+  useLargeTitleHeader,
   useTheme,
 } from '@/design';
 import { getActivityItems } from '@/features/activity/fixtures';
@@ -115,23 +116,26 @@ export default function ProfileScreen() {
   const ticketGap = space.md;
   const demo = !isBackendConfigured;
 
+  const baseHeader = useLargeTitleHeader('Profile');
   const header = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-      <AppText variant="largeTitle" accessibilityRole="header">
-        Profile
-      </AppText>
-      <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <ActivityButton />
-        <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
-      </View>
-    </View>
+    <Stack.Screen
+      options={{
+        ...baseHeader,
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <ActivityButton />
+            <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+          </View>
+        ),
+      }}
+    />
   );
 
   if (profile.isPending) {
     return (
-      <Screen>
+      <Screen nativeHeader>
         {header}
-        <View style={{ gap: space.lg, paddingTop: space.xl }} accessibilityLabel="Loading profile">
+        <View style={{ gap: space.lg }} accessibilityLabel="Loading profile">
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}>
             <Skeleton width={72} height={72} radius={36} />
             <View style={{ flex: 1, gap: space.sm }}>
@@ -148,7 +152,7 @@ export default function ProfileScreen() {
 
   if (profile.isError || !profile.data) {
     return (
-      <Screen>
+      <Screen nativeHeader>
         {header}
         <EmptyState
           symbol="exclamationmark.circle.fill"
@@ -165,10 +169,10 @@ export default function ProfileScreen() {
 
   const me = profile.data;
   return (
-    <Screen>
+    <Screen nativeHeader>
       {header}
 
-      <View style={{ gap: space.xl, paddingTop: space.xl }}>
+      <View style={{ gap: space.xl }}>
         <View
           accessible
           accessibilityLabel={`${me.displayName}, @${me.username}`}

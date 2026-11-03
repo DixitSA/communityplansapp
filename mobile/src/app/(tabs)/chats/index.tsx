@@ -1,9 +1,9 @@
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 
-import { AppText, Button, EmptyState, Screen, Skeleton, useTheme } from '@/design';
+import { AppText, Button, EmptyState, Screen, Skeleton, useLargeTitleHeader, useTheme } from '@/design';
 import { ChatList } from '@/features/chat/ChatList';
 import { CHATS_KEY, useMyChats } from '@/features/chat/useMyChats';
 import { useDemoPlans } from '@/features/event/demoPlans';
@@ -12,6 +12,7 @@ import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
 
 export default function ChatsScreen() {
   const { space, radius } = useTheme();
+  const header = useLargeTitleHeader('Chats');
   const router = useRouter();
   const queryClient = useQueryClient();
   const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
@@ -30,10 +31,8 @@ export default function ChatsScreen() {
   );
 
   return (
-    <Screen>
-      <AppText variant="largeTitle" accessibilityRole="header" style={{ marginBottom: space.lg }}>
-        Chats
-      </AppText>
+    <Screen nativeHeader>
+      <Stack.Screen options={header} />
 
       {isPending ? (
         <View style={{ gap: space.md }} accessibilityLabel="Loading chats">

@@ -1,7 +1,6 @@
-import { router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   AppText,
@@ -12,6 +11,7 @@ import {
   PersonRow,
   PersonRowSkeleton,
   SearchField,
+  useLargeTitleHeader,
   useTheme,
 } from '@/design';
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type PersonSearchResult } from '@/lib/api';
@@ -57,15 +57,12 @@ function ResultRow({ person }: { person: PersonSearchResult }) {
 
 export default function SearchScreen() {
   const { colors, space } = useTheme();
-  const insets = useSafeAreaInsets();
+  const navHeader = useLargeTitleHeader('Search');
   const [text, setText] = useState('');
   const { status, results, typed, refetch } = useFriendSearch(text);
 
   const header = (
-    <View style={{ gap: space.md, paddingHorizontal: space.lg, paddingBottom: space.sm }}>
-      <AppText variant="largeTitle" accessibilityRole="header">
-        Search
-      </AppText>
+    <View style={{ gap: space.md, paddingBottom: space.sm }}>
       <SearchField
         value={text}
         onChangeText={setText}
@@ -108,17 +105,18 @@ export default function SearchScreen() {
     ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top + space.lg }}>
-      {header}
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <Stack.Screen options={navHeader} />
       <FlatList<PersonSearchResult>
         data={status === 'results' ? results : []}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => <ResultRow person={item} />}
+        ListHeaderComponent={header}
         ListEmptyComponent={body ?? undefined}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
         accessibilityLabel={status === 'results' ? `${results.length} people found` : undefined}
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl * 3, paddingTop: space.sm }}
       />
