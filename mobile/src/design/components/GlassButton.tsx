@@ -2,7 +2,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../theme';
-import type { ColorToken } from '../tokens';
+import { scrim, type ColorToken } from '../tokens';
 import { useReduceTransparency } from '../useReduceTransparency';
 import { Icon, type SymbolName } from './Icon';
 
@@ -51,7 +51,7 @@ export function GlassButton({
       {useGlass ? (
         <GlassView
           glassEffectStyle="regular"
-          tintColor={overImage ? 'rgba(0, 0, 0, 0.3)' : undefined}
+          tintColor={overImage ? scrim.soft : undefined}
           isInteractive
           style={[circle, styles.center]}>
           <Icon name={symbol} size={size * 0.45} color={iconColor} />
@@ -62,7 +62,7 @@ export function GlassButton({
             circle,
             styles.center,
             {
-              backgroundColor: fill ? colors[fill] : overImage ? 'rgba(0, 0, 0, 0.4)' : colors.surface,
+              backgroundColor: fill ? colors[fill] : overImage ? scrim.glass : colors.surface,
               borderWidth: overImage || fill ? 0 : StyleSheet.hairlineWidth,
               borderColor: colors.line,
             },

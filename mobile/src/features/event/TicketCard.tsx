@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText, Chip, EventArt, Icon, useTheme } from '@/design';
+import { AppText, Chip, EventArt, Icon, scrim, useTheme } from '@/design';
 import { linearGradient } from '@/design/components/meshFallback';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
@@ -35,7 +35,7 @@ export function TicketCard({ event, countdown }: { event: EventDetail; /** "Star
           pointerEvents="none"
           style={[
             StyleSheet.absoluteFill,
-            linearGradient('linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.65) 100%)'),
+            linearGradient(scrim.ticketGradient),
           ]}
         />
         <View style={{ padding: space.md, gap: space.xs, alignItems: 'flex-start' }}>

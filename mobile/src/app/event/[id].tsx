@@ -20,6 +20,7 @@ import {
   Facepile,
   GlassButton,
   Icon,
+  scrim,
   tintedCanvas,
   useImageHidden,
   useRevealedImages,
@@ -170,7 +171,7 @@ export default function EventScreen() {
         style={[
           styles.hero,
           { height: insets.top + space.xxxl * 2 },
-          linearGradient('linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%)'),
+          linearGradient(scrim.heroTopGradient),
         ]}
       />
 
