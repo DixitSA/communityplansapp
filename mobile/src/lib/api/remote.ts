@@ -5,7 +5,7 @@ import { createAppleNonce } from '../nonce';
 import { mapChatRow, mapMessageRow, mapTableRow, normalizeMessageBody } from './chatMapping';
 import { ApiError, errorCode } from './errors';
 import { mapFriendRow, mapProfileRow, mapRequestRow, mapSearchRow, type AvatarUrl } from './friendsMapping';
-import { mapFeedRow, parseFriends, primaryInterest, priceLabel } from './feedMapping';
+import { mapFeedRow, parseFriends, primaryInterest, priceLabel, spotlightReason } from './feedMapping';
 import { SEARCH_LIMIT } from './friendTypes';
 import { CHAT_PAGE_SIZE, type Api, type AuthSession, type ChatMessage, type EventPage, type Interest, type MyProfile, type RsvpStatus } from './types';
 
@@ -218,7 +218,10 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => ({ ...mapFeedRow(row, interests), picked: row.picked === true }));
+      return (data ?? []).map((row) => {
+        const e = mapFeedRow(row, interests);
+        return { ...e, picked: row.picked === true, spotlightReason: spotlightReason(row.picked === true, e.goingCount) };
+      });
     },
 
     async getEvent(id) {

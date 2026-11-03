@@ -66,7 +66,7 @@ export type FeedEvent = EventCardData & {
 };
 
 /** A spotlight card. `picked` means yard chose it, rather than it earning its place with Going RSVPs. */
-export type SpotlightEvent = FeedEvent & { picked: boolean };
+export type SpotlightEvent = FeedEvent & { picked: boolean; spotlightReason?: string };
 
 /** The event page's data. `goingCount` is null in demo mode, where `othersGoing` is already final. */
 export type EventPage = EventDetail & {

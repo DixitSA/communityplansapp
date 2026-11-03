@@ -1,5 +1,5 @@
 import { DEMO_INTERESTS, createDemoApi } from '../demo';
-import { METERS_PER_MILE, mapFeedRow, priceLabel, type FeedRow } from '../feedMapping';
+import { METERS_PER_MILE, mapFeedRow, priceLabel, spotlightReason, type FeedRow } from '../feedMapping';
 
 const row: FeedRow = {
   id: 'e1',
@@ -68,6 +68,22 @@ describe('priceLabel', () => {
     expect(priceLabel({ is_free: true, price_min: null, price_max: null })).toBe('Free');
     expect(priceLabel({ is_free: false, price_min: 15, price_max: null })).toBe('$15');
     expect(priceLabel({ is_free: false, price_min: 20, price_max: 35 })).toBe('$20 to $35');
+  });
+});
+
+describe('spotlightReason', () => {
+  it('says yard pick when picked, whatever the count', () => {
+    expect(spotlightReason(true, 12)).toBe('yard pick');
+  });
+  it('falls back to the going count, with no names', () => {
+    expect(spotlightReason(false, 5)).toBe('5 going');
+  });
+  it('is unset with nothing to say', () => {
+    expect(spotlightReason(false, 0)).toBeUndefined();
+  });
+  it('marks the first demo spotlight card as a pick', async () => {
+    const list = await createDemoApi().getSpotlight({ cityId: 1, lat: 35.2, lng: -80.8 });
+    expect(list[0].spotlightReason).toBe('yard pick');
   });
 });
 

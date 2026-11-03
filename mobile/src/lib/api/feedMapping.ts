@@ -24,6 +24,12 @@ export function primaryInterest(ids: number[], interests: Interest[]): Interest 
   return interests.find((i) => ids.includes(i.id));
 }
 
+/** Why a spotlight event is featured: "yard pick", else "{n} going" (the server only picks n >= 3). Never names. */
+export function spotlightReason(picked: boolean, goingCount: number | null | undefined): string | undefined {
+  if (picked) return 'yard pick';
+  return goingCount ? `${goingCount} going` : undefined;
+}
+
 export function mapFeedRow(row: FeedRow | FeedRangeRow | SpotlightRow, interests: Interest[]): FeedEvent {
   const primary = primaryInterest(row.interest_ids ?? [], interests);
   const friends = parseFriends(row.friends_going);

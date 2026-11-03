@@ -48,3 +48,15 @@ describe('EventCard plan button', () => {
     expect(eventA11yLabel(event, null)).not.toContain('Interested');
   });
 });
+
+describe('EventCard spotlight reason', () => {
+  const picked = { ...event, spotlightReason: 'yard pick' };
+  it('adds the reason to the label and shows the pill', async () => {
+    expect(eventA11yLabel(picked)).toContain('yard pick.');
+    expect(eventA11yLabel({ ...event, spotlightReason: '7 going' })).toContain('7 going.');
+    expect(eventA11yLabel(event)).not.toContain('yard pick');
+    await render(<EventCard event={picked} size="compact" />);
+    expect(screen.getByText('yard pick')).toBeTruthy();
+    expect(screen.getByLabelText(eventA11yLabel(picked))).toBeTruthy();
+  });
+});

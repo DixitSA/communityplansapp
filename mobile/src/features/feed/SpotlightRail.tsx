@@ -9,7 +9,7 @@ const PEEK = 36;
 
 export type SpotlightRailProps = { events: SpotlightEvent[] };
 
-/** "Popping this week": a swipeable row of big event cards at the top of the feed. */
+/** "Popping this week": a swipeable row of compact event cards at the top of the feed. */
 export function SpotlightRail({ events }: SpotlightRailProps) {
   const { space } = useTheme();
   const { width } = useWindowDimensions();
@@ -33,7 +33,7 @@ export function SpotlightRail({ events }: SpotlightRailProps) {
         contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md }}
         renderItem={({ item }) => (
           <View style={{ width: cardWidth }}>
-            <EventCardLink event={item} />
+            <EventCardLink event={item} size="compact" />
           </View>
         )}
       />
