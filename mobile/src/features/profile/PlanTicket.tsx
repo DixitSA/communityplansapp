@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, Icon, MeshArt, useTheme } from '@/design';
+import { AppText, EventArt, Icon, useTheme } from '@/design';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
 import type { UpcomingPlan } from './stats';
@@ -38,7 +38,7 @@ export function PlanTicket({ plan, width }: { plan: UpcomingPlan; width: number 
       ]}
     >
       <View style={{ height: ART_HEIGHT }}>
-        <MeshArt id={event.id} interest={event.interest} symbol={event.symbol} symbolSize={64} />
+        <EventArt event={event} symbolSize={64} />
         <View
           style={{
             position: 'absolute',

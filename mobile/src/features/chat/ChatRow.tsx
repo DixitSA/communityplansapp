@@ -1,7 +1,6 @@
-import { Image } from 'expo-image';
 import { Pressable, View } from 'react-native';
 
-import { AppText, Icon, MeshArt, useTheme, asSymbol } from '@/design';
+import { AppText, EventArt, Icon, useTheme, asSymbol } from '@/design';
 import type { ChatSummary } from '@/lib/api';
 
 import { chatPreview, countdownLabel, relativeTime, unreadBadge } from './messages';
@@ -56,16 +55,18 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
           opacity: chat.isOpen ? 1 : 0.6,
         }}
       >
-        {chat.imageUrl ? (
-          <Image source={{ uri: chat.imageUrl }} contentFit="cover" style={{ flex: 1 }} accessibilityIgnoresInvertColors />
-        ) : (
-          <MeshArt
-            id={chat.eventId}
-            interest={chat.art?.interest ?? 'community'}
-            symbol={asSymbol(chat.art?.symbol ?? 'bubble.left.fill')}
-            symbolSize={28}
-          />
-        )}
+        {/* Same picture as everywhere else: the event's image (blurred if flagged), else its category's stock photo. */}
+        <EventArt
+          event={{
+            id: chat.eventId,
+            imageUrl: chat.imageUrl,
+            imageSensitive: chat.imageSensitive,
+            interest: chat.art?.interest ?? 'community',
+            symbol: asSymbol(chat.art?.symbol ?? 'bubble.left.fill'),
+          }}
+          symbolSize={28}
+          overlay="none"
+        />
       </View>
 
       <View style={{ flex: 1, gap: 2 }}>
