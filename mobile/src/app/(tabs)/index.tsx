@@ -330,7 +330,7 @@ export default function FeedScreen() {
   );
 
   const scopeRow = <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{scopeControl}</View>;
-  // The list view pins only the date strip and filters; the map pins everything.
+  // The list view pins the wordmark row, date strip and filters; the map also pins Nearby/Friends.
   const pinnedBar = (
     <>
       {strip}
@@ -399,8 +399,11 @@ export default function FeedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* Only the date strip and filters stay pinned; the wordmark row and Nearby/Friends scroll away with the list. */}
-      <View style={{ paddingTop: insets.top, zIndex: 5, backgroundColor: colors.canvas }}>{pinnedBar}</View>
+      {/* The wordmark row, date strip and filters stay pinned; Nearby/Friends scrolls away with the list. */}
+      <View style={{ paddingTop: insets.top + space.md, zIndex: 5, backgroundColor: colors.canvas }}>
+        {topRow}
+        {pinnedBar}
+      </View>
       <SectionList<FeedEvent, Section>
         ref={listRef}
         sections={sections}
@@ -423,7 +426,6 @@ export default function FeedScreen() {
         ListEmptyComponent={empty}
         ListHeaderComponent={
           <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
-            <View style={{ paddingTop: space.md }}>{topRow}</View>
             {scopeRow}
             {spotlightEvents ? <SpotlightRail events={spotlightEvents} /> : null}
             <NeighborhoodChips hoods={hoods} selected={neighborhood} onSelect={setNeighborhood} compact />

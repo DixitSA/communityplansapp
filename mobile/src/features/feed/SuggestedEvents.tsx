@@ -14,7 +14,8 @@ export function SuggestedEvents({ events, note }: { events: FeedEvent[]; note?: 
         <View key={event.id} style={{ gap: space.xs }}>
           <EventRowLink event={event} />
           <AppText variant="caption" color="inkSecondary" style={{ paddingHorizontal: space.sm }}>
-            {event.goingCount} going{note ? ` · ${note}` : ''}
+            {/* A zero reads as "nobody wants this"; invite them to be first instead. */}
+            {event.goingCount > 0 ? `${event.goingCount} going${note ? ` · ${note}` : ''}` : 'Be the first one going'}
           </AppText>
         </View>
       ))}
