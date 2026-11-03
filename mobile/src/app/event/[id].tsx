@@ -39,6 +39,7 @@ import {
 } from '@/features/event/plansLogic';
 import type { PlanStatus } from '@/features/event/plansStore';
 import { useEvent } from '@/features/event/useEvent';
+import { useFirstTimeHint } from '@/features/event/useFirstTimeHint';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { EndedBar } from '@/features/event/EndedBar';
 import { RsvpBar } from '@/features/event/RsvpBar';
@@ -79,6 +80,7 @@ export default function EventScreen() {
   const imageHidden = useImageHidden(id, event?.imageSensitive);
   const revealImage = useRevealedImages((s) => s.reveal);
   const { setStatus } = useSetRsvp();
+  const showDownHint = useFirstTimeHint('down_if_friends');
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
   const [barHeight, setBarHeight] = useState(0);
@@ -139,7 +141,9 @@ export default function EventScreen() {
 
   const choose = (choice: Exclude<PlanStatus, 'going'>) => {
     light();
-    setStatus(event.id, nextStatus(status, choice));
+    const next = nextStatus(status, choice);
+    setStatus(event.id, next);
+    if (next === 'down_if_friends') void showDownHint();
   };
   const onGoing = () => {
     if (status === 'going') {
