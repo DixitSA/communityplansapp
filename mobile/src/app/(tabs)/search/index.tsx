@@ -19,6 +19,7 @@ import { useFriendButton } from '@/features/friends/useFriendButton';
 import { useFriendRequests } from '@/features/friends/useFriends';
 import { useFriendSearch } from '@/features/friends/useFriendSearch';
 import { friendsHref, userHref } from '@/features/friends/routes';
+import { inviteFriends } from '@/features/friends/invite';
 
 /** Under the search field while it's empty: the way to your friends and requests. */
 function FriendsShortcut() {
@@ -85,8 +86,18 @@ export default function SearchScreen() {
         <EmptyState
           symbol="magnifyingglass"
           title="Find your people"
-          message="Search by name or @username to add friends and see what they’re up to."
-        />
+          message="Search by name or @username. Friends see each other’s Going plans, never your Interested ones."
+        >
+          <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+            <Button
+              variant="primary"
+              symbol="square.and.arrow.up"
+              label="Invite a friend"
+              accessibilityLabel="Invite a friend to yard"
+              onPress={inviteFriends}
+            />
+          </View>
+        </EmptyState>
       </View>
     ) : status === 'loading' ? (
       <PersonRowSkeleton />

@@ -193,7 +193,7 @@ export default function ActivityScreen() {
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, flexGrow: 1 }}
       >
         {all.length === 0 ? (
-          <View style={{ flex: 1, justifyContent: 'center' }}>
+          <View style={{ flex: 1 }}>
             <EmptyState
               symbol="bell.slash"
               title="Nothing here yet"
