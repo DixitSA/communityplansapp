@@ -18,6 +18,8 @@ import {
 } from '@/design';
 import { getActivityItems } from '@/features/activity/fixtures';
 import { useDemoPlans } from '@/features/event/demoPlans';
+import { SuggestedEvents } from '@/features/feed/SuggestedEvents';
+import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
 import { usePlansStore } from '@/features/event/plansStore';
 import { getFixtureEvents } from '@/features/feed/fixtures';
 import { friendsHref } from '@/features/friends/routes';
@@ -101,6 +103,7 @@ export default function ProfileScreen() {
   const statuses = usePlansStore((s) => s.statuses);
   const plans = useMemo(() => upcomingPlans(statuses, getFixtureEvents(new Date())), [statuses]);
   const friends = useFriends();
+  const { events: suggested } = useSuggestedEvents(3);
   const incomingRequests = (useFriendRequests().data ?? []).filter((r) => r.direction === 'incoming').length;
   const stats = useMemo(
     () => deriveProfileStats(statuses, plans, friends.data?.length ?? 0),
@@ -215,11 +218,13 @@ export default function ProfileScreen() {
             Upcoming plans
           </AppText>
           {plans.length === 0 ? (
-            <EmptyState symbol="sparkles" title="No plans yet" message="Tap Going on an event and it will show up here.">
-              <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
-                <Button label="Find something to do" onPress={() => router.navigate('/')} />
-              </View>
-            </EmptyState>
+            <View style={{ gap: space.lg }}>
+              <AppText variant="body" color="inkSecondary">
+                Nothing on your calendar yet. Tap Going on something below and it lands here.
+              </AppText>
+              <SuggestedEvents events={suggested} />
+              <Button label="Find something to do" onPress={() => router.navigate('/')} />
+            </View>
           ) : (
             <ScrollView
               horizontal

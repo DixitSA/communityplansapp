@@ -14,6 +14,8 @@ import {
   useTheme,
 } from '@/design';
 import { formatAgo } from '@/features/activity/format';
+import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
+import { inviteFriends } from '@/features/friends/invite';
 import { useNow } from '@/lib/useNow';
 import { userHref } from '@/features/friends/routes';
 import { useFriendButton } from '@/features/friends/useFriendButton';
@@ -51,6 +53,7 @@ export default function FriendsScreen() {
   const requests = useFriendRequests();
   const { onAction, busyId } = useFriendButton();
   const now = useNow();
+  const { peopleGoing } = useSuggestedEvents(0);
 
   const incoming = (requests.data ?? []).filter((r) => r.direction === 'incoming');
   const outgoing = (requests.data ?? []).filter((r) => r.direction === 'outgoing');
@@ -97,11 +100,16 @@ export default function FriendsScreen() {
     state = (
       <EmptyState
         symbol="person.2"
-        title="No friends yet"
-        message="Search for people you know. Once they accept, you’ll see which events they’re going to."
+        title="Your Charlotte crew starts here"
+        message={
+          peopleGoing > 0
+            ? `This week, ${peopleGoing} people are going to things you like. Add friends and you’ll see which events they’re going to.`
+            : 'Add friends and you’ll see which events they’re going to.'
+        }
       >
-        <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+        <View style={{ alignSelf: 'stretch', paddingTop: space.md, gap: space.sm }}>
           <Button variant="primary" symbol="magnifyingglass" label="Find friends" onPress={() => router.navigate('/search')} />
+          <Button symbol="square.and.arrow.up" label="Invite a friend" onPress={inviteFriends} />
         </View>
       </EmptyState>
     );
