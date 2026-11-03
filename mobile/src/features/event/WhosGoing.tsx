@@ -39,7 +39,7 @@ function PersonTile({ person }: { person: Person }) {
       style={({ pressed }) => ({ width: FACE + space.md, alignItems: 'center', gap: space.xs, opacity: pressed ? 0.7 : 1 })}
     >
       <Avatar name={person.name} size={FACE} />
-      <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={1.4}>
+      <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={2}>
         {firstName(person.name)}
       </AppText>
     </Pressable>

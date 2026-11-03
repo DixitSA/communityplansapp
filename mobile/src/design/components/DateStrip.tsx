@@ -124,7 +124,7 @@ export function DateStrip({ selected, onSelect, dayMeta = {} }: DateStripProps) 
                       <AppText
                         variant="caption"
                         color={isSelected ? 'onAccent' : 'inkSecondary'}
-                        maxFontSizeMultiplier={1.4}
+                        maxFontSizeMultiplier={2}
                       >
                         {WEEKDAYS_LONG[day.getDay()].slice(0, 3)}
                       </AppText>
@@ -132,7 +132,7 @@ export function DateStrip({ selected, onSelect, dayMeta = {} }: DateStripProps) 
                         variant="headline"
                         rounded
                         color={isSelected ? 'onAccent' : 'ink'}
-                        maxFontSizeMultiplier={1.4}
+                        maxFontSizeMultiplier={2}
                       >
                         {day.getDate()}
                       </AppText>

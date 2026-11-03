@@ -98,7 +98,7 @@ function RsvpButton({ label, displayLabel, hint, symbol, activeSymbol, selected,
         <AppText
           variant="footnote"
           color={fg}
-          maxFontSizeMultiplier={1.4}
+         
           style={{ fontWeight: '600', textAlign: 'center' }}
         >
           {displayLabel ?? label}

@@ -224,7 +224,7 @@ export default function FeedScreen() {
             router.push('/city');
           }}
           style={({ pressed }) => ({
-            height: 32,
+            minHeight: 32,
             flexShrink: 1,
             flexDirection: 'row',
             alignItems: 'center',
@@ -237,7 +237,7 @@ export default function FeedScreen() {
           })}
         >
           <Icon name="mappin.circle.fill" size={16} color="accent" />
-          <AppText variant="subheadline" numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontWeight: '600' }}>
+          <AppText variant="subheadline" numberOfLines={1} style={{ flexShrink: 1, fontWeight: '600' }}>
             Charlotte, NC
           </AppText>
           <Icon name="chevron.down" size={10} color="inkSecondary" weight="semibold" />

@@ -17,10 +17,10 @@ function Count({ value, label }: { value: number; label: string }) {
   const { space } = useTheme();
   return (
     <View accessible accessibilityLabel={`${value} ${label}`} style={{ flex: 1, alignItems: 'center', gap: space.xs }}>
-      <AppText variant="title2" rounded maxFontSizeMultiplier={1.4}>
+      <AppText variant="title2" rounded>
         {value}
       </AppText>
-      <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4}>
+      <AppText variant="footnote" color="inkSecondary">
         {label}
       </AppText>
     </View>

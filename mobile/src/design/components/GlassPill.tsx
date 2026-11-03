@@ -32,7 +32,7 @@ export function GlassPill({ label, onPress, accessibilityLabel }: GlassPillProps
     justifyContent: 'center' as const,
   };
   const text = (
-    <AppText variant="headline" maxFontSizeMultiplier={1.4}>
+    <AppText variant="headline">
       {label}
     </AppText>
   );

@@ -33,7 +33,7 @@ export function StepProgress({ step, total = 4 }: StepProgressProps) {
           />
         ))}
       </View>
-      <AppText variant="caption" color="inkSecondary" maxFontSizeMultiplier={1.4}>
+      <AppText variant="caption" color="inkSecondary">
         Step {step} of {total}
       </AppText>
     </View>

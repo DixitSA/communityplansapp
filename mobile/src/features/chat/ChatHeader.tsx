@@ -95,10 +95,10 @@ export function ChatHeader({
           accessibilityLabel={`${title}. ${subtitle}`}
           style={{ flex: 1, marginLeft: space.xs }}
         >
-          <AppText variant="headline" numberOfLines={1} maxFontSizeMultiplier={1.3}>
+          <AppText variant="headline" numberOfLines={1} maxFontSizeMultiplier={2}>
             {title}
           </AppText>
-          <AppText variant="footnote" color="inkSecondary" numberOfLines={1} maxFontSizeMultiplier={1.3} rounded>
+          <AppText variant="footnote" color="inkSecondary" numberOfLines={1} maxFontSizeMultiplier={2} rounded>
             {subtitle}
           </AppText>
         </View>
