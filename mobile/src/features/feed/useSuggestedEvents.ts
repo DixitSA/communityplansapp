@@ -23,10 +23,11 @@ export function useSuggestedEvents(limit = 3): { events: FeedEvent[]; peopleGoin
     const upcoming = (list: FeedEvent[]) => list.filter((e) => e.startsAt.getTime() > now);
     const fromSpotlight = upcoming(spotlight.data ?? []);
     const fromFeed = upcoming(feed.filtered);
+    const allUpcoming = upcoming(feed.upcoming);
     const events = (fromSpotlight.length > 0 ? fromSpotlight : fromFeed).slice(0, limit);
-    const peopleGoing = fromFeed
+    const peopleGoing = allUpcoming
       .filter((e) => e.startsAt.getTime() < now + WEEK_MS)
       .reduce((sum, e) => sum + e.goingCount, 0);
     return { events, peopleGoing };
-  }, [spotlight.data, feed.filtered, limit, nowDate]);
+  }, [spotlight.data, feed.filtered, feed.upcoming, limit, nowDate]);
 }

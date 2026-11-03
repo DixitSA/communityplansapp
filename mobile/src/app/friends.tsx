@@ -103,7 +103,7 @@ export default function FriendsScreen() {
         title="Your Charlotte crew starts here"
         message={
           peopleGoing > 0
-            ? `Events this week already have ${peopleGoing} people going. Add friends and you’ll see which ones they pick.`
+            ? `This week’s events already have ${peopleGoing} going. Add friends and you’ll see which ones they pick.`
             : 'Add friends and you’ll see which events they’re going to.'
         }
       >

@@ -2,7 +2,7 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { View } from 'react-native';
 
 import { useTheme } from '../theme';
-import type { ColorToken } from '../tokens';
+import { scrim, type ColorToken } from '../tokens';
 import type { CardPlan } from './EventCard';
 import { useReduceTransparency } from '../useReduceTransparency';
 import { Icon, type SymbolName } from './Icon';
@@ -71,10 +71,10 @@ export function PlanPill({ plan, overImage = false }: { plan: CardPlan; overImag
   const icon = <Icon name={spec.symbol} size={17} color={onPhoto ? 'onImage' : spec.fg} weight="semibold" />;
   if (onPhoto && glassAvailable() && !reduceTransparency) {
     return (
-      <GlassView glassEffectStyle="regular" tintColor="rgba(0, 0, 0, 0.3)" style={circle}>
+      <GlassView glassEffectStyle="regular" tintColor={scrim.soft} style={circle}>
         {icon}
       </GlassView>
     );
   }
-  return <View style={[circle, { backgroundColor: onPhoto ? 'rgba(0, 0, 0, 0.4)' : colors[spec.bg] }]}>{icon}</View>;
+  return <View style={[circle, { backgroundColor: onPhoto ? scrim.glass : colors[spec.bg] }]}>{icon}</View>;
 }

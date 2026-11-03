@@ -1,5 +1,5 @@
 import { stockImageFor } from '@/design/stockImages';
-import { type AgendaEvent, assignStockVariants,agendaDetail,agendaHeadline, agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, hasEnded, isLive, sectionIndexForDay } from '../agenda';
+import { type AgendaEvent, assignStockVariants, assignStockVariantsByDay,agendaDetail,agendaHeadline, agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, hasEnded, isLive, sectionIndexForDay } from '../agenda';
 
 const ev = (id: string, y: number, mo: number, d: number, h: number, extra: { day?: string; friendsGoing?: number } = {}) => ({
   id,
@@ -183,12 +183,18 @@ describe('assignStockVariants', () => {
     expect(out[2].stockVariant).toBeUndefined();
   });
 
-  it('is applied per day by groupByDay', () => {
-    const sections = groupByDay(
-      [music('a'), music('b'), music('c'), music('d'), music('e', { startsAt: new Date(2026, 9, 31, 12) })],
-      '2026-10-30',
-    );
-    expect(sections[0].data.filter((e) => e.stockVariant === null)).toHaveLength(1);
-    expect(sections[1].data[0].stockVariant).toBeUndefined();
+  it('is applied per day, keeping the input order', () => {
+    const input = [music('a'), music('e', { startsAt: new Date(2026, 9, 31, 12) }), music('b'), music('c'), music('d')];
+    const out = assignStockVariantsByDay(input);
+    expect(out.map((e) => e.id)).toEqual(['a', 'e', 'b', 'c', 'd']);
+    expect(out.filter((e) => e.stockVariant === null)).toHaveLength(1); // the 30th has four, one too many
+    expect(out[1].stockVariant).toBeUndefined(); // the 31st's only event keeps its own pick
+  });
+
+  it('decides photos before filtering, so dropping an event never moves a photo', () => {
+    const day = [music('a'), music('b'), music('c'), music('d')];
+    const before = assignStockVariantsByDay(day);
+    const afterDrop = before.slice(1); // e.g. 'a' ended or was filtered out
+    expect(afterDrop.map(photo)).toEqual(before.slice(1).map(photo));
   });
 });

@@ -41,6 +41,26 @@ export function assignStockVariants<T extends AgendaEvent>(events: T[]): T[] {
   });
 }
 
+/**
+ * `assignStockVariants` for every day at once, over the whole fetched list and before any on-device filter
+ * (time of day, neighborhood, ended events). So an event's photo never changes while you look: filters and
+ * the minute clock only remove events, they never hand a photo to a different one. Order is kept.
+ */
+export function assignStockVariantsByDay<T extends AgendaEvent>(events: T[]): T[] {
+  const byDay = new Map<string, T[]>();
+  for (const e of [...events].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())) {
+    const key = eventDay(e);
+    const list = byDay.get(key);
+    if (list) list.push(e);
+    else byDay.set(key, [e]);
+  }
+  const assigned = new Map<T, T>();
+  for (const list of byDay.values()) {
+    assignStockVariants(list).forEach((out, i) => assigned.set(list[i], out));
+  }
+  return events.map((e) => assigned.get(e) ?? e);
+}
+
 export type AgendaSection<T extends AgendaEvent> = {
   /** Local day, "YYYY-MM-DD". */
   day: string;
@@ -129,7 +149,7 @@ export function groupByDay<T extends AgendaEvent>(events: T[], today: string, no
   return [...byDay.keys()]
     .sort()
     .map((day) => {
-      const data = assignStockVariants(byDay.get(day) ?? []);
+      const data = byDay.get(day) ?? [];
       const headline = agendaHeadline(day, today, now);
       return {
         day,

@@ -99,7 +99,10 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
   const [dateLine, venueLine] = eventMetaLines(event);
 
   const cardContent = (
-    <View style={{ minHeight: 170, justifyContent: 'flex-end' }}>
+    // The art clips here rather than on the outer card, so the plan menu's web popover can hang below the card.
+    <View
+      style={{ minHeight: 170, justifyContent: 'flex-end', borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}
+    >
       <View style={StyleSheet.absoluteFill}>
         <EventArt event={event} />
       </View>
@@ -176,7 +179,9 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
         minHeight: 170,
         borderRadius: radius.card,
         borderCurve: 'continuous',
-        overflow: 'hidden',
+        // iOS uses a native menu, so the card can clip; the web popover needs to overflow it.
+        overflow: process.env.EXPO_OS === 'ios' ? 'hidden' : 'visible',
+        zIndex: 1,
         // Light mode has a soft shadow. In dark mode a hairline keeps dark art from melting into the canvas.
         ...(scheme === 'dark' ? { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line } : null),
       }}
