@@ -98,7 +98,8 @@ function RsvpButton({ label, displayLabel, hint, symbol, activeSymbol, selected,
         <AppText
           variant="footnote"
           color={fg}
-         
+          // Pinned bar: at the largest text sizes it would cover a third of the screen and break words.
+          maxFontSizeMultiplier={1.4}
           style={{ fontWeight: '600', textAlign: 'center' }}
         >
           {displayLabel ?? label}

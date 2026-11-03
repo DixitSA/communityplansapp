@@ -93,7 +93,6 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
               variant="footnote"
               color="inkSecondary"
               numberOfLines={1}
-             
               style={{ flexShrink: 1, lineHeight: 16 }}
             >
               {event.liveUntil ? (
@@ -124,14 +123,12 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
               color="inkSecondary"
               numberOfLines={1}
               style={{ flexShrink: 1, lineHeight: 16 }}
-             
             >
               {event.venue}
             </AppText>
             <AppText
               variant="footnote"
               color="inkSecondary"
-             
               style={{ flexShrink: 0, lineHeight: 16 }}
             >
               {event.venue ? ' · ' : ''}

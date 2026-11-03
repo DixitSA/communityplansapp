@@ -124,6 +124,7 @@ export function DateStrip({ selected, onSelect, dayMeta = {} }: DateStripProps) 
                       <AppText
                         variant="caption"
                         color={isSelected ? 'onAccent' : 'inkSecondary'}
+                        numberOfLines={1}
                         maxFontSizeMultiplier={2}
                       >
                         {WEEKDAYS_LONG[day.getDay()].slice(0, 3)}

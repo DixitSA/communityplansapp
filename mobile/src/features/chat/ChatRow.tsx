@@ -74,7 +74,6 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
           <AppText
             variant="headline"
             numberOfLines={1}
-           
             style={{ flex: 1, fontWeight: unread ? '700' : '600' }}
           >
             {chat.title}
@@ -90,7 +89,6 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
             variant="subheadline"
             color="inkSecondary"
             numberOfLines={1}
-           
             style={{ flex: 1 }}
           >
             {preview}
@@ -107,7 +105,7 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
                 justifyContent: 'center',
               }}
             >
-              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} rounded>
+              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} rounded maxFontSizeMultiplier={1.4}>
                 {unread}
               </AppText>
             </View>
@@ -126,7 +124,6 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
               variant="caption"
               color={ended ? 'inkSecondary' : 'accent'}
               style={{ fontWeight: '600' }}
-             
             >
               {countdown}
             </AppText>
