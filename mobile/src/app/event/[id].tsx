@@ -296,7 +296,7 @@ export default function EventScreen() {
                 onPress={() => Linking.openURL(event.source.url as string).catch(() => {})}
                 accessibilityRole="link"
                 accessibilityLabel={`View original listing on ${sourceName(event.source.name)}`}
-                hitSlop={space.sm}
+                hitSlop={{ top: space.lg, bottom: space.lg, left: space.sm, right: space.sm }}
               >
                 <AppText variant="footnote" color="accent" style={{ fontWeight: '600' }}>
                   · View original

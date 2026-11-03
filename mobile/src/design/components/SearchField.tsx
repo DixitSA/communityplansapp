@@ -48,7 +48,7 @@ export function SearchField({ value, onChangeText, placeholder, ...input }: Sear
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Clear search"
-          hitSlop={space.md}
+          hitSlop={space.lg}
           onPress={() => {
             selection();
             onChangeText('');

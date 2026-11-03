@@ -217,6 +217,8 @@ export default function FeedScreen() {
           accessibilityRole="button"
           accessibilityLabel="Location: Charlotte, NC"
           accessibilityHint="Opens the city picker"
+          // 32pt pill + 2x8 = 48pt tall; the top row is taller than 44pt so this can't reach the scope control.
+          hitSlop={{ top: space.sm, bottom: space.sm }}
           onPress={() => {
             selection();
             router.push('/city');

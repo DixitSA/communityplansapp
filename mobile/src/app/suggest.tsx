@@ -88,7 +88,7 @@ export default function SuggestSheet() {
         Suggest an event
       </AppText>
       {isSuccess ? null : (
-        <Pressable accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={space.sm} onPress={() => router.back()}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={space.md} onPress={() => router.back()}>
           <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
             Cancel
           </AppText>
