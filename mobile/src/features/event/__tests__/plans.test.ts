@@ -1,5 +1,29 @@
-import { attributionLine, goingTogetherLine, nextStatus, othersLabel, othersRevealed, privacyHint } from '../plansLogic';
+import {
+  attributionLine,
+  eventSummary,
+  goingTogetherLine,
+  listingButtonLabel,
+  nextStatus,
+  othersLabel,
+  othersRevealed,
+  privacyHint,
+} from '../plansLogic';
 import { usePlansStore } from '../plansStore';
+
+describe('listing button and summary', () => {
+  it('labels ticket sources and plain listings', () => {
+    expect(listingButtonLabel('Ticketmaster')).toBe('Get tickets on Ticketmaster');
+    expect(listingButtonLabel('Listed via SeatGeek')).toBe('Get tickets on SeatGeek');
+    expect(listingButtonLabel('Google')).toBe('View listing on Google');
+  });
+  it('builds a summary from known facts only', () => {
+    expect(eventSummary({ category: 'Music', venue: 'The Fillmore' })).toBe('Music at The Fillmore.');
+    expect(eventSummary({ category: 'Music', venue: 'The Fillmore', endText: '10:00 PM' })).toBe(
+      'Music at The Fillmore. Runs until 10:00 PM.',
+    );
+    expect(eventSummary({ venue: 'The Fillmore' })).toBe('At The Fillmore.');
+  });
+});
 
 const reset = () => usePlansStore.setState({ statuses: {} });
 const status = (id: string) => usePlansStore.getState().statuses[id] ?? null;

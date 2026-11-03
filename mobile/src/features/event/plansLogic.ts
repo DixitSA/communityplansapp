@@ -39,6 +39,27 @@ export function attributionLine(source: { name: string; curated?: boolean }): st
   return source.curated ? `Curated by ${sourceName(source.name)}` : `Listed via ${sourceName(source.name)}`;
 }
 
+/** True when a source sells tickets (Ticketmaster, SeatGeek), so its link reads "Get tickets" rather than "View listing". */
+export function isTicketSource(name: string): boolean {
+  return /ticketmaster|seatgeek/i.test(name);
+}
+
+/** The label of the listing button: "Get tickets on Ticketmaster", "View listing on Google". */
+export function listingButtonLabel(rawSourceName: string): string {
+  const name = sourceName(rawSourceName);
+  return isTicketSource(rawSourceName) ? `Get tickets on ${name}` : `View listing on ${name}`;
+}
+
+/**
+ * One plain line for events with no description, built only from what we know:
+ * "Music at The Fillmore. Runs until 10:00 PM." `endText` is the already-formatted end time.
+ */
+export function eventSummary(event: { category?: string | null; venue: string; endText?: string | null }): string {
+  const category = event.category?.trim();
+  const head = category ? `${category} at ${event.venue}.` : `At ${event.venue}.`;
+  return event.endText ? `${head} Runs until ${event.endText}.` : head;
+}
+
 /**
  * "+N others" on the event page: everyone going who isn't a friend and isn't you.
  * `goingCount` comes from the server and includes the viewer when they are Going.
