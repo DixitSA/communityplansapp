@@ -354,6 +354,9 @@ export default function Gallery() {
         <EventRow event={{ ...events[3], endsAt: undefined }} />
         <EventRow event={events[3]} plan="down_if_friends" />
         <EventRow event={{ ...events[2], title: 'Lunchtime Food Truck Rally with a very long title that wraps' }} plan="going" />
+        {/* The short card used in the feed's spotlight rail. */}
+        <EventCard event={{ ...events[2], spotlightReason: 'yard pick' }} size="compact" />
+        <EventCard event={{ ...events[0], liveUntil: GALLERY_LIVE_UNTIL, spotlightReason: '12 going' }} size="compact" />
         {/* Opens the event page with the zoom transition; the plan menu shares the plans store. */}
         <EventRowLink event={events[5]} />
       </Section>

@@ -6,7 +6,7 @@ import { createDemoChat } from './demoChat';
 import { createDemoFriends } from './demoFriends';
 import { ApiError } from './errors';
 import { toISODate } from '../dates';
-import { METERS_PER_MILE } from './feedMapping';
+import { METERS_PER_MILE, spotlightReason } from './feedMapping';
 import {
   CHARLOTTE_CITY_ID,
   type Api,
@@ -107,7 +107,7 @@ export function demoSpotlight(): SpotlightEvent[] {
     .slice()
     .sort((a, b) => b.friendsGoing - a.friendsGoing || a.startsAt.getTime() - b.startsAt.getTime())
     .slice(0, 6)
-    .map((e, i) => ({ ...e, picked: i === 0 }));
+    .map((e, i) => ({ ...e, picked: i === 0, spotlightReason: spotlightReason(i === 0, e.goingCount) }));
 }
 
 /** A sample event for the event page, or null for an unknown id. */

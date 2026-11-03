@@ -59,7 +59,7 @@ function useEventLink(event: LinkableEvent) {
  * An EventCard that opens the event page (zoom transition on iOS 18+) and shares the plans store,
  * so the corner plan button and the event page always agree. Long-press shows a preview and quick actions.
  */
-export function EventCardLink({ event }: { event: LinkableEvent }) {
+export function EventCardLink({ event, size }: { event: LinkableEvent; size?: 'regular' | 'compact' }) {
   const l = useEventLink(event);
   return (
     <EventCard
@@ -68,6 +68,7 @@ export function EventCardLink({ event }: { event: LinkableEvent }) {
       onSetPlan={l.onSetPlan}
       href={l.href}
       menuActions={l.menuActions}
+      size={size}
     />
   );
 }

@@ -41,6 +41,8 @@ export type EventCardData = {
   friends: { id: string; name: string }[];
   /** All friends going (>= friends.length). */
   friendsGoing: number;
+  /** Why a spotlight card is featured: "yard pick" or "{n} going". Never names. Unset elsewhere. */
+  spotlightReason?: string;
 };
 
 /** The viewer's own plan for an event. `null` means no plan. Mirrors the plans store. */
@@ -70,6 +72,7 @@ export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string 
   );
   return [
     e.liveUntil ? 'Happening now.' : '',
+    e.spotlightReason ? `${e.spotlightReason}.` : '',
     `${e.title}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
     friends ? `${friends}.` : '',
     plan ? PLAN_A11Y[plan] : '',
@@ -92,16 +95,31 @@ export type EventCardProps = {
   href?: Href;
   /** `Link.MenuAction` items for the long-press menu (with a live preview). iOS only, and only with `href`. */
   menuActions?: ReactNode;
+  /** `compact` is the short card for the spotlight rail (about 120 pt, one meta line). */
+  size?: 'regular' | 'compact';
 };
 
-export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuActions }: EventCardProps) {
+const MIN_HEIGHT = { regular: 170, compact: 120 } as const;
+
+export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuActions, size = 'regular' }: EventCardProps) {
+  const compact = size === 'compact';
+  const minHeight = MIN_HEIGHT[size];
   const { space, radius, colors, scheme } = useTheme();
   const [dateLine, venueLine] = eventMetaLines(event);
+  const pill = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingHorizontal: space.sm,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: scrim.medium,
+  } as const;
 
   const cardContent = (
     // The art clips here rather than on the outer card, so the plan menu's web popover can hang below the card.
     <View
-      style={{ minHeight: 170, justifyContent: 'flex-end', borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}
+      style={{ minHeight, justifyContent: 'flex-end', borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}
     >
       <View style={StyleSheet.absoluteFill}>
         <EventArt event={event} />
@@ -114,49 +132,73 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
           linearGradient(scrim.cardGradient),
         ]}
       />
-      {event.liveUntil ? (
+      {event.liveUntil || event.spotlightReason ? (
         <View
           pointerEvents="none"
           style={{
             position: 'absolute',
             top: space.md,
             left: space.md,
+            // Leave room for the 44 pt plan button on the right.
+            right: space.md + 44,
             flexDirection: 'row',
+            flexWrap: 'wrap',
             alignItems: 'center',
             gap: space.xs,
-            paddingHorizontal: space.sm,
-            paddingVertical: space.xs,
-            borderRadius: radius.pill,
-            backgroundColor: scrim.medium,
           }}
         >
-          <LiveDot color={colors.onImage} />
-          <AppText variant="footnote" color="onImage" style={{ fontWeight: '600' }}>
-            Live now
-          </AppText>
+          {event.liveUntil ? (
+            <View style={pill}>
+              <LiveDot color={colors.onImage} />
+              <AppText variant="footnote" color="onImage" style={{ fontWeight: '600' }}>
+                Live now
+              </AppText>
+            </View>
+          ) : null}
+          {event.spotlightReason ? (
+            <View style={pill}>
+              <AppText variant="footnote" color="onImage" style={{ fontWeight: '600' }}>
+                {event.spotlightReason}
+              </AppText>
+            </View>
+          ) : null}
         </View>
       ) : null}
-      <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl * 2 }}>
-        <AppText variant="title2" color="onImage">
-          {event.title}
-        </AppText>
-        <View>
-          <AppText variant="subheadline" color="onImage">
-            {dateLine}
+      {compact ? (
+        <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl + space.md }}>
+          <AppText variant="headline" color="onImage" numberOfLines={2} style={{ paddingRight: space.xxxl }}>
+            {event.title}
           </AppText>
-          <AppText variant="subheadline" color="onImage">
-            {venueLine}
-          </AppText>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingTop: space.xs }}>
-          <View style={{ flexShrink: 1 }}>
-            {event.friendsGoing > 0 ? (
-              <Facepile people={event.friends} total={event.friendsGoing} labelColor="onImage" />
-            ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
+            <AppText variant="footnote" color="onImage" numberOfLines={1} style={{ flexShrink: 1 }}>
+              {`${WEEKDAYS_LONG[event.startsAt.getDay()].slice(0, 3)} ${formatTime(event.startsAt)} · ${event.venue}`}
+            </AppText>
+            <Chip label={event.categoryLabel} size="small" category={event.interest} />
           </View>
-          <Chip label={event.categoryLabel} size="small" category={event.interest} />
         </View>
-      </View>
+      ) : (
+        <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl * 2 }}>
+          <AppText variant="title2" color="onImage">
+            {event.title}
+          </AppText>
+          <View>
+            <AppText variant="subheadline" color="onImage">
+              {dateLine}
+            </AppText>
+            <AppText variant="subheadline" color="onImage">
+              {venueLine}
+            </AppText>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingTop: space.xs }}>
+            <View style={{ flexShrink: 1 }}>
+              {event.friendsGoing > 0 ? (
+                <Facepile people={event.friends} total={event.friendsGoing} labelColor="onImage" />
+              ) : null}
+            </View>
+            <Chip label={event.categoryLabel} size="small" category={event.interest} />
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -166,7 +208,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       accessibilityRole={href ? 'link' : 'button'}
       accessibilityLabel={eventA11yLabel(event, plan)}
       onPress={onPress}
-      style={({ pressed }) => [{ minHeight: 170 }, pressed && { opacity: 0.92 }]}
+      style={({ pressed }) => [{ minHeight }, pressed && { opacity: 0.92 }]}
     >
       {href ? <Link.AppleZoom>{cardContent}</Link.AppleZoom> : cardContent}
     </Pressable>
@@ -176,7 +218,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
     // The plan button is a sibling of the card Pressable (not a child) so buttons never nest on web.
     <View
       style={{
-        minHeight: 170,
+        minHeight,
         borderRadius: radius.card,
         borderCurve: 'continuous',
         // iOS uses a native menu, so the card can clip; the web popover needs to overflow it.
