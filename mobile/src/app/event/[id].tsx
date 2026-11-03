@@ -31,7 +31,9 @@ import { attributionLine, nextStatus, othersCount, othersRevealed, sourceName } 
 import type { PlanStatus } from '@/features/event/plansStore';
 import { useEvent } from '@/features/event/useEvent';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
+import { EndedBar } from '@/features/event/EndedBar';
 import { RsvpBar } from '@/features/event/RsvpBar';
+import { hasEnded } from '@/features/feed/agenda';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
 import { countdownLabel, formatEventTime, formatShortDate } from '@/lib/dates';
@@ -382,7 +384,11 @@ export default function EventScreen() {
           linearGradient(`linear-gradient(to bottom, ${pageBg}00 0%, ${pageBg} 100%)`),
         ]}
       />
-      <RsvpBar status={status} onChoose={choose} onGoing={onGoing} onLayoutHeight={setBarHeight} />
+      {hasEnded(event, now) ? (
+        <EndedBar onOpenChat={status === 'going' ? onGoing : undefined} onLayoutHeight={setBarHeight} />
+      ) : (
+        <RsvpBar status={status} onChoose={choose} onGoing={onGoing} onLayoutHeight={setBarHeight} />
+      )}
     </View>
   );
 }

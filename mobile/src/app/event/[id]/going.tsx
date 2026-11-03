@@ -13,6 +13,8 @@ import { useEvent } from '@/features/event/useEvent';
 import { countdownLabel } from '@/lib/dates';
 import { success } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
+import { useNow } from '@/lib/useNow';
+import { hasEnded } from '@/features/feed/agenda';
 
 const BADGE = 64;
 
@@ -23,10 +25,13 @@ export default function GoingSheet() {
   const { colors, space, radius } = useTheme();
   const router = useRouter();
   const hydrated = useHydrated();
+  const now = useNow();
+  const ended = !!event && hasEnded(event, now);
 
   // One success haptic as the sheet appears, in step with the burst.
   useEffect(() => {
-    success();
+    if (!ended) success();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on first appearance
   }, []);
 
   if (!hydrated) return null;
@@ -37,6 +42,10 @@ export default function GoingSheet() {
     : event.goingCount === null
       ? event.othersGoing
       : othersCount(event.goingCount, event.friendsGoing, event.myStatus === 'going');
+
+  if (ended) {
+    return <EmptyState symbol="clock" title="This event has ended" message="Close this and see what's on next." />;
+  }
 
   return (
     <>
