@@ -20,7 +20,7 @@ describe('deriveProfileStats', () => {
   const now = new Date(2026, 9, 28, 15);
   const events = [ev('a', 29), ev('b', 30), ev('c', 31), ev('d', 31, 22), ev('past', 20)];
 
-  it('counts Going and Down if as Upcoming (matching the list) and Interested as Saved', () => {
+  it('counts Going and Down if as Upcoming (matching the list) and counts Interested separately', () => {
     const statuses: Record<string, PlanStatus> = {
       a: 'going',
       b: 'going',
@@ -28,7 +28,7 @@ describe('deriveProfileStats', () => {
       d: 'down_if_friends',
     };
     const plans = upcomingPlans(statuses, events, now);
-    expect(deriveProfileStats(statuses, plans)).toEqual({ upcoming: 3, friends: 0, saved: 1 });
+    expect(deriveProfileStats(statuses, plans)).toEqual({ upcoming: 3, friends: 0, interested: 1 });
     expect(deriveProfileStats(statuses, plans).upcoming).toBe(plans.length);
   });
 
@@ -38,12 +38,12 @@ describe('deriveProfileStats', () => {
   });
 
   it('is all zeros with no plans, and passes friends through', () => {
-    expect(deriveProfileStats({}, [])).toEqual({ upcoming: 0, friends: 0, saved: 0 });
+    expect(deriveProfileStats({}, [])).toEqual({ upcoming: 0, friends: 0, interested: 0 });
     expect(deriveProfileStats({}, [], 4).friends).toBe(4);
   });
 
   it('ignores cleared entries', () => {
-    expect(deriveProfileStats({ a: undefined }, []).saved).toBe(0);
+    expect(deriveProfileStats({ a: undefined }, []).interested).toBe(0);
   });
 });
 

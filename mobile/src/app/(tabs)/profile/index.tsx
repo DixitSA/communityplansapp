@@ -214,7 +214,7 @@ export default function ProfileScreen() {
             badge={incomingRequests > 0}
             a11yExtra={incomingRequests > 0 ? `${incomingRequests} new ${incomingRequests === 1 ? 'request' : 'requests'}` : undefined}
           />
-          <Stat value={stats.saved} label="Saved" />
+          <Stat value={stats.interested} label="Interested" />
         </View>
 
         <View style={{ gap: space.md }}>

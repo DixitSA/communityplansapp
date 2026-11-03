@@ -3,11 +3,11 @@ import { startOfDay } from '@/lib/dates';
 
 import type { PlanStatus } from '../event/plansStore';
 
-export type ProfileStats = { upcoming: number; friends: number; saved: number };
+export type ProfileStats = { upcoming: number; friends: number; interested: number };
 
 /**
  * Upcoming is the length of the plans the Profile lists (Going plus Down if friends go, not yet
- * past), so the number always matches the list. Saved = Interested (private).
+ * past), so the number always matches the list. Interested is private.
  * Friends is 0 until the friends list exists.
  */
 export function deriveProfileStats(
@@ -15,18 +15,18 @@ export function deriveProfileStats(
   plans: readonly UpcomingPlan[],
   friendsCount = 0,
 ): ProfileStats {
-  let saved = 0;
+  let interested = 0;
   for (const status of Object.values(statuses)) {
-    if (status === 'interested') saved += 1;
+    if (status === 'interested') interested += 1;
   }
-  return { upcoming: plans.length, friends: friendsCount, saved };
+  return { upcoming: plans.length, friends: friendsCount, interested };
 }
 
 export type UpcomingPlan = { event: EventCardData; status: 'going' | 'down_if_friends' };
 
 /**
  * The viewer's committed plans (Going, and Down if friends go) that have not passed, soonest first.
- * Interested events are bookmarks, so they stay in Saved instead.
+ * Interested events are bookmarks, so they stay under Interested instead.
  */
 export function upcomingPlans(
   statuses: Record<string, PlanStatus | undefined>,
