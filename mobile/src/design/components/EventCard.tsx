@@ -6,6 +6,7 @@ import { formatShortDate, formatTime, WEEKDAYS_LONG } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 
 import { useTheme } from '../theme';
+import { scrim } from '../tokens';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
 import { EventArt } from './EventArt';
@@ -137,7 +138,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
         pointerEvents="none"
         style={[
           StyleSheet.absoluteFill,
-          linearGradient('linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.75) 100%)'),
+          linearGradient(scrim.cardGradient),
         ]}
       />
       {event.liveUntil ? (
@@ -153,7 +154,7 @@ export function EventCard({ event, plan = null, onPress, onToggleInterested, onO
             paddingHorizontal: space.sm,
             paddingVertical: space.xs,
             borderRadius: radius.pill,
-            backgroundColor: 'rgba(0,0,0,0.45)',
+            backgroundColor: scrim.medium,
           }}
         >
           <LiveDot color={colors.onImage} />

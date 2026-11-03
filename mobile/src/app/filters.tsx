@@ -78,7 +78,7 @@ export default function FiltersSheet() {
           accessibilityLabel="Clear all filters"
           accessibilityState={{ disabled: isDefault }}
           disabled={isDefault}
-          hitSlop={space.sm}
+          hitSlop={space.md}
           onPress={() => {
             selection();
             clearFilters();

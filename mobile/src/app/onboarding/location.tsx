@@ -60,9 +60,8 @@ export default function LocationScreen() {
         <MeshArt id="onboarding-location" interest="fitness" symbol="location.fill" symbolSize={96} />
       </View>
       <View style={{ gap: space.md }}>
-        <Point symbol="lock.shield.fill" text="Your location stays on your phone. It’s only used to work out distances." />
-        <Point symbol="mappin" text="We never store it or send it to our servers." />
-        <Point symbol="checkmark.circle" text="You can change this any time in Settings." />
+        <Point symbol="lock.shield.fill" text="Used only to find events near you. Never saved." />
+        <Point symbol="checkmark.circle" text="You can turn this off any time in iOS Settings." />
       </View>
     </Scaffold>
   );

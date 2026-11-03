@@ -81,7 +81,6 @@ export function Composer({ onSend, failure, onDismissFailure }: ComposerProps) {
           accessibilityLabel="Message"
           accessibilityHint="Type a message to the group"
           allowFontScaling
-          maxFontSizeMultiplier={1.4}
           selectionColor={colors.accent}
           style={{
             flex: 1,

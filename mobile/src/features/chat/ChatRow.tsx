@@ -74,13 +74,12 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
           <AppText
             variant="headline"
             numberOfLines={1}
-            maxFontSizeMultiplier={1.4}
             style={{ flex: 1, fontWeight: unread ? '700' : '600' }}
           >
             {chat.title}
           </AppText>
           {when ? (
-            <AppText variant="footnote" color={unread ? 'accent' : 'inkSecondary'} maxFontSizeMultiplier={1.4} rounded>
+            <AppText variant="footnote" color={unread ? 'accent' : 'inkSecondary'} rounded>
               {when}
             </AppText>
           ) : null}
@@ -90,7 +89,6 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
             variant="subheadline"
             color="inkSecondary"
             numberOfLines={1}
-            maxFontSizeMultiplier={1.4}
             style={{ flex: 1 }}
           >
             {preview}
@@ -99,7 +97,7 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
             <View
               style={{
                 minWidth: 20,
-                height: 20,
+                minHeight: 20,
                 paddingHorizontal: space.xs + 2,
                 borderRadius: radius.pill,
                 backgroundColor: colors.accent,
@@ -107,7 +105,7 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
                 justifyContent: 'center',
               }}
             >
-              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} maxFontSizeMultiplier={1.4} rounded>
+              <AppText variant="caption" color="onAccent" style={{ fontWeight: '700' }} rounded maxFontSizeMultiplier={1.4}>
                 {unread}
               </AppText>
             </View>
@@ -126,14 +124,13 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
               variant="caption"
               color={ended ? 'inkSecondary' : 'accent'}
               style={{ fontWeight: '600' }}
-              maxFontSizeMultiplier={1.4}
             >
               {countdown}
             </AppText>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
             <Icon name="person.2.fill" size={11} color="inkSecondary" />
-            <AppText variant="caption" color="inkSecondary" maxFontSizeMultiplier={1.4} rounded>
+            <AppText variant="caption" color="inkSecondary" rounded>
               {chat.goingCount}
             </AppText>
           </View>

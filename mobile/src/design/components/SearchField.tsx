@@ -48,7 +48,8 @@ export function SearchField({ value, onChangeText, placeholder, ...input }: Sear
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Clear search"
-          hitSlop={space.md}
+          // Not toward the text: a tap at the end of the query places the cursor instead of clearing it.
+          hitSlop={{ top: space.md, bottom: space.md, left: space.sm, right: space.lg }}
           onPress={() => {
             selection();
             onChangeText('');

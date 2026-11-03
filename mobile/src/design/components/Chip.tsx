@@ -99,8 +99,7 @@ export function Chip({
         variant={small && !filled ? 'caption' : 'subheadline'}
         color={fg}
         style={{ fontWeight: '500' }}
-        // The filled filter-row chips sit in a tight row beside the map toggle, so they cap sooner.
-        maxFontSizeMultiplier={filled ? 1.4 : 1.6}
+        maxFontSizeMultiplier={2}
       >
         {label}
       </AppText>

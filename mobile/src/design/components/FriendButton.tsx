@@ -123,7 +123,7 @@ function Pill({
       <AppText
         variant={compact ? 'subheadline' : 'headline'}
         color={fg}
-        maxFontSizeMultiplier={1.4}
+        maxFontSizeMultiplier={2}
         style={{ fontWeight: '600', flexShrink: 1 }}
         numberOfLines={1}
       >

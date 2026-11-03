@@ -1,5 +1,6 @@
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { scrim } from '../tokens';
 import { ART_PALETTES, DEFAULT_PALETTE } from '../artPalettes';
 import { Icon, type SymbolName } from './Icon';
 import { MeshBackground } from './MeshBackground';
@@ -65,7 +66,7 @@ export function MeshArt({ id, interest, symbol, symbolSize = 120, style }: MeshA
         <Icon
           name={symbol}
           size={symbolSize}
-          tintColor="rgba(255, 255, 255, 0.35)"
+          tintColor={scrim.lightTint}
           weight="light"
           style={styles.symbol}
         />

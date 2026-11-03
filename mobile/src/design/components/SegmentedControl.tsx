@@ -57,7 +57,7 @@ export function SegmentedControl<T extends string>({
               variant="subheadline"
               color={selected ? 'onAccent' : 'inkSecondary'}
               style={{ fontWeight: selected ? '600' : '500' }}
-              maxFontSizeMultiplier={1.6}
+              maxFontSizeMultiplier={2}
             >
               {o.label}
             </AppText>

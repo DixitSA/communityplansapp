@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { create } from 'zustand';
 
 import { useTheme } from '../theme';
+import { scrim } from '../tokens';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
 
@@ -71,7 +72,7 @@ export function EventImage({ eventId, source, sensitive, overlay = 'badge' }: Ev
               paddingVertical: space.sm,
               borderRadius: radius.pill,
               borderCurve: 'continuous',
-              backgroundColor: 'rgba(0,0,0,0.45)',
+              backgroundColor: scrim.medium,
             }}
           >
             <Icon name="eye.slash" size={overlay === 'label' ? 17 : 15} color="onImage" />

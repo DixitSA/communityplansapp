@@ -73,11 +73,11 @@ function Stat({
       accessibilityHint={href ? 'Opens your friends' : undefined}
       style={{ flex: 1, alignItems: 'center', gap: space.xs }}
     >
-      <AppText variant="title2" rounded maxFontSizeMultiplier={1.4}>
+      <AppText variant="title2" rounded>
         {value}
       </AppText>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-        <AppText variant="footnote" color="inkSecondary" maxFontSizeMultiplier={1.4}>
+        <AppText variant="footnote" color="inkSecondary">
           {label}
         </AppText>
         {badge ? <UnreadDot size={space.sm} /> : null}

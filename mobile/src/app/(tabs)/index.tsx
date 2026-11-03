@@ -217,12 +217,14 @@ export default function FeedScreen() {
           accessibilityRole="button"
           accessibilityLabel="Location: Charlotte, NC"
           accessibilityHint="Opens the city picker"
+          // 32pt pill + 2x8 = 48pt tall; the top row is taller than 44pt so this can't reach the scope control.
+          hitSlop={{ top: space.sm, bottom: space.sm }}
           onPress={() => {
             selection();
             router.push('/city');
           }}
           style={({ pressed }) => ({
-            height: 32,
+            minHeight: 32,
             flexShrink: 1,
             flexDirection: 'row',
             alignItems: 'center',
@@ -235,7 +237,7 @@ export default function FeedScreen() {
           })}
         >
           <Icon name="mappin.circle.fill" size={16} color="accent" />
-          <AppText variant="subheadline" numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontWeight: '600' }}>
+          <AppText variant="subheadline" numberOfLines={1} style={{ flexShrink: 1, fontWeight: '600' }}>
             Charlotte, NC
           </AppText>
           <Icon name="chevron.down" size={10} color="inkSecondary" weight="semibold" />

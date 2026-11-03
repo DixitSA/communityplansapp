@@ -127,3 +127,17 @@ export const cardShadow: Record<Scheme, { boxShadow?: string }> = {
   light: { boxShadow: '0 4px 14px rgba(29, 27, 34, 0.08)' },
   dark: {},
 };
+
+/** Scheme-independent overlays that keep text and glass controls legible on top of photos. */
+export const scrim = {
+  /** Flat tints. */
+  soft: 'rgba(0,0,0,0.3)',
+  glass: 'rgba(0, 0, 0, 0.4)',
+  medium: 'rgba(0,0,0,0.45)',
+  /** White tint for mesh art. */
+  lightTint: 'rgba(255, 255, 255, 0.35)',
+  /** Gradients (CSS strings for experimental_backgroundImage). */
+  cardGradient: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.75) 100%)',
+  heroTopGradient: 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%)',
+  ticketGradient: 'linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.65) 100%)',
+} as const;

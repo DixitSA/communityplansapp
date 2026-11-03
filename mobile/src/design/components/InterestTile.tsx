@@ -60,7 +60,6 @@ export function InterestTile({ label, symbol, slug, selected, onPress }: Interes
         </View>
         <AppText
           variant="headline"
-          maxFontSizeMultiplier={1.4}
           style={{ color: selected ? colors.onImage : colors.ink }}
         >
           {label}
