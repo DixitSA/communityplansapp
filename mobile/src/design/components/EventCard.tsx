@@ -166,11 +166,11 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       ) : null}
       {compact ? (
         <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl + space.md }}>
-          <AppText variant="headline" color="onImage" style={{ paddingRight: space.xxxl }}>
+          <AppText variant="headline" color="onImage" numberOfLines={2} style={{ paddingRight: space.xxxl }}>
             {event.title}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
-            <AppText variant="footnote" color="onImage" style={{ flexShrink: 1 }}>
+            <AppText variant="footnote" color="onImage" numberOfLines={1} style={{ flexShrink: 1 }}>
               {`${WEEKDAYS_LONG[event.startsAt.getDay()].slice(0, 3)} ${formatTime(event.startsAt)} · ${event.venue}`}
             </AppText>
             <Chip label={event.categoryLabel} size="small" category={event.interest} />

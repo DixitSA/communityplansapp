@@ -116,9 +116,11 @@ export default function SearchScreen() {
     ) : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <>
       <Stack.Screen options={navHeader} />
+      {/* The list is the screen's root scroll view, so the native large title collapses as it scrolls. */}
       <FlatList<PersonSearchResult>
+        style={{ flex: 1, backgroundColor: colors.canvas }}
         data={status === 'results' ? results : []}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => <ResultRow person={item} />}
@@ -131,6 +133,6 @@ export default function SearchScreen() {
         accessibilityLabel={status === 'results' ? `${results.length} people found` : undefined}
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl * 3, paddingTop: space.sm }}
       />
-    </View>
+    </>
   );
 }

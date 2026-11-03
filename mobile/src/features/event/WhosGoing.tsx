@@ -18,6 +18,8 @@ export type WhosGoingProps = {
   /** All other people going (>= others.length). */
   othersGoing: number;
   revealed: boolean;
+  /** The event is over: past tense, and no "go to see who's going" prompt (you can't RSVP any more). */
+  ended?: boolean;
 };
 
 const FACE = 52;
@@ -104,7 +106,7 @@ function RedactedFacepile() {
  * "Who's going". Friends show by name and face. Other attendees are a redacted facepile until the
  * viewer is Going: the privacy rule is the reason to commit (DESIGN.md 4.6).
  */
-export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed }: WhosGoingProps) {
+export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed, ended = false }: WhosGoingProps) {
   const { space } = useTheme();
   const reduced = useReducedMotion();
   const moreFriends = Math.max(friendsGoing - friends.length, 0);
@@ -113,7 +115,7 @@ export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed
   return (
     <View style={{ gap: space.lg }}>
       <AppText variant="title2" accessibilityRole="header">
-        Who&apos;s going
+        {ended ? 'Who went' : 'Who\u2019s going'}
       </AppText>
 
       <View style={{ gap: space.sm }}>
@@ -129,7 +131,7 @@ export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed
           </View>
         ) : (
           <AppText variant="subheadline" color="inkSecondary">
-            None of your friends are going yet.
+            {ended ? 'None of your friends went.' : 'None of your friends are going yet.'}
           </AppText>
         )}
       </View>
@@ -152,18 +154,22 @@ export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed
           ) : (
             <View
               accessible
-              accessibilityLabel={`${othersGoing} others are going. Go to see who's going.`}
+              accessibilityLabel={
+                ended ? `${othersGoing} ${othersGoing === 1 ? 'other' : 'others'} went.` : `${othersGoing} others are going. Go to see who's going.`
+              }
               style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}
             >
               <RedactedFacepile />
               <View style={{ flexShrink: 1, gap: 2 }}>
                 <AppText variant="headline">{othersLabel(othersGoing)}</AppText>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-                  <Icon name="lock.fill" size={11} color="inkSecondary" />
-                  <AppText variant="footnote" color="inkSecondary" style={{ flexShrink: 1 }}>
-                    Go to see who&apos;s going
-                  </AppText>
-                </View>
+                {ended ? null : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                    <Icon name="lock.fill" size={11} color="inkSecondary" />
+                    <AppText variant="footnote" color="inkSecondary" style={{ flexShrink: 1 }}>
+                      Go to see who&apos;s going
+                    </AppText>
+                  </View>
+                )}
               </View>
             </View>
           )}

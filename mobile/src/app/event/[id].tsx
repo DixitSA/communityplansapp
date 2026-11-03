@@ -317,6 +317,7 @@ export default function EventScreen() {
               others={revealed ? event.otherAttendees : []}
               othersGoing={othersGoing}
               revealed={revealed}
+              ended={hasEnded(event, now)}
             />
           </View>
         </View>
