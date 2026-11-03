@@ -3,9 +3,8 @@ import { Alert } from 'react-native';
 import { showHintOnce } from '../useFirstTimeHint';
 
 const mockStore = new Map<string, string>();
-jest.mock('expo-sqlite/kv-store', () => ({
-  __esModule: true,
-  default: {
+jest.mock('@/lib/kv', () => ({
+  kv: {
     getItem: async (k: string) => mockStore.get(k) ?? null,
     setItem: async (k: string, v: string) => {
       mockStore.set(k, v);

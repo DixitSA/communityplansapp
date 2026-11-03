@@ -1,4 +1,4 @@
-import Storage from 'expo-sqlite/kv-store';
+import { kv } from '@/lib/kv';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 
@@ -17,8 +17,8 @@ export type HintId = keyof typeof COPY;
 export async function showHintOnce(id: HintId): Promise<void> {
   try {
     const key = KEY_PREFIX + id;
-    if ((await Storage.getItem(key)) != null) return;
-    await Storage.setItem(key, '1');
+    if ((await kv.getItem(key)) != null) return;
+    await kv.setItem(key, '1');
     Alert.alert(COPY[id].title, COPY[id].body, [{ text: 'Got it', style: 'default' }]);
   } catch {
     // A hint is never worth breaking the action it explains.
