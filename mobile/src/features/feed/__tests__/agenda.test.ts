@@ -1,4 +1,5 @@
-import { agendaDetail, agendaHeadline, agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, hasEnded, isLive, sectionIndexForDay } from '../agenda';
+import { stockImageFor } from '@/design/stockImages';
+import { type AgendaEvent, assignStockVariants,agendaDetail,agendaHeadline, agendaItemLayouts, dayMetaFrom, eventDay, formatAgendaTitle, groupByDay, hasEnded, isLive, sectionIndexForDay } from '../agenda';
 
 const ev = (id: string, y: number, mo: number, d: number, h: number, extra: { day?: string; friendsGoing?: number } = {}) => ({
   id,
@@ -160,5 +161,34 @@ describe('live and ended', () => {
     expect(hasEnded(ev(8, 12), now)).toBe(true);
     expect(hasEnded(ev(16), now)).toBe(true);
     expect(hasEnded(ev(19, 22), now)).toBe(false);
+  });
+});
+
+describe('assignStockVariants', () => {
+  const music = (id: string, extra: object = {}): AgendaEvent & { id: string; interest: string } => ({ id, interest: 'music', startsAt: new Date(2026, 9, 30, 12), friendsGoing: 0, ...extra });
+  const photo = (e: { id: string; interest: string; stockVariant?: number | null }) => stockImageFor(e.interest, e.id, e.stockVariant);
+
+  it('never repeats a stock photo within a category, then falls back to art', () => {
+    const out = assignStockVariants(['a', 'b', 'c', 'd', 'e', 'f'].map((id) => music(id)));
+    const shown = out.map(photo).filter((p) => p !== undefined);
+    expect(shown).toHaveLength(3);
+    expect(new Set(shown).size).toBe(3);
+    expect(out.filter((e) => e.stockVariant === null)).toHaveLength(3);
+  });
+
+  it('ignores events with their own image and other categories', () => {
+    const own = music('own', { imageUrl: 'https://x/y.jpg' });
+    const out = assignStockVariants([own, music('a'), { ...music('b'), interest: 'comedy' }]);
+    expect(out[0]).toBe(own);
+    expect(out[2].stockVariant).toBeUndefined();
+  });
+
+  it('is applied per day by groupByDay', () => {
+    const sections = groupByDay(
+      [music('a'), music('b'), music('c'), music('d'), music('e', { startsAt: new Date(2026, 9, 31, 12) })],
+      '2026-10-30',
+    );
+    expect(sections[0].data.filter((e) => e.stockVariant === null)).toHaveLength(1);
+    expect(sections[1].data[0].stockVariant).toBeUndefined();
   });
 });

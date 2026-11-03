@@ -28,6 +28,8 @@ export type EventCardData = {
   venue: string;
   distanceMi: number;
   imageUrl?: string;
+  /** Stock photo variant the feed picked so a day's rows don't repeat a photo (see assignStockVariants). Unset: the event's own pick. */
+  stockVariant?: number | null;
   /** The image is flagged as sensitive: it shows blurred until the viewer taps to view it on the event page. */
   imageSensitive?: boolean;
   /** Category slug (music, food_drinks, fitness, arts_culture, nightlife): picks art palette and tag colors. */

@@ -1,9 +1,45 @@
 import type { DayMeta } from '@/design';
 import { MONTHS_SHORT, WEEKDAYS_LONG, startOfDay, toISODate } from '@/lib/dates';
+import { defaultStockIndex, stockCountFor } from '@/design/stockImages';
 import { parseDateOnly } from '@/lib/validation';
 
 /** What the agenda needs from an event: its start, and optionally the city-local day the server computed. */
-export type AgendaEvent = { startsAt: Date; day?: string; friendsGoing: number };
+export type AgendaEvent = {
+  startsAt: Date;
+  day?: string;
+  friendsGoing: number;
+  id?: string;
+  interest?: string;
+  imageUrl?: string | null;
+  stockVariant?: number | null;
+};
+
+/**
+ * Within one day's events (in order), gives image-less events of the same category different stock photos. Each
+ * keeps its own seeded pick when free (so it matches the event page hero), else the next unused photo; once a
+ * category's photos are used up, `null` makes the rest show generated art. Events with their own image, or with
+ * no id/interest, are untouched. Trade-off: a reassigned event's feed thumbnail differs from its event page hero
+ * (which keeps the per-event pick); the hero is plumbed nowhere near the feed's day grouping.
+ */
+export function assignStockVariants<T extends AgendaEvent>(events: T[]): T[] {
+  const used = new Map<string, Set<number>>();
+  return events.map((e) => {
+    if (e.imageUrl || !e.id || !e.interest) return e;
+    const count = stockCountFor(e.interest);
+    if (count === 0) return e;
+    const taken = used.get(e.interest) ?? new Set<number>();
+    used.set(e.interest, taken);
+    const start = defaultStockIndex(e.interest, e.id);
+    for (let i = 0; i < count; i++) {
+      const index = (start + i) % count;
+      if (!taken.has(index)) {
+        taken.add(index);
+        return index === start ? e : { ...e, stockVariant: index };
+      }
+    }
+    return { ...e, stockVariant: null };
+  });
+}
 
 export type AgendaSection<T extends AgendaEvent> = {
   /** Local day, "YYYY-MM-DD". */
@@ -93,7 +129,7 @@ export function groupByDay<T extends AgendaEvent>(events: T[], today: string, no
   return [...byDay.keys()]
     .sort()
     .map((day) => {
-      const data = byDay.get(day) ?? [];
+      const data = assignStockVariants(byDay.get(day) ?? []);
       const headline = agendaHeadline(day, today, now);
       return {
         day,
