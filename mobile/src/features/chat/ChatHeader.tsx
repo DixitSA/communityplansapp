@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppText, EventImage, GlassSurface, Icon, MeshArt, categoryColors, isCategory, useTheme, type SymbolName } from '@/design';
+import { AppText, EventArt, GlassSurface, Icon, categoryColors, isCategory, useTheme, type SymbolName } from '@/design';
 
 export const CHAT_HEADER_THUMB = 36;
 
@@ -83,11 +83,11 @@ export function ChatHeader({
             overflow: 'hidden',
           }}
         >
-          {imageUrl ? (
-            <EventImage eventId={eventId} source={imageUrl} sensitive={imageSensitive} overlay="none" />
-          ) : (
-            <MeshArt id={eventId} interest={interest} symbol={symbol} symbolSize={18} />
-          )}
+          <EventArt
+            event={{ id: eventId, imageUrl, imageSensitive, interest, symbol }}
+            symbolSize={18}
+            overlay="none"
+          />
         </View>
         <View
           accessible

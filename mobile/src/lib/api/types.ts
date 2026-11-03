@@ -80,6 +80,8 @@ export type ChatSummary = {
   title: string;
   startsAt: Date;
   imageUrl: string | null;
+  /** The event's image is flagged: it stays blurred here too. */
+  imageSensitive: boolean;
   goingCount: number;
   lastBody: string | null;
   lastAuthorName: string | null;
@@ -87,7 +89,7 @@ export type ChatSummary = {
   unreadCount: number;
   /** False once the chat closed (48 h after the event). Read-only from then on. */
   isOpen: boolean;
-  /** Demo mode only: lets the row draw the event's placeholder art. */
+  /** The event's primary interest: picks the stock photo (or generated art) when there's no image. */
   art?: { interest: string; symbol: string };
 };
 

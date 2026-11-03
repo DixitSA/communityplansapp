@@ -1,6 +1,7 @@
 import type { Tables } from '../database.types';
 import { ApiError } from './errors';
-import { CHAT_MAX_LENGTH, type ChatMessage, type ChatSummary } from './types';
+import { primaryInterest } from './feedMapping';
+import { CHAT_MAX_LENGTH, type ChatMessage, type ChatSummary, type Interest } from './types';
 
 const HOUR_MS = 3_600_000;
 
@@ -72,20 +73,25 @@ type ChatRow = {
   last_at: string | null;
   unread_count: number;
   is_open: boolean;
+  image_sensitive?: boolean | null;
+  interest_ids?: number[] | null;
 };
 
-/** A `get_my_chats` row. */
-export function mapChatRow(row: ChatRow): ChatSummary {
+/** A `get_my_chats` row. `interests` turns its interest ids into the art (stock photo) to show without an image. */
+export function mapChatRow(row: ChatRow, interests: Interest[] = []): ChatSummary {
+  const primary = primaryInterest(row.interest_ids ?? [], interests);
   return {
     eventId: row.event_id,
     title: row.title,
     startsAt: new Date(row.starts_at),
     imageUrl: row.image_url,
+    imageSensitive: row.image_sensitive === true,
     goingCount: row.going_count,
     lastBody: row.last_body,
     lastAuthorName: row.last_author_name,
     lastAt: row.last_at ? new Date(row.last_at) : null,
     unreadCount: row.unread_count,
     isOpen: row.is_open,
+    art: primary ? { interest: primary.slug, symbol: primary.symbol } : undefined,
   };
 }

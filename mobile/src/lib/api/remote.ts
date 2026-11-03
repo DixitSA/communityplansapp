@@ -289,9 +289,9 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
     },
 
     async getMyChats() {
-      const { data, error } = await supabase.rpc('get_my_chats');
+      const [{ data, error }, interests] = await Promise.all([supabase.rpc('get_my_chats'), cachedInterests()]);
       if (error) fail(error);
-      return (data ?? []).map(mapChatRow);
+      return (data ?? []).map((row) => mapChatRow(row, interests));
     },
 
     async getChatMessages(eventId, beforeId) {

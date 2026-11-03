@@ -171,6 +171,7 @@ const chat = (over: Partial<ChatSummary>): ChatSummary => ({
   title: 'Event',
   startsAt: at(21),
   imageUrl: null,
+  imageSensitive: false,
   goingCount: 3,
   lastBody: null,
   lastAuthorName: null,

@@ -37,10 +37,10 @@ describe('normalizeLink', () => {
 
 describe('validateSubmission', () => {
   it('accepts the minimum (title and time only)', () => {
-    expect(validateSubmission(draft())).toEqual({});
+    expect(validateSubmission(draft(), now)).toEqual({});
   });
   it('title is 1 to 120 after trimming', () => {
-    expect(validateSubmission(draft({ title: '   ' })).title).toBeDefined();
+    expect(validateSubmission(draft({ title: '   ' }), now).title).toBeDefined();
     expect(isSubmissionValid(draft({ title: 'a'.repeat(TITLE_MAX) }), now)).toBe(true);
     expect(validateSubmission(draft({ title: 'a'.repeat(TITLE_MAX + 1) }), now).title).toBeDefined();
   });

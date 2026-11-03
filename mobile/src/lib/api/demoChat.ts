@@ -134,6 +134,7 @@ export function createDemoChat({ wait, now = () => new Date() }: {
           title: event.title,
           startsAt: event.startsAt,
           imageUrl: event.imageUrl ?? null,
+          imageSensitive: event.imageSensitive === true,
           goingCount: event.friendsGoing + event.othersGoing + 1,
           lastBody: last?.body ?? null,
           lastAuthorName: last?.displayName ?? null,

@@ -1386,7 +1386,9 @@ export type Database = {
         Returns: {
           event_id: string
           going_count: number
+          image_sensitive: boolean
           image_url: string
+          interest_ids: number[]
           is_open: boolean
           last_at: string
           last_author_name: string
