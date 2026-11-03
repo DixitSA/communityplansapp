@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { EventArt, Facepile, MeshBackground, buildMesh, useTheme } from '@/design';
+import { Avatar, EventArt, MeshBackground, buildMesh, useTheme } from '@/design';
 
 const CARDS = [
   { id: 'welcome-music', interest: 'music', symbol: 'music.note', rotate: '-9deg', x: -64, y: 14 },
@@ -96,8 +96,13 @@ export function WelcomeBlob({ size = 240 }: { size?: number }) {
           </View>
         ))}
       </Animated.View>
-      <View style={{ position: 'absolute', bottom: -space.lg }}>
-        <Facepile people={FACES} total={FACES.length} avatarSize={32} />
+      {/* Faces only: names here would read as real friends going, and the label would crowd the art. */}
+      <View style={{ position: 'absolute', bottom: -space.lg, flexDirection: 'row' }}>
+        {FACES.map((p, i) => (
+          <View key={p.id} style={{ marginLeft: i === 0 ? 0 : -space.sm }}>
+            <Avatar name={p.name} size={32} ring ringColor="canvas" />
+          </View>
+        ))}
       </View>
     </View>
   );
