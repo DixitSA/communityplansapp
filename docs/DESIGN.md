@@ -75,7 +75,7 @@ The yard palette, checked for **WCAG AA**: text ≥ 4.5:1, glyphs on solid pins 
 - Clamp it so text stays AA.
 
 **Plan states:**
-- **Interested:** ♡ heart outline, filled when chosen (the same glyph on cards, the RSVP row and Profile "Saved").
+- **Interested:** ♡ heart outline, filled when chosen (the same glyph on cards, the RSVP row and Profile "Interested").
 - **Down if friends go:** a two-person glyph, with an `accentSoft` fill when chosen.
 - **Going:** ✓ on a filled `accent` button.
 

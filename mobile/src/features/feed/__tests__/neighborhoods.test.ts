@@ -1,4 +1,4 @@
-import { milesBetween, neighborhoodCounts, neighborhoodFor } from '../neighborhoods';
+import { milesBetween, neighborhoodFor } from '../neighborhoods';
 
 describe('neighborhoodFor', () => {
   it('places real venues by coordinates', () => {
@@ -18,21 +18,6 @@ describe('neighborhoodFor', () => {
     expect(neighborhoodFor({ neighborhood: 'Optimist Park' })?.name).toBe('Camp North End');
     // A name we don't know falls back to the coordinates.
     expect(neighborhoodFor({ neighborhood: 'Fourth Ward', lat: 35.2272, lng: -80.8426 })?.name).toBe('Uptown');
-  });
-});
-
-describe('neighborhoodCounts', () => {
-  it('counts in launch order and drops empty neighborhoods', () => {
-    const counts = neighborhoodCounts([
-      { lat: 35.2469, lng: -80.8026 },
-      { lat: 35.2272, lng: -80.8426 },
-      { lat: 35.2469, lng: -80.8026 },
-      { lat: 35.1531, lng: -80.8268 },
-    ]);
-    expect(counts.map((c) => [c.hood.name, c.count])).toEqual([
-      ['Uptown', 1],
-      ['NoDa', 2],
-    ]);
   });
 });
 

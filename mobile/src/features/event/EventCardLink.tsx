@@ -6,6 +6,7 @@ import type { RsvpStatus } from '@/lib/api';
 
 import { openDirections, shareEvent } from './actions';
 import type { PlanChoice } from './plansStore';
+import { useFirstTimeHint } from './useFirstTimeHint';
 import { usePlan, useSetRsvp } from './useRsvp';
 
 type LinkableEvent = EventCardData & { myStatus?: RsvpStatus | null; neighborhood?: string };
@@ -16,6 +17,7 @@ function useEventLink(event: LinkableEvent) {
   const status = usePlan(event.id, event.myStatus);
   const { setStatus, toggleInterested } = useSetRsvp();
   const going = status === 'going';
+  const showDownHint = useFirstTimeHint('down_if_friends');
 
   const goingAction = () => {
     if (going) {
@@ -31,7 +33,10 @@ function useEventLink(event: LinkableEvent) {
     onSetPlan: (next: PlanChoice) => {
       if (next === 'going') {
         if (!going) goingAction();
-      } else setStatus(event.id, next);
+      } else {
+        setStatus(event.id, next);
+        if (next === 'down_if_friends') void showDownHint();
+      }
     },
     href: { pathname: '/event/[id]', params: { id: event.id } } as const,
     menuActions: [

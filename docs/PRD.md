@@ -31,7 +31,7 @@ Launch neighborhoods: **Uptown, South End, NoDa, Plaza Midwood, Camp North End /
 ### Plan states (one per user per event, changeable anytime)
 | State | Meaning | Who can see it | Side effects |
 |---|---|---|---|
-| **Interested ♡** | Saved for later | **Only me** | Appears in Profile › Saved |
+| **Interested ♡** | Saved for later | **Only me** | Appears in Profile › Interested |
 | **Down if friends go ✦** | I'll go if a friend commits | **Only me** (a hidden trigger) | When the **first** friend taps Going: push notification and an Activity item, once |
 | **Going ✓** | Committed | **My friends**, plus **other people who are Going** | Added to Plans; joins the event chat; can add to device calendar; friends who are "Down if" get alerted |
 
@@ -70,7 +70,7 @@ Launch neighborhoods: **Uptown, South End, NoDa, Plaza Midwood, Camp North End /
 - The chat is archived (read-only) 48 h after the event ends.
 
 ### 5.6 Profile, friends, activity, settings
-- Own profile: photo, name, bio, interests, upcoming plans, saved, friends count.
+- Own profile: photo, name, bio, interests, upcoming plans, interested, friends count.
 - Other user's profile: mutual friends, shared past events, Add Friend.
 - Friends list and requests. Activity: friend going, requests, accepts, "Who did you meet?".
 - Settings: discoverable by phone, notification toggles, blocked users, sign out, **delete account** (App Store guideline 5.1.1(v)).

@@ -7,7 +7,7 @@ import { toISODate } from '@/lib/dates';
 import { isBackendConfigured } from '@/lib/env';
 import { useNow } from '@/lib/useNow';
 
-import { neighborhoodCounts, neighborhoodFor, type Neighborhood } from './neighborhoods';
+import { neighborhoodFor } from './neighborhoods';
 import { assignStockVariantsByDay, dayMetaFrom, eventEndsAt, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
@@ -41,8 +41,6 @@ export function useFeedEvents(): {
   /** The 14 days with the filters off: tells "nothing planned" apart from "filters removed it all". */
   total: number;
   dayMeta: Record<string, DayMeta>;
-  /** Neighborhoods with events under the other filters, for the chips (the neighborhood filter itself not applied). */
-  hoods: { hood: Neighborhood; count: number }[];
   /** First load, nothing to show yet. */
   isLoading: boolean;
   isError: boolean;
@@ -140,7 +138,6 @@ export function useFeedEvents(): {
       dayEvents,
       total,
       dayMeta: dayMetaFrom(filtered),
-      hoods: neighborhoodCounts(timed),
     };
   }, [all, baselineData, timeOfDay, neighborhood, selectedISO, filtersActive, today, now]);
 

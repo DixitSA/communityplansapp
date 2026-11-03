@@ -22,7 +22,6 @@ import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } 
 import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
-import { NeighborhoodChips } from '@/features/feed/NeighborhoodChips';
 import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
 import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
@@ -61,7 +60,7 @@ export default function FeedScreen() {
   const { setScope, setSelectedDay, setTimeOfDay, setDistance, setView, setNeighborhood, clearFilters } =
     useFiltersStore.getState();
 
-  const { sections, dayEvents, total, dayMeta, hoods, isLoading, isError, refetch } = useFeedEvents();
+  const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
   const neighborhood = useFiltersStore((s) => s.neighborhood);
   const spotlight = useSpotlight();
   // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
@@ -85,7 +84,7 @@ export default function FeedScreen() {
   // were. That gives the list exact offsets (getItemLayout), so a far-off day is one jump away without drawing
   // every row in between. Rows differ a little (a "N going" line, text size), so a jump re-aims once the rows
   // around its target have drawn and measured.
-  // Height of everything above the first day (wordmark row, Nearby/Friends, spotlight, neighborhoods); day offsets start after it.
+  // Height of everything above the first day (wordmark row, Nearby/Friends, spotlight); day offsets start after it.
   const [lead, setLead] = useState(0);
   const leadHeight = lead;
   const [heights, setHeights] = useState<{ rows: Record<string, number>; headers: Record<string, number> }>({
@@ -428,7 +427,6 @@ export default function FeedScreen() {
           <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
             {scopeRow}
             {spotlightEvents ? <SpotlightRail events={spotlightEvents} /> : null}
-            <NeighborhoodChips hoods={hoods} selected={neighborhood} onSelect={setNeighborhood} compact />
           </View>
         }
         ListFooterComponent={

@@ -54,15 +54,3 @@ export function neighborhoodFor(e: { lat?: number; lng?: number; neighborhood?: 
   }
   return best;
 }
-
-/** How many events each neighborhood has, in launch order, leaving out the empty ones. */
-export function neighborhoodCounts(
-  events: { lat?: number; lng?: number; neighborhood?: string }[],
-): { hood: Neighborhood; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const e of events) {
-    const h = neighborhoodFor(e);
-    if (h) counts.set(h.slug, (counts.get(h.slug) ?? 0) + 1);
-  }
-  return NEIGHBORHOODS.filter((h) => counts.has(h.slug)).map((hood) => ({ hood, count: counts.get(hood.slug) ?? 0 }));
-}

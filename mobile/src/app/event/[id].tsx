@@ -27,16 +27,26 @@ import {
   useTheme,
 } from '@/design';
 import { openDirections, openEventMenu, shareEvent } from '@/features/event/actions';
-import { attributionLine, nextStatus, othersCount, othersRevealed, sourceName } from '@/features/event/plansLogic';
+import {
+  attributionLine,
+  eventSummary,
+  isTicketSource,
+  listingButtonLabel,
+  nextStatus,
+  othersCount,
+  othersRevealed,
+  sourceName,
+} from '@/features/event/plansLogic';
 import type { PlanStatus } from '@/features/event/plansStore';
 import { useEvent } from '@/features/event/useEvent';
+import { useFirstTimeHint } from '@/features/event/useFirstTimeHint';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { EndedBar } from '@/features/event/EndedBar';
 import { RsvpBar } from '@/features/event/RsvpBar';
 import { hasEnded } from '@/features/feed/agenda';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
-import { countdownLabel, formatEventTime, formatShortDate } from '@/lib/dates';
+import { WEEKDAYS_LONG, countdownLabel, formatEventTime, formatShortDate, formatTime, isSameDay } from '@/lib/dates';
 import { light } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 import { useNow } from '@/lib/useNow';
@@ -70,6 +80,7 @@ export default function EventScreen() {
   const imageHidden = useImageHidden(id, event?.imageSensitive);
   const revealImage = useRevealedImages((s) => s.reveal);
   const { setStatus } = useSetRsvp();
+  const showDownHint = useFirstTimeHint('down_if_friends');
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
   const [barHeight, setBarHeight] = useState(0);
@@ -130,7 +141,9 @@ export default function EventScreen() {
 
   const choose = (choice: Exclude<PlanStatus, 'going'>) => {
     light();
-    setStatus(event.id, nextStatus(status, choice));
+    const next = nextStatus(status, choice);
+    setStatus(event.id, next);
+    if (next === 'down_if_friends') void showDownHint();
   };
   const onGoing = () => {
     if (status === 'going') {
@@ -150,6 +163,25 @@ export default function EventScreen() {
   const hasDistance = event.distanceMi > 0;
   // A soft wash of the flyer's own color, so every event page looks like its event.
   const pageBg = tintedCanvas(event.imageColor, colors.canvas, scheme);
+  const ended = hasEnded(event, now);
+  // Only real web links get a button or link.
+  const listingUrl = event.source.url && /^https?:\/\//i.test(event.source.url) ? event.source.url : undefined;
+  // Curated and ended events keep the quiet footnote link; everything else gets a real button.
+  const showListingButton = Boolean(listingUrl) && !event.source.curated && !ended;
+  const knownPrice = event.priceLabel !== UNKNOWN_PRICE_LABEL ? event.priceLabel : null;
+  const listingLabel = listingButtonLabel(event.source.name);
+  const description =
+    event.description.trim() ||
+    eventSummary({
+      category: event.tags[0]?.label,
+      venue: event.venue,
+      // An end on a later day names the day ("Sun 5:00 PM"), so it never reads as the same evening.
+      endText: event.endsAt
+        ? isSameDay(event.startsAt, event.endsAt)
+          ? formatTime(event.endsAt)
+          : `${WEEKDAYS_LONG[event.endsAt.getDay()].slice(0, 3)} ${formatTime(event.endsAt)}`
+        : null,
+    });
   const countdown = countdownLabel(event.startsAt, event.endsAt, now);
   const timeText = formatEventTime(event.startsAt, event.endsAt, true);
   // A multi-day event reads "Fri 7:00 PM – Sun 5:00 PM", which already says the days.
@@ -245,8 +277,23 @@ export default function EventScreen() {
                 <Chip key={t.label} label={t.label} category={t.interest} />
               ))}
               {/* With no price known the chip would only say "See listing"; the listing link below covers that. */}
-              {event.priceLabel !== UNKNOWN_PRICE_LABEL ? <Chip label={event.priceLabel} symbol="ticket.fill" /> : null}
+              {knownPrice && !showListingButton ? <Chip label={event.priceLabel} symbol="ticket.fill" /> : null}
             </View>
+            {showListingButton ? (
+              <View style={{ paddingTop: space.sm, gap: space.xs }}>
+                <Button
+                  label={listingLabel}
+                  symbol={isTicketSource(event.source.name) ? 'ticket.fill' : 'arrow.up.right'}
+                  onPress={() => Linking.openURL(listingUrl as string).catch(() => {})}
+                  accessibilityLabel={`${listingLabel}${knownPrice ? `, ${knownPrice}` : ''}. Opens ${sourceName(event.source.name)}`}
+                />
+                {knownPrice ? (
+                  <AppText variant="footnote" color="inkSecondary" style={{ textAlign: 'center' }}>
+                    {knownPrice}
+                  </AppText>
+                ) : null}
+              </View>
+            ) : null}
           </View>
 
           {/* For a venue this row would only repeat the location line above; it earns its place for a real host. */}
@@ -287,16 +334,16 @@ export default function EventScreen() {
           <Divider />
 
           <AppText variant="body" selectable style={{ lineHeight: 24 }}>
-            {event.description}
+            {description}
           </AppText>
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.xs }}>
             <AppText variant="footnote" color="inkSecondary">
               {attributionLine(event.source)}
             </AppText>
-            {event.source.url ? (
+            {listingUrl && !showListingButton ? (
               <Pressable
-                onPress={() => Linking.openURL(event.source.url as string).catch(() => {})}
+                onPress={() => Linking.openURL(listingUrl).catch(() => {})}
                 accessibilityRole="link"
                 accessibilityLabel={`View original listing on ${sourceName(event.source.name)}`}
                 hitSlop={{ top: space.lg, bottom: space.lg, left: space.sm, right: space.sm }}
