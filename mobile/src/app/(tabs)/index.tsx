@@ -85,9 +85,9 @@ export default function FeedScreen() {
   // were. That gives the list exact offsets (getItemLayout), so a far-off day is one jump away without drawing
   // every row in between. Rows differ a little (a "N going" line, text size), so a jump re-aims once the rows
   // around its target have drawn and measured.
-  // Height of the spotlight row above the first day (0 without it); day offsets start after it.
+  // Height of everything above the first day (wordmark row, Nearby/Friends, spotlight, neighborhoods); day offsets start after it.
   const [lead, setLead] = useState(0);
-  const leadHeight = spotlightEvents ? lead : 0;
+  const leadHeight = lead;
   const [heights, setHeights] = useState<{ rows: Record<string, number>; headers: Record<string, number> }>({
     rows: {},
     headers: {},
@@ -100,7 +100,7 @@ export default function FeedScreen() {
   const layouts = useMemo(() => {
     const rowValues = Object.values(heights.rows);
     const headerValues = Object.values(heights.headers);
-    if (rowValues.length === 0 || headerValues.length === 0 || (spotlightEvents && lead === 0)) return null;
+    if (rowValues.length === 0 || headerValues.length === 0 || lead === 0) return null;
     const typicalRow = rowValues[0];
     const typicalHeader = headerValues[0];
     return agendaItemLayouts(
@@ -109,7 +109,7 @@ export default function FeedScreen() {
       (e) => heights.rows[e.id] ?? typicalRow,
       leadHeight,
     );
-  }, [sections, heights, spotlightEvents, lead, leadHeight]);
+  }, [sections, heights, lead, leadHeight]);
   const getItemLayout = useMemo(
     () => (layouts ? (_: unknown, index: number) => layouts[index] ?? { length: 0, offset: 0, index } : undefined),
     [layouts],
@@ -329,13 +329,19 @@ export default function FeedScreen() {
     </View>
   );
 
-  // Same order in both views: wordmark row, Nearby/Friends, date strip, filters.
+  const scopeRow = <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{scopeControl}</View>;
+  // The list view pins the wordmark row, date strip and filters; the map also pins Nearby/Friends.
+  const pinnedBar = (
+    <>
+      {strip}
+      {filterRow}
+    </>
+  );
   const pinned = (
     <>
       {topRow}
-      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md }}>{scopeControl}</View>
-      {strip}
-      {filterRow}
+      {scopeRow}
+      {pinnedBar}
     </>
   );
 
@@ -393,8 +399,11 @@ export default function FeedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {/* The whole header stays pinned; the list scrolls underneath it. */}
-      <View style={{ paddingTop: insets.top + space.md, zIndex: 5 }}>{pinned}</View>
+      {/* The wordmark row, date strip and filters stay pinned; Nearby/Friends scrolls away with the list. */}
+      <View style={{ paddingTop: insets.top + space.md, zIndex: 5, backgroundColor: colors.canvas }}>
+        {topRow}
+        {pinnedBar}
+      </View>
       <SectionList<FeedEvent, Section>
         ref={listRef}
         sections={sections}
@@ -417,8 +426,9 @@ export default function FeedScreen() {
         ListEmptyComponent={empty}
         ListHeaderComponent={
           <View onLayout={(e) => setLead(e.nativeEvent.layout.height)}>
+            {scopeRow}
             {spotlightEvents ? <SpotlightRail events={spotlightEvents} /> : null}
-            <NeighborhoodChips hoods={hoods} selected={neighborhood} onSelect={setNeighborhood} />
+            <NeighborhoodChips hoods={hoods} selected={neighborhood} onSelect={setNeighborhood} compact />
           </View>
         }
         ListFooterComponent={

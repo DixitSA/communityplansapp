@@ -8,7 +8,7 @@ import { isBackendConfigured } from '@/lib/env';
 import { useNow } from '@/lib/useNow';
 
 import { neighborhoodCounts, neighborhoodFor, type Neighborhood } from './neighborhoods';
-import { dayMetaFrom, eventEndsAt, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
+import { assignStockVariantsByDay, dayMetaFrom, eventEndsAt, groupByDay, hasEnded, isLive, type AgendaSection } from './agenda';
 import { DISTANCES, matchesTimeOfDay } from './filters';
 import { useFiltersStore } from './filtersStore';
 import { CHARLOTTE_CENTER, getOrigin } from './origin';
@@ -32,6 +32,8 @@ const WIDEST_RADIUS_M = Math.round(Math.max(...DISTANCES) * METERS_PER_MILE);
 export function useFeedEvents(): {
   /** Matches the filters, over the whole 14 days, earliest first. */
   filtered: FeedEvent[];
+  /** All upcoming events in the 14 days, ignoring every filter (for counts on empty screens). */
+  upcoming: FeedEvent[];
   /** `filtered` grouped by local day (days without events are left out): the agenda's sections. */
   sections: AgendaSection<FeedEvent>[];
   /** Matches the filters on the selected day, earliest first (the map's pins). */
@@ -116,8 +118,10 @@ export function useFeedEvents(): {
   // Ticks every minute: ended events drop out, "Live now" comes and goes, and "This afternoon" becomes "Tonight".
   const now = useNow();
 
+  // Stock photos are handed out once per fetch, before any filter, so they never swap on screen.
+  const all = useMemo(() => assignStockVariantsByDay(data ?? []), [data]);
+
   const derived = useMemo(() => {
-    const all = data ?? [];
     // The time-of-day chip is applied here, so changing it never refetches.
     const timed = all
       .filter((e) => matchesTimeOfDay(e.startsAt, timeOfDay) && !hasEnded(e, now))
@@ -127,8 +131,18 @@ export function useFeedEvents(): {
     const sections = groupByDay(filtered, today, now);
     const dayEvents = sections.find((s) => s.day === selectedISO)?.data ?? [];
     const total = (filtersActive ? (baselineData ?? all) : all).length;
-    return { filtered, sections, dayEvents, total, dayMeta: dayMetaFrom(filtered), hoods: neighborhoodCounts(timed) };
-  }, [data, baselineData, timeOfDay, neighborhood, selectedISO, filtersActive, today, now]);
+    // Every upcoming event, whatever the filters (the baseline query when filters are on): for counts on empty screens.
+    const upcoming = (filtersActive ? (baselineData ?? all) : all).filter((e) => !hasEnded(e, now));
+    return {
+      filtered,
+      upcoming,
+      sections,
+      dayEvents,
+      total,
+      dayMeta: dayMetaFrom(filtered),
+      hoods: neighborhoodCounts(timed),
+    };
+  }, [all, baselineData, timeOfDay, neighborhood, selectedISO, filtersActive, today, now]);
 
   return {
     ...derived,

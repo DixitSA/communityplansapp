@@ -84,7 +84,7 @@ export default function Gallery() {
   const [seg, setSeg] = useState('a');
   const [hood, setHood] = useState<string | null>('noda');
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
-  const [interested, setInterested] = useState(false);
+  const [plan, setPlan] = useState<CardPlan>(null);
   const [rowPlan, setRowPlan] = useState<CardPlan>(null);
   const [count, setCount] = useState(24);
   const [name, setName] = useState('');
@@ -367,13 +367,13 @@ export default function Gallery() {
       <Section title="EventCard">
         <EventCard
           event={events[4]}
-          plan={interested ? 'interested' : null}
-          onToggleInterested={() => setInterested((s) => !s)}
+          plan={plan}
+          onSetPlan={setPlan}
         />
         <EventCard event={events[1]} plan="down_if_friends" />
         <EventCard event={events[3]} plan="going" />
         <EventCard event={{ ...events[0], liveUntil: GALLERY_LIVE_UNTIL }} />
-        {/* Opens the event page with the zoom transition; the corner indicator shares the plans store. */}
+        {/* Opens the event page with the zoom transition; the corner plan button shares the plans store. */}
         <EventCardLink event={events[2]} />
       </Section>
 
@@ -393,7 +393,7 @@ export default function Gallery() {
         </View>
       </Section>
 
-      <Section title="NeighborhoodChips (feed: browse by area, one color each)">
+      <Section title="NeighborhoodChips (feed: browse by area, neutral map-pin chips)">
         <View style={{ marginHorizontal: -space.lg }}>
           <NeighborhoodChips
             hoods={NEIGHBORHOODS.map((h, i) => ({ hood: h, count: 12 - i * 2 }))}

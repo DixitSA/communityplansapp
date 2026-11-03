@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Share, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText, Avatar, Button, Icon, PrimaryButton, useTheme } from '@/design';
+import { inviteFriends } from '@/features/friends/invite';
 import { useOnboardingDraft } from '@/features/onboarding/draftStore';
 import { draftToInput } from '@/features/onboarding/finish';
 import { Scaffold } from '@/features/onboarding/Scaffold';
@@ -12,7 +13,6 @@ import { api, errorCode, mapOnboardingError, onboardingStepForError } from '@/li
 import { isBackendConfigured } from '@/lib/env';
 import { success } from '@/lib/haptics';
 
-const INVITE_MESSAGE = 'I’m using yard to find events in Charlotte and see who’s going. Come find your people with me.';
 // Decorative initials only; these are not real people or suggestions.
 const SAMPLE_FACES = ['Maya Chen', 'Jordan Lee', 'Sam Ortiz'];
 
@@ -51,18 +51,12 @@ export default function FindFriendsScreen() {
     }
   };
 
-  const invite = () => {
-    Share.share({ message: INVITE_MESSAGE }).catch(() => {
-      // Closing the share sheet can reject on some platforms; nothing to do.
-    });
-  };
-
   return (
     <Scaffold
       back
       step={4}
-      title="Friends make it better"
-      subtitle="Finding friends from your contacts is coming soon. For now, invite them and see who’s going together."
+      title="Bring your people"
+      subtitle="Events are better with someone you know. Send an invite and see who’s going together."
       footer={
         <>
           {problem ? (
@@ -75,8 +69,8 @@ export default function FindFriendsScreen() {
               ) : null}
             </View>
           ) : null}
-          <Button label="Invite friends" symbol="square.and.arrow.up" onPress={invite} />
-          <PrimaryButton label={busy ? 'Setting up…' : 'Finish'} disabled={busy} onPress={finish} />
+          <PrimaryButton label="Invite friends" onPress={inviteFriends} />
+          <Button label={busy ? 'Setting up…' : 'Finish'} onPress={busy ? () => {} : finish} />
         </>
       }
     >
@@ -100,10 +94,10 @@ export default function FindFriendsScreen() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
           <Icon name="person.badge.plus" size={18} color="accent" />
-          <AppText variant="headline">Contact matching, soon</AppText>
+          <AppText variant="headline">Your crew starts with one invite</AppText>
         </View>
         <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }}>
-          You’ll choose who to match, and we’ll never message anyone for you. You can skip this and add friends later.
+          Finding friends from your contacts is coming soon, and you’ll choose who to match. You can skip this and add friends later.
         </AppText>
       </View>
     </Scaffold>

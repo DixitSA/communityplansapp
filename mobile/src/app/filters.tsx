@@ -151,7 +151,7 @@ export default function FiltersSheet() {
                   key={h.slug}
                   label={h.name}
                   symbol="mappin"
-                  category={on ? h.tint : undefined}
+                  filled={on}
                   selected={on}
                   ring={on}
                   onPress={() => setNeighborhood(on ? null : h.slug)}

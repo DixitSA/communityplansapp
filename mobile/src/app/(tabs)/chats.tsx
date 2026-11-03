@@ -7,6 +7,8 @@ import { AppText, Button, EmptyState, Screen, Skeleton, useTheme } from '@/desig
 import { ChatList } from '@/features/chat/ChatList';
 import { CHATS_KEY, useMyChats } from '@/features/chat/useMyChats';
 import { useDemoPlans } from '@/features/event/demoPlans';
+import { SuggestedEvents } from '@/features/feed/SuggestedEvents';
+import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
 
 export default function ChatsScreen() {
   const { space, radius } = useTheme();
@@ -14,6 +16,7 @@ export default function ChatsScreen() {
   const queryClient = useQueryClient();
   const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
   useDemoPlans(demoPlans);
+  const { events: suggested } = useSuggestedEvents(3);
 
   const { data, isPending, isError, refetch, dataUpdatedAt } = useMyChats();
   // The countdown badges are measured from when the list last loaded.
@@ -45,15 +48,13 @@ export default function ChatsScreen() {
           </View>
         </EmptyState>
       ) : data.length === 0 ? (
-        <EmptyState
-          symbol="bubble.left.and.bubble.right"
-          title="Tap Going on an event to join its chat"
-          message="Every event you’re going to gets a group chat with the people who are going too."
-        >
-          <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
-            <Button variant="primary" symbol="sparkles" label="Browse the Feed" onPress={() => router.navigate('/')} />
-          </View>
-        </EmptyState>
+        <View style={{ gap: space.lg }}>
+          <AppText variant="body" color="inkSecondary">
+            Every event has a group chat for the people going. Pick one and meet them before the night.
+          </AppText>
+          <SuggestedEvents events={suggested} note="chat opens when you tap Going" />
+          <Button variant="primary" symbol="sparkles" label="Browse the Feed" onPress={() => router.navigate('/')} />
+        </View>
       ) : (
         <ChatList
           chats={data}

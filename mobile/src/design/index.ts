@@ -22,11 +22,9 @@ export { DateStrip, getWeekDays, type DayMeta, type DateStripProps } from './com
 export {
   EventCard,
   eventA11yLabel,
-  planIndicator,
   eventMetaLines,
   type CardPlan,
   type EventCardData,
-  type PlanIndicator,
   type EventCardProps,
 } from './components/EventCard';
 export { PlanPill, planMenuOptions, planPillSpec, type PlanMenuOption } from './components/PlanPill';

@@ -1,9 +1,65 @@
 import type { DayMeta } from '@/design';
 import { MONTHS_SHORT, WEEKDAYS_LONG, startOfDay, toISODate } from '@/lib/dates';
+import { defaultStockIndex, stockCountFor } from '@/design/stockImages';
 import { parseDateOnly } from '@/lib/validation';
 
 /** What the agenda needs from an event: its start, and optionally the city-local day the server computed. */
-export type AgendaEvent = { startsAt: Date; day?: string; friendsGoing: number };
+export type AgendaEvent = {
+  startsAt: Date;
+  day?: string;
+  friendsGoing: number;
+  id?: string;
+  interest?: string;
+  imageUrl?: string | null;
+  stockVariant?: number | null;
+};
+
+/**
+ * Within one day's events (in order), gives image-less events of the same category different stock photos. Each
+ * keeps its own seeded pick when free (so it matches the event page hero), else the next unused photo; once a
+ * category's photos are used up, `null` makes the rest show generated art. Events with their own image, or with
+ * no id/interest, are untouched. Trade-off: a reassigned event's feed thumbnail differs from its event page hero
+ * (which keeps the per-event pick); the hero is plumbed nowhere near the feed's day grouping.
+ */
+export function assignStockVariants<T extends AgendaEvent>(events: T[]): T[] {
+  const used = new Map<string, Set<number>>();
+  return events.map((e) => {
+    if (e.imageUrl || !e.id || !e.interest) return e;
+    const count = stockCountFor(e.interest);
+    if (count === 0) return e;
+    const taken = used.get(e.interest) ?? new Set<number>();
+    used.set(e.interest, taken);
+    const start = defaultStockIndex(e.interest, e.id);
+    for (let i = 0; i < count; i++) {
+      const index = (start + i) % count;
+      if (!taken.has(index)) {
+        taken.add(index);
+        return index === start ? e : { ...e, stockVariant: index };
+      }
+    }
+    return { ...e, stockVariant: null };
+  });
+}
+
+/**
+ * `assignStockVariants` for every day at once, over the whole fetched list and before any on-device filter
+ * (time of day, neighborhood, ended events). So an event's photo never changes while you look: filters and
+ * the minute clock only remove events, they never hand a photo to a different one. Order is kept.
+ */
+export function assignStockVariantsByDay<T extends AgendaEvent>(events: T[]): T[] {
+  const byDay = new Map<string, T[]>();
+  for (const e of [...events].sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())) {
+    const key = eventDay(e);
+    const list = byDay.get(key);
+    if (list) list.push(e);
+    else byDay.set(key, [e]);
+  }
+  const assigned = new Map<T, T>();
+  for (const list of byDay.values()) {
+    assignStockVariants(list).forEach((out, i) => assigned.set(list[i], out));
+  }
+  return events.map((e) => assigned.get(e) ?? e);
+}
 
 export type AgendaSection<T extends AgendaEvent> = {
   /** Local day, "YYYY-MM-DD". */

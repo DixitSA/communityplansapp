@@ -1,8 +1,10 @@
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { View } from 'react-native';
 
 import { useTheme } from '../theme';
-import type { ColorToken } from '../tokens';
+import { scrim, type ColorToken } from '../tokens';
 import type { CardPlan } from './EventCard';
+import { useReduceTransparency } from '../useReduceTransparency';
 import { Icon, type SymbolName } from './Icon';
 
 /** Size of the round quick plan button: Apple's minimum touch target. */
@@ -40,22 +42,39 @@ export function planMenuOptions(plan: CardPlan): PlanMenuOption[] {
   return options;
 }
 
-/** The quick plan button's face: a circle with the plan's symbol. Not interactive by itself (see PlanMenu). */
-export function PlanPill({ plan }: { plan: CardPlan }) {
+function glassAvailable(): boolean {
+  try {
+    return isLiquidGlassAvailable();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The quick plan button's face: a circle with the plan's symbol. Not interactive by itself (see PlanMenu).
+ * `overImage` is for photo cards: Going stays solid accent, the other states are darker glass (a dark
+ * translucent circle without glass or with Reduce Transparency) with a white glyph.
+ */
+export function PlanPill({ plan, overImage = false }: { plan: CardPlan; overImage?: boolean }) {
   const { colors } = useTheme();
+  const reduceTransparency = useReduceTransparency();
   const spec = planPillSpec(plan);
-  return (
-    <View
-      style={{
-        width: PLAN_BUTTON_SIZE,
-        height: PLAN_BUTTON_SIZE,
-        borderRadius: PLAN_BUTTON_SIZE / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors[spec.bg],
-      }}
-    >
-      <Icon name={spec.symbol} size={17} color={spec.fg} weight="semibold" />
-    </View>
-  );
+  const onPhoto = overImage && plan !== 'going';
+  const circle = {
+    width: PLAN_BUTTON_SIZE,
+    height: PLAN_BUTTON_SIZE,
+    borderRadius: PLAN_BUTTON_SIZE / 2,
+    borderCurve: 'continuous' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  };
+  const icon = <Icon name={spec.symbol} size={17} color={onPhoto ? 'onImage' : spec.fg} weight="semibold" />;
+  if (onPhoto && glassAvailable() && !reduceTransparency) {
+    return (
+      <GlassView glassEffectStyle="regular" tintColor={scrim.soft} style={circle}>
+        {icon}
+      </GlassView>
+    );
+  }
+  return <View style={[circle, { backgroundColor: onPhoto ? scrim.glass : colors[spec.bg] }]}>{icon}</View>;
 }

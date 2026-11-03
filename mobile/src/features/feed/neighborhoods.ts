@@ -1,8 +1,6 @@
-import type { CategorySlug } from '@/design';
-
 /**
- * Charlotte's launch neighborhoods (PRD), each with a rough center and reach, plus a color borrowed from
- * the category palette so every chip looks different. Events get the closest one they fall inside,
+ * Charlotte's launch neighborhoods (PRD), each with a rough center and reach. Neighborhoods have no colors of their own: color means
+ * event category elsewhere, so they share one neutral chip style. Events get the closest one they fall inside,
  * measured relative to its reach; events outside all of them simply have no neighborhood.
  */
 export type Neighborhood = {
@@ -11,15 +9,14 @@ export type Neighborhood = {
   lat: number;
   lng: number;
   radiusMi: number;
-  tint: CategorySlug;
 };
 
 export const NEIGHBORHOODS: readonly Neighborhood[] = [
-  { slug: 'uptown', name: 'Uptown', lat: 35.2271, lng: -80.8431, radiusMi: 1.0, tint: 'food_drinks' },
-  { slug: 'south-end', name: 'South End', lat: 35.206, lng: -80.862, radiusMi: 1.1, tint: 'music' },
-  { slug: 'noda', name: 'NoDa', lat: 35.2475, lng: -80.803, radiusMi: 0.8, tint: 'nightlife' },
-  { slug: 'plaza-midwood', name: 'Plaza Midwood', lat: 35.221, lng: -80.81, radiusMi: 0.8, tint: 'arts_culture' },
-  { slug: 'camp-north-end', name: 'Camp North End', lat: 35.241, lng: -80.829, radiusMi: 0.8, tint: 'fitness' },
+  { slug: 'uptown', name: 'Uptown', lat: 35.2271, lng: -80.8431, radiusMi: 1.0 },
+  { slug: 'south-end', name: 'South End', lat: 35.206, lng: -80.862, radiusMi: 1.1 },
+  { slug: 'noda', name: 'NoDa', lat: 35.2475, lng: -80.803, radiusMi: 0.8 },
+  { slug: 'plaza-midwood', name: 'Plaza Midwood', lat: 35.221, lng: -80.81, radiusMi: 0.8 },
+  { slug: 'camp-north-end', name: 'Camp North End', lat: 35.241, lng: -80.829, radiusMi: 0.8 },
 ];
 
 const EARTH_RADIUS_MI = 3958.8;

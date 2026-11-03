@@ -2,7 +2,7 @@ import { Stack, router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, View } from 'react-native';
 
-import { AppText, Avatar, Chip, EmptyState, useTheme } from '@/design';
+import { AppText, Avatar, Button, Chip, EmptyState, useTheme } from '@/design';
 import { formatAgo } from '@/features/activity/format';
 import { getActivityItems, type ActivityItem, type Person } from '@/features/activity/fixtures';
 import { useNow } from '@/lib/useNow';
@@ -196,9 +196,13 @@ export default function ActivityScreen() {
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <EmptyState
               symbol="bell.slash"
-              title="You're all caught up"
-              message="When friends are going, requests come in, or you meet someone at an event, it shows up here."
-            />
+              title="Nothing here yet"
+              message="Friend requests, friends heading to events, and people you meet at events will show up here."
+            >
+              <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+                <Button variant="primary" symbol="sparkles" label="See what’s on in Charlotte" onPress={() => router.navigate('/')} />
+              </View>
+            </EmptyState>
           </View>
         ) : (
           all.map((item) => {

@@ -66,9 +66,25 @@ const STOCK: Record<string, number[]> = {
   ],
 };
 
-/** A stock photo for the event's category, the same one every time for that event, or undefined if none fits. */
-export function stockImageFor(interest: string, eventId: string): number | undefined {
+/** How many stock photos a category has (0 when it has none). */
+export function stockCountFor(interest: string): number {
+  return STOCK[interest]?.length ?? 0;
+}
+
+/** The event's own (seeded) pick, as an index into its category's photos; -1 when the category has none. */
+export function defaultStockIndex(interest: string, eventId: string): number {
+  const count = stockCountFor(interest);
+  return count === 0 ? -1 : Math.floor(seededRandom(`stock:${eventId}`)() * count);
+}
+
+/**
+ * A stock photo for the event's category, or undefined if none fits. Without `variant` it is the same one every
+ * time for that event; `variant` (an index, wrapped) picks a specific photo so a list can avoid repeats. `null`
+ * means "no photo", so the caller falls back to generated art.
+ */
+export function stockImageFor(interest: string, eventId: string, variant?: number | null): number | undefined {
   const set = STOCK[interest];
-  if (!set || set.length === 0) return undefined;
-  return set[Math.floor(seededRandom(`stock:${eventId}`)() * set.length)];
+  if (!set || set.length === 0 || variant === null) return undefined;
+  const index = variant === undefined ? defaultStockIndex(interest, eventId) : ((variant % set.length) + set.length) % set.length;
+  return set[index];
 }
