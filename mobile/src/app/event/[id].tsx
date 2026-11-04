@@ -1,5 +1,5 @@
-import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   interpolate,
@@ -88,10 +88,13 @@ export default function EventScreen() {
 
   // The undo toast floats just above the RSVP bar here instead of its tab-bar spot.
   // The bar's height already includes the bottom safe area, which the toast adds itself.
-  useEffect(() => {
-    useUndoStore.getState().setLift(barHeight > 0 ? Math.max(barHeight - insets.bottom, 0) : null);
-    return () => useUndoStore.getState().setLift(null);
-  }, [barHeight, insets.bottom]);
+  // useFocusEffect re-applies it when returning to this page and clears it when another screen covers it.
+  useFocusEffect(
+    useCallback(() => {
+      useUndoStore.getState().setLift(barHeight > 0 ? Math.max(barHeight - insets.bottom, 0) : null);
+      return () => useUndoStore.getState().setLift(null);
+    }, [barHeight, insets.bottom]),
+  );
 
   // Scrolling: the hero stretches when you pull down and drifts up slower than the sheet.
   const scrollY = useSharedValue(0);

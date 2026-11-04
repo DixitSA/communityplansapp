@@ -7,7 +7,7 @@ import { isBackendConfigured } from '@/lib/env';
 
 import { toggleInterestedChoice, undoMessage } from './plansLogic';
 import { usePlanStatus, usePlansStore, type PlanChoice } from './plansStore';
-import { showUndo } from './undoStore';
+import { showUndo, useUndoStore } from './undoStore';
 
 export type RsvpVars = { eventId: string; status: RsvpStatus | null };
 
@@ -91,6 +91,9 @@ export function useSetRsvp() {
 
   const setStatus = useCallback(
     (eventId: string, status: PlanChoice) => {
+      // A newer change to this event makes its pending Undo stale (it would restore an old plan).
+      const { toast, dismiss } = useUndoStore.getState();
+      if (toast?.eventId === eventId) dismiss();
       if (isBackendConfigured) mutate({ eventId, status });
       else usePlansStore.getState().setStatus(eventId, status);
     },
@@ -104,7 +107,7 @@ export function useSetRsvp() {
       if (next === current) return;
       setStatus(eventId, next);
       const message = undoMessage(current, next, '');
-      if (message) showUndo({ message, onUndo: () => setStatus(eventId, current) });
+      if (message) showUndo({ eventId, message, onUndo: () => setStatus(eventId, current) });
     },
     [setStatus],
   );
@@ -117,7 +120,7 @@ export function useSetRsvp() {
     (eventId: string, prev: PlanChoice, next: PlanChoice, title: string) => {
       setStatus(eventId, next);
       const message = undoMessage(prev, next, title);
-      if (message) showUndo({ message, onUndo: () => setStatus(eventId, prev) });
+      if (message) showUndo({ eventId, message, onUndo: () => setStatus(eventId, prev) });
     },
     [setStatus],
   );

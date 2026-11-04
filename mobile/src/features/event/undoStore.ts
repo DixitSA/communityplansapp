@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type UndoToastData = { id: number; message: string; onUndo: () => void };
+export type UndoToastData = { id: number; eventId?: string; message: string; onUndo: () => void };
 
 type UndoState = {
   toast: UndoToastData | null;
@@ -10,7 +10,7 @@ type UndoState = {
    */
   lift: number | null;
   setLift: (px: number | null) => void;
-  showUndo: (t: { message: string; onUndo: () => void }) => void;
+  showUndo: (t: { eventId?: string; message: string; onUndo: () => void }) => void;
   dismiss: () => void;
 };
 
@@ -25,4 +25,4 @@ export const useUndoStore = create<UndoState>((set) => ({
   dismiss: () => set({ toast: null }),
 }));
 
-export const showUndo = (t: { message: string; onUndo: () => void }) => useUndoStore.getState().showUndo(t);
+export const showUndo = (t: { eventId?: string; message: string; onUndo: () => void }) => useUndoStore.getState().showUndo(t);

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Pressable, View } from 'react-native';
 import Animated, { Easing, FadeIn, FadeOut, SlideInDown, SlideOutDown, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,11 +26,27 @@ export function UndoToast({ message, onUndo, onDismiss, duration = 5000, bottomO
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
 
+  const [screenReaderOn, setScreenReaderOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void AccessibilityInfo.isScreenReaderEnabled().then((on) => live && setScreenReaderOn(on));
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReaderOn);
+    return () => {
+      live = false;
+      sub.remove();
+    };
+  }, []);
+
   useEffect(() => {
     AccessibilityInfo.announceForAccessibility(message);
+  }, [message]);
+
+  // With a screen reader on, keep the toast until the user acts; 5 s is too short to find Undo.
+  useEffect(() => {
+    if (screenReaderOn) return;
     const t = setTimeout(onDismiss, duration);
     return () => clearTimeout(t);
-  }, [message, duration, onDismiss]);
+  }, [message, duration, onDismiss, screenReaderOn]);
 
   // Reduce Motion: opacity only, no slide.
   const enter = reduceMotion ? FadeIn.duration(150) : SlideInDown.duration(250).easing(Easing.out(Easing.cubic));
