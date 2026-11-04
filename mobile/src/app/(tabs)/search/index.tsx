@@ -100,7 +100,7 @@ export default function SearchScreen() {
 
   const shortcuts = useMemo(() => searchShortcuts(upcoming), [upcoming]);
 
-  const onChangeText =(next: string) => {
+  const onChangeText = (next: string) => {
     setText(next);
     if (isPeopleQuery(next)) setMode('people');
   };
