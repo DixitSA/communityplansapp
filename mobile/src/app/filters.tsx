@@ -8,9 +8,9 @@ import {
   PrimaryButton,
   RollingNumber,
   SegmentedControl,
+  minTouchTarget,
   useTheme,
 } from '@/design';
-import { DistanceSlider } from '@/features/feed/DistanceSlider';
 import {
   DISTANCES,
   INTEREST_OPTIONS,
@@ -42,7 +42,7 @@ function Section({ title, children, trailing }: { title: string; children: React
 }
 
 export default function FiltersSheet() {
-  const { colors, space } = useTheme();
+  const { colors, space, radius } = useTheme();
   const insets = useSafeAreaInsets();
   const timeOfDay = useFiltersStore((s) => s.timeOfDay);
   const interests = useFiltersStore((s) => s.interests);
@@ -56,7 +56,13 @@ export default function FiltersSheet() {
   const isDefault = isDefaultFilters({ timeOfDay, interests, distanceMi, price, scope }) && neighborhood === null;
   // The agenda lists every matching event in the next two weeks, so the button counts those.
   const count = filtered.length;
-  const distanceIndex = DISTANCES.indexOf(distanceMi);
+  const distanceOptions = DISTANCES.map((d) => ({ value: String(d), label: `${d} mi` }));
+  const card = {
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    borderCurve: 'continuous',
+    padding: space.md,
+  } as const;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -66,7 +72,7 @@ export default function FiltersSheet() {
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingHorizontal: space.lg,
-          paddingTop: space.xl,
+          paddingTop: space.xxl,
           paddingBottom: space.md,
         }}
       >
@@ -79,6 +85,7 @@ export default function FiltersSheet() {
           accessibilityState={{ disabled: isDefault }}
           disabled={isDefault}
           hitSlop={space.md}
+          style={{ minHeight: minTouchTarget, minWidth: minTouchTarget, alignItems: 'flex-end', justifyContent: 'center' }}
           onPress={() => {
             selection();
             clearFilters();
@@ -90,41 +97,25 @@ export default function FiltersSheet() {
         </Pressable>
       </View>
 
-      {/* flexGrow 0: the button sits right under Price, and the list only scrolls if it can't fit. */}
+      {/* flex 1: the list fills the sheet and the Show button stays pinned at the bottom. */}
       <ScrollView
-        style={{ flexGrow: 0 }}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingVertical: space.md, gap: space.xxl }}
         showsVerticalScrollIndicator={false}
       >
         <Section title="Distance" trailing={`Within ${distanceMi} mi`}>
-          <View style={{ gap: space.xs }}>
-            <DistanceSlider
-              index={distanceIndex}
-              max={DISTANCES.length - 1}
-              onIndexChange={(i) => {
-                const next = DISTANCES[i];
-                if (next !== undefined && next !== distanceMi) {
-                  selection();
-                  setDistance(next);
-                }
-              }}
-            />
-            <View
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: space.sm }}
-            >
-              {DISTANCES.map((d) => (
-                <AppText key={d} variant="caption" color={d === distanceMi ? 'ink' : 'inkSecondary'} rounded>
-                  {d}
-                </AppText>
-              ))}
-            </View>
-          </View>
+          <SegmentedControl
+            options={distanceOptions}
+            value={String(distanceMi)}
+            onChange={(v) => {
+              const next = DISTANCES.find((d) => String(d) === v);
+              if (next !== undefined) setDistance(next);
+            }}
+          />
         </Section>
 
         <Section title="Interests">
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          <View style={[card, { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }]}>
             {INTEREST_OPTIONS.map((o) => {
               const on = interests.includes(o.slug);
               return (
@@ -143,7 +134,7 @@ export default function FiltersSheet() {
         </Section>
 
         <Section title="Neighborhood">
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+          <View style={[card, { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }]}>
             {NEIGHBORHOODS.map((h) => {
               const on = neighborhood === h.slug;
               return (
