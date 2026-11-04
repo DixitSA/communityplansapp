@@ -98,7 +98,7 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="sparkles"
-          title="We can’t find that chat"
+          title="can’t find that chat"
           message="The event may have been taken down. Head back to your chats."
         />
       </View>
@@ -108,7 +108,7 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="lock.fill"
-          title="Tap Going to join the chat"
+          title="tap Going to join the chat"
           message="Only people who are going can read and send messages."
         >
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -122,7 +122,7 @@ export default function ChatScreen() {
   } else if (chat.isError) {
     body = (
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
-        <EmptyState symbol="wifi.slash" title="Couldn’t load the chat" message="Check your connection and try again.">
+        <EmptyState symbol="wifi.slash" title="couldn’t load the chat" message="Check your connection and try again.">
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
             <Button label="Try again" onPress={() => void chat.refetch()} />
           </View>
@@ -134,7 +134,7 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="bubble.left.and.bubble.right"
-          title="No messages yet"
+          title="no messages yet"
           message={open ? 'Say hi and make a plan to meet up.' : 'Nobody wrote in this chat.'}
         />
       </View>

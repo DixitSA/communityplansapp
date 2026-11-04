@@ -55,8 +55,8 @@ export default function FindFriendsScreen() {
     <Scaffold
       back
       step={4}
-      title="Bring your people"
-      subtitle="Events are better with someone you know. Send an invite and see who’s going together."
+      title="bring your people"
+      subtitle="Events hit different with someone you know. Send an invite and see who’s going together."
       footer={
         <>
           {problem ? (

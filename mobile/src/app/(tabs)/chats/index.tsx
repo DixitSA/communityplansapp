@@ -41,7 +41,7 @@ export default function ChatsScreen() {
           ))}
         </View>
       ) : isError ? (
-        <EmptyState symbol="wifi.slash" title="Couldn’t load your chats" message="Check your connection and try again.">
+        <EmptyState symbol="wifi.slash" title="couldn’t load your chats" message="Check your connection and try again.">
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
             <Button label="Try again" onPress={() => void refetch()} />
           </View>
@@ -49,7 +49,7 @@ export default function ChatsScreen() {
       ) : data.length === 0 ? (
         <View style={{ gap: space.lg }}>
           <AppText variant="body" color="inkSecondary">
-            Every event has a group chat for the people going. Pick one and meet them before the night.
+            Every event has a group chat for the people going. Pick one and meet people before the night even starts.
           </AppText>
           <SuggestedEvents events={suggested} note="chat opens when you tap Going" />
           <Button variant="primary" symbol="sparkles" label="Browse the Feed" onPress={() => router.navigate('/')} />

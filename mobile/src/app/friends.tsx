@@ -90,7 +90,7 @@ export default function FriendsScreen() {
     );
   } else if (failed) {
     state = (
-      <EmptyState symbol="wifi.slash" title="Couldn’t load your friends" message="Check your connection and try again.">
+      <EmptyState symbol="wifi.slash" title="couldn’t load your friends" message="Check your connection and try again.">
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Try again" onPress={refresh} />
         </View>
@@ -100,7 +100,7 @@ export default function FriendsScreen() {
     state = (
       <EmptyState
         symbol="person.2"
-        title="Your Charlotte crew starts here"
+        title="your Charlotte crew starts here"
         message={
           peopleGoing > 0
             ? `This week’s events already have ${peopleGoing} going. Add friends and you’ll see which ones they pick.`
@@ -143,7 +143,7 @@ export default function FriendsScreen() {
           if (item.kind === 'none') {
             return (
               <AppText variant="subheadline" color="inkSecondary" style={{ paddingVertical: space.md }}>
-                No friends yet. Accept a request, or find people in Search.
+                No friends yet. Accept a request, or go find your people in Search.
               </AppText>
             );
           }

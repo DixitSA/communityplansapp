@@ -149,7 +149,7 @@ export default function SearchScreen() {
       <View style={{ gap: space.lg }}>
         <EmptyState
           symbol="magnifyingglass"
-          title="Find an event"
+          title="find something to do"
           message="Search the next 2 weeks by title, venue, neighborhood or category."
         />
         <ShortcutGroup label="Neighborhoods" items={shortcuts.neighborhoods} onPick={(q) => pickShortcut(q, 'neighborhood')} />
@@ -158,7 +158,7 @@ export default function SearchScreen() {
     ) : eventResults.length === 0 ? (
       <EmptyState
         symbol="calendar.badge.exclamationmark"
-        title="No events found"
+        title="no events found"
         message={`No events match “${eventQuery}” in the next 2 weeks.`}
       />
     ) : undefined;
@@ -169,7 +169,7 @@ export default function SearchScreen() {
         {status === 'idle' ? <FriendsShortcut /> : null}
         <EmptyState
           symbol="magnifyingglass"
-          title="Find your people"
+          title="find your people"
           message="Search by name or @username. Friends see each other’s Going plans, never your Interested ones."
         >
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -186,7 +186,7 @@ export default function SearchScreen() {
     ) : status === 'loading' ? (
       <PersonRowSkeleton />
     ) : status === 'error' ? (
-      <EmptyState symbol="wifi.slash" title="Couldn’t search" message="Check your connection and try again.">
+      <EmptyState symbol="wifi.slash" title="couldn’t search" message="Check your connection and try again.">
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Try again" onPress={() => void refetch()} />
         </View>
@@ -194,7 +194,7 @@ export default function SearchScreen() {
     ) : status === 'empty' ? (
       <EmptyState
         symbol="person.crop.circle.badge.questionmark"
-        title="No one found"
+        title="no one found"
         message={`Nobody matches “${typed}”. Check the spelling, or try their @username.`}
       />
     ) : null;

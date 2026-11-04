@@ -44,7 +44,7 @@ export default function GoingSheet() {
       : othersCount(event.goingCount, event.friendsGoing, event.myStatus === 'going');
 
   if (ended) {
-    return <EmptyState symbol="clock" title="This event has ended" message="Close this and see what's on next." />;
+    return <EmptyState symbol="clock" title="that one's over" message="Close this and see what's on next." />;
   }
 
   return (
@@ -117,13 +117,13 @@ export default function GoingSheet() {
             />
             <Button
               symbol="person.badge.plus"
-              label="Invite a friend"
+              label="Bring a friend"
               onPress={() => shareEvent(event, 'invite')}
             />
           </View>
         </ScrollView>
       ) : (
-        <EmptyState symbol="sparkles" title="We can't find that event" message="Close this and pick another plan." />
+        <EmptyState symbol="sparkles" title="can't find that event" message="Close this and pick another plan." />
       )}
     </>
   );

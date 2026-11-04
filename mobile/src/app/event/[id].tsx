@@ -132,7 +132,7 @@ export default function EventScreen() {
         {isPending ? null : (
           <View style={{ flex: 1, justifyContent: 'center' }}>
             {failed ? (
-              <EmptyState symbol="wifi.slash" title="Couldn't load this event" message="Check your connection and try again.">
+              <EmptyState symbol="wifi.slash" title="couldn't load this event" message="Check your connection and try again.">
                 <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
                   <Button label="Retry" onPress={() => void refetch()} />
                 </View>
@@ -140,8 +140,8 @@ export default function EventScreen() {
             ) : (
               <EmptyState
                 symbol="sparkles"
-                title="We can't find that event"
-                message="It may have ended or been taken down. Head back to the feed to see what's on."
+                title="can't find that event"
+                message="It may have ended or been taken down. Head back to the feed to see what else is on."
               />
             )}
           </View>

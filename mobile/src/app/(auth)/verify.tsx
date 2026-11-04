@@ -60,7 +60,7 @@ export default function VerifyScreen() {
         : null;
 
   return (
-    <Scaffold back title="Check your email" subtitle={email ? `Enter the 6-digit code we sent to ${email}.` : 'Enter the 6-digit code we sent you.'}>
+    <Scaffold back title="check your email" subtitle={email ? `Pop in the 6-digit code we sent to ${email}.` : 'Pop in the 6-digit code we sent you.'}>
       <View style={{ gap: space.md }}>
         <CodeField
           value={code}

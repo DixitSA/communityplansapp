@@ -225,7 +225,7 @@ describe('Chats list', () => {
 
   it('previews the last message with the first name', () => {
     expect(chatPreview({ lastBody: 'see you at 8', lastAuthorName: 'Maya Chen' })).toBe('Maya: see you at 8');
-    expect(chatPreview({ lastBody: null, lastAuthorName: null })).toBe('No messages yet. Say hi.');
+    expect(chatPreview({ lastBody: null, lastAuthorName: null })).toBe('no messages yet. say hi.');
   });
 
   it('caps the unread badge', () => {

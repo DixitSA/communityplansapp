@@ -3,11 +3,11 @@ import { useUndoStore } from '../undoStore';
 
 describe('undoMessage', () => {
   it('offers undo when a plan is removed', () => {
-    expect(undoMessage('interested', null, 'Jazz Night')).toBe('Removed from your plans');
-    expect(undoMessage('down_if_friends', null, 'Jazz Night')).toBe('Removed from your plans');
+    expect(undoMessage('interested', null, 'Jazz Night')).toBe('removed from your plans');
+    expect(undoMessage('down_if_friends', null, 'Jazz Night')).toBe('removed from your plans');
   });
   it('warns about chat when leaving Going, cleared or not', () => {
-    const msg = 'You left Jazz Night. Chat access removed.';
+    const msg = 'you left Jazz Night. chat access removed.';
     expect(undoMessage('going', null, 'Jazz Night')).toBe(msg);
     expect(undoMessage('going', 'interested', 'Jazz Night')).toBe(msg);
   });

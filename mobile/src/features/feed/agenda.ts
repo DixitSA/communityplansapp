@@ -96,12 +96,12 @@ export function formatAgendaTitle(day: string, count: number): string {
 export function agendaHeadline(day: string, today: string, now: Date): string {
   if (day === today) {
     const h = now.getHours();
-    return h < 12 ? 'This morning' : h < 17 ? 'This afternoon' : 'Tonight';
+    return h < 12 ? 'this morning' : h < 17 ? 'this afternoon' : 'tonight';
   }
   const d = dayToDate(day);
   // Rounded, so a day with a daylight-saving change (23 or 25 hours) still counts as one.
   const daysAway = Math.round((d.getTime() - dayToDate(today).getTime()) / 86_400_000);
-  if (daysAway === 1) return 'Tomorrow';
+  if (daysAway === 1) return 'tomorrow';
   if (daysAway > 1 && daysAway < 7) return WEEKDAYS_LONG[d.getDay()];
   return shortDate(d);
 }

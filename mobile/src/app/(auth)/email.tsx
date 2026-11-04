@@ -30,7 +30,7 @@ export default function EmailScreen() {
   return (
     <Scaffold
       back
-      title="What’s your email?"
+      title="what’s your email?"
       subtitle="We’ll send you a 6-digit code. No password needed."
       footer={<PrimaryButton label={busy ? 'Sending…' : 'Send code'} disabled={!valid || busy} onPress={send} />}
     >

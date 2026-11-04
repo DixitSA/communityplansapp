@@ -41,7 +41,7 @@ function GatedStack() {
         <View style={{ flex: 1, justifyContent: 'center', padding: space.lg, backgroundColor: colors.canvas }}>
           <EmptyState
             symbol="exclamationmark.circle.fill"
-            title="Couldn’t load your profile"
+            title="couldn’t load your profile"
             message="Check your connection and try again."
           >
             <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>

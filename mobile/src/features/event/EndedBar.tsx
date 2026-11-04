@@ -34,12 +34,12 @@ export function EndedBar({ onOpenChat, onLayoutHeight }: EndedBarProps) {
         }}
       >
         <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }} accessibilityRole="text">
-          This event has ended
+          that one’s over
         </AppText>
         <Button
           variant="primary"
-          label="See what's on tonight"
-          accessibilityLabel="See what's on tonight"
+          label="see what's on tonight"
+          accessibilityLabel="see what's on tonight"
           onPress={seeTonight}
         />
         {onOpenChat ? (

@@ -159,13 +159,13 @@ export default function FiltersSheet() {
 
       <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: Math.max(insets.bottom, space.lg) }}>
         <PrimaryButton
-          accessibilityLabel={count === 0 ? 'No events match' : `Show ${count} ${count === 1 ? 'event' : 'events'}`}
+          accessibilityLabel={count === 0 ? 'Nothing matches' : `Show ${count} ${count === 1 ? 'event' : 'events'}`}
           disabled={count === 0}
           onPress={() => router.back()}
         >
           {count === 0 ? (
             <AppText variant="headline" color="onAccent">
-              No events match
+              nothing matches
             </AppText>
           ) : (
             <>

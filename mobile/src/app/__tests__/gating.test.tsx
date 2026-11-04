@@ -41,7 +41,7 @@ describe('root guards with a backend', () => {
     mockState.session = session;
     mockState.profile = null;
     await renderRouter('./src/app', { initialUrl: '/' });
-    expect(await screen.findByText('The basics')).toBeTruthy();
+    expect(await screen.findByText('the basics')).toBeTruthy();
     expect(screen.queryByText('Nearby')).toBeNull();
   });
 
@@ -50,6 +50,6 @@ describe('root guards with a backend', () => {
     mockState.profile = profile;
     await renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByText('Nearby')).toBeTruthy();
-    expect(screen.queryByText('The basics')).toBeNull();
+    expect(screen.queryByText('the basics')).toBeNull();
   });
 });

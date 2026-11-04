@@ -131,7 +131,7 @@ export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed
           </View>
         ) : (
           <AppText variant="subheadline" color="inkSecondary">
-            {ended ? 'None of your friends went.' : 'None of your friends are going yet.'}
+            {ended ? 'None of your friends went.' : 'None of your friends are going yet. Be first?'}
           </AppText>
         )}
       </View>

@@ -156,7 +156,7 @@ export default function ProfileScreen() {
         {header}
         <EmptyState
           symbol="exclamationmark.circle.fill"
-          title="Couldn’t load your profile"
+          title="couldn’t load your profile"
           message="Check your connection and try again."
         >
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -219,12 +219,12 @@ export default function ProfileScreen() {
 
         <View style={{ gap: space.md }}>
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header">
-            Upcoming plans
+            your plans
           </AppText>
           {plans.length === 0 ? (
             <View style={{ gap: space.lg }}>
               <AppText variant="body" color="inkSecondary">
-                Nothing on your calendar yet. Tap Going on something below and it lands here.
+                Nothing on your calendar yet. Tap Going on something and it lands here.
               </AppText>
               <SuggestedEvents events={suggested} />
               <Button label="Find something to do" onPress={() => router.navigate('/')} />
@@ -232,7 +232,7 @@ export default function ProfileScreen() {
           ) : (
             <ScrollView
               horizontal
-              accessibilityLabel="Upcoming plans"
+              accessibilityLabel="your plans"
               showsHorizontalScrollIndicator={false}
               decelerationRate="fast"
               snapToOffsets={plans.map((_, i) => i * (ticketWidth + ticketGap))}
@@ -262,7 +262,7 @@ export default function ProfileScreen() {
           </View>
           {interestedPlans.length === 0 ? (
             <AppText variant="body" color="inkSecondary">
-              Tap ♡ Interested on an event to save it here.
+              Tap ♡ Interested on an event to stash it here.
             </AppText>
           ) : (
             <ScrollView

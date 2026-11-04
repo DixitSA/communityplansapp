@@ -136,6 +136,6 @@ describe('goingTogetherLine', () => {
     expect(goingTogetherLine([], 0, 1)).toBe('You and 1 other are going');
   });
   it('nudges when nobody else is in yet', () => {
-    expect(goingTogetherLine([], 0, 0)).toBe("You're the first one in. Bring a friend?");
+    expect(goingTogetherLine([], 0, 0)).toBe("you're the first one in. bring a friend?");
   });
 });

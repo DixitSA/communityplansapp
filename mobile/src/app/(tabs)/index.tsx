@@ -375,20 +375,20 @@ export default function FeedScreen() {
       ))}
     </View>
   ) : isError ? (
-    <EmptyState symbol="wifi.slash" title="Couldn't load events" message="Check your connection and try again.">
+    <EmptyState symbol="wifi.slash" title="couldn't load events" message="Check your connection and try again.">
       <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
         <Button label="Retry" onPress={refetch} />
       </View>
     </EmptyState>
   ) : total === 0 ? (
-    <EmptyState symbol="sparkles" title="Nothing planned yet" message="No events in the next two weeks. Check back soon.">
+    <EmptyState symbol="sparkles" title="nothing's happening yet" message="No events in the next two weeks. Check back soon, it fills up fast.">
       <SuggestRow />
     </EmptyState>
   ) : friendsOnly ? (
     <EmptyState
       symbol="person.2"
-      title="None of your friends have plans yet"
-      message="When friends tap Going, their plans show up here. Add a few friends to get started."
+      title="your friends are quiet rn"
+      message="When friends tap Going, their plans show up here. Add a few friends to get things moving."
     >
       <View style={{ alignSelf: 'stretch', gap: space.sm, paddingTop: space.md, paddingHorizontal: space.lg }}>
         <PrimaryButton label="Find friends" onPress={() => router.navigate('/search')} />
@@ -398,8 +398,8 @@ export default function FeedScreen() {
   ) : (
     <EmptyState
       symbol="line.3.horizontal.decrease.circle"
-      title="No events match"
-      message="Your filters leave nothing in the next two weeks. Loosen them to see more."
+      title="nothing matches"
+      message="Your filters leave nothing in the next two weeks. Loosen them up to see more."
     >
       <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
         <PrimaryButton label="Clear filters" onPress={clearFilters} />

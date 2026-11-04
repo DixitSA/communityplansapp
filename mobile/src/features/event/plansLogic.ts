@@ -44,8 +44,8 @@ export function shortTitle(title: string, max = 24): string {
  */
 export function undoMessage(prev: PlanChoice, next: PlanChoice, title: string): string | null {
   if (prev === next || prev === null) return null;
-  if (prev === 'going') return `You left ${shortTitle(title)}. Chat access removed.`;
-  if (next === null) return 'Removed from your plans';
+  if (prev === 'going') return `you left ${shortTitle(title)}. chat access removed.`;
+  if (next === null) return 'removed from your plans';
   return null;
 }
 
@@ -114,7 +114,7 @@ export function goingTogetherLine(friendNames: string[], friendsGoing: number, o
   const shown = friendNames.slice(0, 2);
   const rest = friends - shown.length + Math.max(others, 0);
   const people = (n: number) => `${n} ${n === 1 ? 'other' : 'others'}`;
-  if (shown.length === 0) return rest > 0 ? `You and ${people(rest)} are going` : "You're the first one in. Bring a friend?";
+  if (shown.length === 0) return rest > 0 ? `You and ${people(rest)} are going` : "you're the first one in. bring a friend?";
   if (rest === 0) return shown.length === 1 ? `${shown[0]} is going too` : `${shown[0]} and ${shown[1]} are going too`;
   return `${shown.join(', ')} and ${people(rest)} are going too`;
 }
