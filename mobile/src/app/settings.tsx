@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
-import { AppText, Icon, useTheme, type SymbolName } from '@/design';
+import { AppText, Icon, NavRow, useTheme, type SymbolName } from '@/design';
+import { DELETE_ACCOUNT_DETAILS } from '@/features/settings/blockedList';
+import { useDeleteAccount, useDiscoverableByPhone } from '@/features/settings/useSettings';
 import { MySuggestions } from '@/features/submit/MySuggestions';
 import { SuggestRow } from '@/features/submit/SuggestRow';
 import { api } from '@/lib/api';
@@ -24,10 +26,42 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-/** Settings: who sees what, suggesting events, and sign out. Notifications and blocking arrive with their features. */
+/** Settings: who sees what, suggesting events, and sign out. Notifications arrive with push. */
 export default function SettingsSheet() {
   const { colors, space, radius } = useTheme();
   const router = useRouter();
+  const discoverable = useDiscoverableByPhone();
+  const deleteAccount = useDeleteAccount();
+
+  const confirmDelete = () => {
+    warning();
+    if (!isBackendConfigured) {
+      Alert.alert('No account to delete', 'You’re in demo mode, so there’s no account here.');
+      return;
+    }
+    Alert.alert('Delete your account?', DELETE_ACCOUNT_DETAILS, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Continue',
+        style: 'destructive',
+        onPress: () => {
+          warning();
+          Alert.alert('Delete account for good?', 'Last check: your account and everything in it will be deleted right now.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete my account',
+              style: 'destructive',
+              onPress: () =>
+                // On success the auth listener sends us to the welcome screen.
+                deleteAccount.mutate(undefined, {
+                  onError: () => Alert.alert('Couldn’t delete your account', 'Nothing was deleted. Check your connection and try again.'),
+                }),
+            },
+          ]);
+        },
+      },
+    ]);
+  };
 
   const confirmSignOut = () => {
     warning();
@@ -108,6 +142,37 @@ export default function SettingsSheet() {
         </View>
 
         <View style={{ gap: space.sm }}>
+          <SectionLabel>Privacy</SectionLabel>
+          <View
+            style={{
+              borderRadius: radius.card,
+              borderCurve: 'continuous',
+              backgroundColor: colors.surface,
+              paddingHorizontal: space.lg,
+              minHeight: 52,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space.md,
+            }}
+          >
+            <AppText variant="body" style={{ flex: 1, paddingVertical: space.md }}>
+              Let people find me by phone number
+            </AppText>
+            <Switch
+              accessibilityLabel="Let people find me by phone number"
+              value={discoverable.value ?? true}
+              disabled={discoverable.isLoading}
+              onValueChange={(v) => discoverable.set(v)}
+              trackColor={{ true: colors.accent }}
+            />
+          </View>
+          <AppText variant="footnote" color="inkSecondary" style={{ paddingLeft: space.xs }}>
+            phone matching arrives later. this saves your choice now.
+          </AppText>
+          <NavRow symbol="hand.raised" label="Blocked people" onPress={() => router.push('/blocked')} />
+        </View>
+
+        <View style={{ gap: space.sm }}>
           <SectionLabel>Help yard grow</SectionLabel>
           <SuggestRow surface />
           <MySuggestions />
@@ -166,6 +231,34 @@ export default function SettingsSheet() {
             </AppText>
           </Pressable>
         ) : null}
+
+        <View style={{ gap: space.sm }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Delete account"
+            onPress={confirmDelete}
+            disabled={deleteAccount.isPending}
+            style={({ pressed }) => ({
+              minHeight: 52,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space.md,
+              paddingHorizontal: space.lg,
+              borderRadius: radius.card,
+              borderCurve: 'continuous',
+              backgroundColor: colors.surface,
+              opacity: pressed || deleteAccount.isPending ? 0.6 : 1,
+            })}
+          >
+            <Icon name="trash" size={20} color="danger" />
+            <AppText variant="body" color="danger">
+              {deleteAccount.isPending ? 'Deleting…' : 'Delete account'}
+            </AppText>
+          </Pressable>
+          <AppText variant="footnote" color="inkSecondary" style={{ paddingLeft: space.xs }}>
+            permanently removes your profile, plans, friends and messages.
+          </AppText>
+        </View>
 
         {__DEV__ && !isBackendConfigured ? (
           <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>

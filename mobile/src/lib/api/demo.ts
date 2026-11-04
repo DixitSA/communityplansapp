@@ -125,6 +125,7 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: () => Date } = {}): Api {
   let session: AuthSession | null = null;
   let profile: MyProfile | null = null;
+  let discoverable = true;
   const listeners = new Set<(s: AuthSession | null) => void>();
   const wait = (ms = delayMs) => (ms > 0 ? delay(ms) : Promise.resolve());
   const setSession = (s: AuthSession | null) => {
@@ -166,6 +167,24 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       await wait();
       setSession({ userId: 'demo-user', email: null });
       return { givenName: 'Taylor' };
+    },
+    async unblockUser() {
+      // Nothing is blocked in demo mode.
+    },
+    async listBlockedUsers() {
+      await wait();
+      return [];
+    },
+    async getDiscoverableByPhone() {
+      await wait(delayMs / 2);
+      return discoverable;
+    },
+    async setDiscoverableByPhone(value) {
+      await wait(delayMs / 2);
+      discoverable = value;
+    },
+    async deleteAccount() {
+      throw new ApiError('validation_failed'); // demo mode has no account
     },
     async signOut() {
       session = null;

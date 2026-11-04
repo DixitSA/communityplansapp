@@ -1433,6 +1433,16 @@ export type Database = {
           username: string
         }[]
       }
+      list_my_blocks: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          blocked_at: string
+          display_name: string
+          id: string
+          username: string
+        }[]
+      }
       mark_chat_read: { Args: { p_event_id: string }; Returns: undefined }
       purge_old_reports: { Args: never; Returns: number }
       remove_friend: { Args: { p_user: string }; Returns: undefined }

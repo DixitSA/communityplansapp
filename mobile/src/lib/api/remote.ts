@@ -419,6 +419,45 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error && error.code !== '23505') fail(error);
     },
 
+    async unblockUser(userId) {
+      const uid = await myUserId();
+      const { error } = await supabase.from('blocks').delete().eq('blocker_id', uid).eq('blocked_id', userId);
+      if (error) fail(error);
+    },
+
+    async listBlockedUsers() {
+      const { data, error } = await supabase.rpc('list_my_blocks');
+      if (error) fail(error);
+      return (data ?? []).map((row) => ({
+        id: row.id,
+        username: row.username,
+        displayName: row.display_name,
+        avatarUrl: avatarUrl(row.avatar_path),
+        blockedAt: new Date(row.blocked_at),
+      }));
+    },
+
+    async getDiscoverableByPhone() {
+      const uid = await myUserId();
+      const { data, error } = await supabase.from('profiles_private').select('discoverable_by_phone').eq('id', uid).maybeSingle();
+      if (error) fail(error);
+      return data?.discoverable_by_phone ?? true;
+    },
+
+    async setDiscoverableByPhone(value) {
+      const uid = await myUserId();
+      const { error } = await supabase.from('profiles_private').update({ discoverable_by_phone: value }).eq('id', uid);
+      if (error) fail(error);
+    },
+
+    async deleteAccount() {
+      // The Edge Function reads who you are from your login token, never from the request body.
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) fail(error);
+      // The account is gone; clear the local session. A failure here changes nothing for the person.
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    },
+
     async searchProfiles(query, limit = SEARCH_LIMIT) {
       const { data, error } = await supabase.rpc('search_profiles', { p_query: query, p_limit: limit });
       if (error) fail(error);

@@ -2,7 +2,7 @@ import type { EventCardData } from '@/design';
 import type { EventDetail } from '@/features/event/types';
 
 import type { Tables } from '../database.types';
-import type { FriendEntry, FriendRequest, PersonSearchResult, UserProfile } from './friendTypes';
+import type { BlockedPerson, FriendEntry, FriendRequest, PersonSearchResult, UserProfile } from './friendTypes';
 
 /** A row of `interests` (the symbol is an SF Symbol name). */
 export type Interest = Pick<Tables<'interests'>, 'id' | 'slug' | 'label' | 'symbol'>;
@@ -193,6 +193,15 @@ export type Api = {
   /** Flags an event for review. Reporting the same event twice is not an error. */
   reportEvent(eventId: string, reason: EventReportReason): Promise<void>;
   blockUser(userId: string): Promise<void>;
+  /** Undoes a block. Unblocking someone you hadn't blocked is not an error. */
+  unblockUser(userId: string): Promise<void>;
+  /** The people the viewer blocked, newest first. */
+  listBlockedUsers(): Promise<BlockedPerson[]>;
+  /** The viewer's own "let people find me by phone number" choice (private; nobody else can read it). */
+  getDiscoverableByPhone(): Promise<boolean>;
+  setDiscoverableByPhone(value: boolean): Promise<void>;
+  /** Permanently deletes the viewer's account and data, then signs out on this device. */
+  deleteAccount(): Promise<void>;
   /** People matching a name or @username. Under 2 characters answers an empty list. Blocked people never appear. */
   searchProfiles(query: string, limit?: number): Promise<PersonSearchResult[]>;
   /** Asks to be friends. Answers 'friends' when they had already asked you (it accepts theirs). */
