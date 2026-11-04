@@ -17,8 +17,8 @@ describe('EventRow text', () => {
 
 describe('formatAttendeeCount', () => {
   it('shows "+N" beyond the friends\' faces', () => {
-    expect(formatAttendeeCount(3, 12)).toBe('+9');
-    expect(formatAttendeeCount(5, 5)).toBe('+2'); // only three faces are drawn
+    expect(formatAttendeeCount(3, 12)).toBe('+10');
+    expect(formatAttendeeCount(5, 5)).toBe('+3'); // only two faces are drawn
     expect(formatAttendeeCount(2, 2)).toBe('');
   });
 

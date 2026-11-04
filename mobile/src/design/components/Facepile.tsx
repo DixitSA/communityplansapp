@@ -33,16 +33,18 @@ export type FacepileProps = {
 };
 
 const MAX_FACES = 3;
+/** List rows draw two faces so the row's time and venue keep their room. */
+const COMPACT_MAX_FACES = 2;
 
 /**
- * Compact attendee summary for list rows: up to three friends' faces, then "+N" for everyone else
+ * Compact attendee summary for list rows: up to two friends' faces, then "+N" for everyone else
  * going. Faces are friends only (never strangers). With no friends going it is just "N going".
  */
 export function formatAttendeeCount(friendsShown: number, total: number): string {
   const count = Math.max(total, friendsShown);
   if (count === 0) return '';
   if (friendsShown === 0) return `${count} going`;
-  const rest = count - Math.min(friendsShown, MAX_FACES);
+  const rest = count - Math.min(friendsShown, COMPACT_MAX_FACES);
   return rest > 0 ? `+${rest}` : '';
 }
 
@@ -57,7 +59,7 @@ export function Facepile({
   const { space } = useTheme();
   const names = people.map((p) => p.name);
   const avatarSize = avatarSizeProp ?? (compact ? 24 : 26);
-  const faces = people.slice(0, MAX_FACES);
+  const faces = people.slice(0, compact ? COMPACT_MAX_FACES : MAX_FACES);
   const label = formatFriendsLabel(names, total);
   const compactText = formatAttendeeCount(people.length, total);
   if (compact ? !compactText && faces.length === 0 : !label) return null;
