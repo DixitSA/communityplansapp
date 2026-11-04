@@ -1,10 +1,9 @@
 import { Pressable, View } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 import { selection } from '@/lib/haptics';
 
 import { useTheme } from '../theme';
-import { usePressScale } from '../usePressScale';
+import { PressScaleView, usePressScale } from '../usePressScale';
 import { categoryColors, isCategory, type ColorToken } from '../tokens';
 import { AppText } from './AppText';
 import { Icon, type SymbolName } from './Icon';
@@ -127,7 +126,7 @@ export function Chip({
       onPressOut={press.handlers.onPressOut}
       hitSlop={space.xs}
     >
-      <Animated.View style={press.style}>{content}</Animated.View>
+      <PressScaleView style={press.style}>{content}</PressScaleView>
     </Pressable>
   );
 }

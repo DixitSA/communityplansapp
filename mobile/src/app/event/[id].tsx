@@ -265,7 +265,7 @@ export default function EventScreen() {
             {countdown || popping ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
                 {countdown ? <Chip label={countdown} symbol="clock" tone="accent" selected size="small" /> : null}
-                {popping ? <HotBadge label="Popping" /> : null}
+                {popping ? <HotBadge label="popping" /> : null}
               </View>
             ) : null}
             <AppText variant="largeTitle" accessibilityRole="header" selectable style={{ letterSpacing: -0.9, fontWeight: '800' }}>

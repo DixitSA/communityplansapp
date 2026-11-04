@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
-import { AppText, Avatar, Icon, usePressScale, useTheme } from '@/design';
+import { AppText, Avatar, Icon, PressScaleView, usePressScale, useTheme } from '@/design';
 
 import { userHref } from '../friends/routes';
 import { othersLabel } from './plansLogic';
@@ -43,12 +43,12 @@ function PersonTile({ person }: { person: Person }) {
       onPressOut={press.handlers.onPressOut}
       style={{ width: FACE + space.md }}
     >
-      <Animated.View style={[{ alignItems: 'center', gap: space.xs }, press.style]}>
+      <PressScaleView style={[{ alignItems: 'center', gap: space.xs }, press.style]}>
         <Avatar name={person.name} size={FACE} />
         <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={2} style={{ fontWeight: '600' }}>
           {firstName(person.name)}
         </AppText>
-      </Animated.View>
+      </PressScaleView>
     </Pressable>
   );
 }

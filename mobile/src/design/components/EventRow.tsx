@@ -1,12 +1,11 @@
 import { Link, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 import { formatEventTime, formatTime } from '@/lib/dates';
 
 import { useTheme } from '../theme';
-import { usePressScale } from '../usePressScale';
+import { PressScaleView, usePressScale } from '../usePressScale';
 import { categoryColors, isCategory } from '../tokens';
 import { AppText } from './AppText';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
@@ -150,7 +149,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
 
   return (
     // The right column is a sibling of the row's Pressable so buttons never nest on web.
-    <Animated.View
+    <PressScaleView
       style={[
         {
           flexDirection: 'row',
@@ -189,6 +188,6 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
         <Facepile people={event.friends} total={event.goingCount ?? event.friendsGoing} compact emphasis />
         <PlanMenu plan={plan} title={event.title} onChange={(p) => onSetPlan?.(p)} />
       </View>
-    </Animated.View>
+    </PressScaleView>
   );
 }

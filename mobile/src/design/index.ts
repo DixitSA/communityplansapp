@@ -1,6 +1,6 @@
 export { useTheme, type Theme } from './theme';
 export * from './tokens';
-export { usePressScale } from './usePressScale';
+export { PressScaleView, usePressScale } from './usePressScale';
 export { AppText, type AppTextProps } from './components/AppText';
 export { Avatar, initialsOf, type AvatarProps } from './components/Avatar';
 export {

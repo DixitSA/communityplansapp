@@ -1,4 +1,4 @@
-import { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { motion } from './tokens';
 
@@ -29,3 +29,9 @@ export function usePressScale(scaleTo: number = motion.pressScale) {
     },
   };
 }
+
+/**
+ * The view that carries `style` from usePressScale. It's Reanimated's Animated.View, exported from here so
+ * tests that can't load Reanimated (the router harness) can swap this one module for plain Views.
+ */
+export const PressScaleView = Animated.View;

@@ -1,12 +1,11 @@
 import { Link, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated from 'react-native-reanimated';
 
 import { formatShortDate, formatTime, WEEKDAYS_LONG } from '@/lib/dates';
 
 import { useTheme } from '../theme';
-import { usePressScale } from '../usePressScale';
+import { PressScaleView, usePressScale } from '../usePressScale';
 import { scrim } from '../tokens';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
@@ -240,7 +239,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
 
   return (
     // The plan button is a sibling of the card Pressable (not a child) so buttons never nest on web.
-    <Animated.View
+    <PressScaleView
       style={[
         {
           minHeight,
@@ -274,6 +273,6 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       <View style={{ position: 'absolute', top: space.sm, right: space.sm }}>
         <PlanMenu plan={plan} title={event.title} onChange={(p) => onSetPlan?.(p)} overImage />
       </View>
-    </Animated.View>
+    </PressScaleView>
   );
 }
