@@ -1,4 +1,4 @@
-import { isPeopleQuery, matchEvents } from './matchEvents';
+import { isPeopleQuery, matchEvents, searchShortcuts } from './matchEvents';
 
 const events = [
   { title: 'Jazz Night', venue: 'Evening Muse', categoryLabel: 'Music', neighborhood: 'NoDa' },
@@ -21,6 +21,23 @@ describe('matchEvents', () => {
   it('keeps input order and ignores blank queries', () => {
     expect(matchEvents(events, 'e').map((e) => e.title)).toEqual(['Jazz Night', 'Trivia', 'Market']);
     expect(matchEvents(events, '  ')).toEqual([]);
+  });
+});
+
+describe('searchShortcuts', () => {
+  const more = [
+    ...events,
+    { title: 'Show', venue: 'Neighborhood Theatre', categoryLabel: 'Music', neighborhood: 'NoDa' },
+    { title: 'Gig', venue: 'Evening Muse', categoryLabel: 'Music', neighborhood: 'NoDa' },
+    { title: 'Run', venue: 'Park', categoryLabel: 'Games', neighborhood: 'Plaza Midwood' },
+  ];
+  it('ranks by count and caps the lists', () => {
+    const s = searchShortcuts(more, 1, 2);
+    expect(s.neighborhoods).toEqual(['NoDa']);
+    expect(s.categories).toEqual(['Music', 'Games']);
+  });
+  it('is empty with no events', () => {
+    expect(searchShortcuts([])).toEqual({ neighborhoods: [], categories: [] });
   });
 });
 

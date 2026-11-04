@@ -5,6 +5,7 @@ import { FlatList, View } from 'react-native';
 import {
   AppText,
   Button,
+  Chip,
   EmptyState,
   FriendButton,
   NavRow,
@@ -18,11 +19,12 @@ import {
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type FeedEvent, type PersonSearchResult } from '@/lib/api';
 import { EventRowLink } from '@/features/event/EventCardLink';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
-import { isPeopleQuery, matchEvents, type SearchMode } from '@/features/search/matchEvents';
+import { isPeopleQuery, matchEvents, searchShortcuts, type SearchMode } from '@/features/search/matchEvents';
 import { useFriendButton } from '@/features/friends/useFriendButton';
 import { useFriendRequests } from '@/features/friends/useFriends';
 import { useFriendSearch } from '@/features/friends/useFriendSearch';
 import { friendsHref, userHref } from '@/features/friends/routes';
+import { selection } from '@/lib/haptics';
 import { inviteFriends } from '@/features/friends/invite';
 
 /** Under the search field while it's empty: the way to your friends and requests. */
@@ -36,6 +38,31 @@ function FriendsShortcut() {
       accessibilityLabel={incoming > 0 ? `Friends and requests, ${incoming} new` : 'Friends and requests'}
       onPress={() => router.push(friendsHref)}
     />
+  );
+}
+
+function ShortcutGroup({ label, items, onPick }: { label: string; items: string[]; onPick: (q: string) => void }) {
+  const { space } = useTheme();
+  if (items.length === 0) return null;
+  return (
+    <View style={{ gap: space.sm }}>
+      <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingLeft: space.xs }}>
+        {label}
+      </AppText>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+        {items.map((item) => (
+          <Chip
+            key={item}
+            label={item}
+            accessibilityLabel={`Search ${item}`}
+            onPress={() => {
+              selection();
+              onPick(item);
+            }}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -71,7 +98,9 @@ export default function SearchScreen() {
   const eventQuery = text.trim();
   const eventResults = useMemo(() => (people ? [] : matchEvents(upcoming, eventQuery)), [people, upcoming, eventQuery]);
 
-  const onChangeText = (next: string) => {
+  const shortcuts = useMemo(() => searchShortcuts(upcoming), [upcoming]);
+
+  const onChangeText =(next: string) => {
     setText(next);
     if (isPeopleQuery(next)) setMode('people');
   };
@@ -103,11 +132,15 @@ export default function SearchScreen() {
 
   const eventsBody =
     eventQuery.length === 0 ? (
-      <EmptyState
-        symbol="magnifyingglass"
-        title="Find an event"
-        message="Search the next 2 weeks by title, venue, neighborhood or category."
-      />
+      <View style={{ gap: space.lg }}>
+        <EmptyState
+          symbol="magnifyingglass"
+          title="Find an event"
+          message="Search the next 2 weeks by title, venue, neighborhood or category."
+        />
+        <ShortcutGroup label="Neighborhoods" items={shortcuts.neighborhoods} onPick={onChangeText} />
+        <ShortcutGroup label="Categories" items={shortcuts.categories} onPick={onChangeText} />
+      </View>
     ) : eventResults.length === 0 ? (
       <EmptyState
         symbol="calendar.badge.exclamationmark"

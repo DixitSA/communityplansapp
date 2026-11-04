@@ -27,3 +27,20 @@ export function matchEvents<T extends SearchableEvent>(events: readonly T[], que
     ),
   );
 }
+
+export type SearchShortcuts = { neighborhoods: string[]; categories: string[] };
+
+function topByCount(values: (string | undefined)[], max: number): string[] {
+  const counts = new Map<string, number>();
+  for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  // Array sort is stable, so ties keep first-seen (feed) order.
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, max).map(([name]) => name);
+}
+
+/** Tap-to-search suggestions from the events on offer: busiest neighborhoods and categories. */
+export function searchShortcuts(events: readonly SearchableEvent[], maxNeighborhoods = 3, maxCategories = 6): SearchShortcuts {
+  return {
+    neighborhoods: topByCount(events.map((e) => neighborhoodFor(e)?.name ?? e.neighborhood), maxNeighborhoods),
+    categories: topByCount(events.map((e) => e.categoryLabel), maxCategories),
+  };
+}
