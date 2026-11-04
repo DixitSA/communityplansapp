@@ -6,7 +6,7 @@ import { MySuggestions } from '@/features/submit/MySuggestions';
 import { SuggestRow } from '@/features/submit/SuggestRow';
 import { api } from '@/lib/api';
 import { isBackendConfigured } from '@/lib/env';
-import { warning } from '@/lib/haptics';
+import { selection, warning } from '@/lib/haptics';
 
 /** Who can see each thing you do: the privacy rules from DATA_MODEL.md, in plain words. */
 const PRIVACY: { symbol: SymbolName; title: string; detail: string }[] = [
@@ -111,6 +111,36 @@ export default function SettingsSheet() {
           <SectionLabel>Help yard grow</SectionLabel>
           <SuggestRow surface />
           <MySuggestions />
+        </View>
+
+        <View style={{ gap: space.sm }}>
+          <SectionLabel>Help</SectionLabel>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="How yard works"
+            accessibilityHint="Opens a short guide to plans, chats, friends and privacy"
+            onPress={() => {
+              selection();
+              router.push('/help');
+            }}
+            style={({ pressed }) => ({
+              minHeight: 52,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: space.md,
+              paddingHorizontal: space.lg,
+              borderRadius: radius.card,
+              borderCurve: 'continuous',
+              backgroundColor: colors.surface,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Icon name="questionmark.circle" size={20} color="accent" />
+            <AppText variant="body" style={{ flex: 1 }}>
+              How yard works
+            </AppText>
+            <Icon name="chevron.right" size={14} color="inkSecondary" weight="semibold" />
+          </Pressable>
         </View>
 
         {isBackendConfigured ? (

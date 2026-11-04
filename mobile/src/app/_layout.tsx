@@ -79,6 +79,7 @@ function GatedStack() {
         <Stack.Screen name="user/[id]" />
         <Stack.Screen name="suggest" options={sheet([0.9, 1])} />
         <Stack.Screen name="settings" options={sheet([0.5, 1])} />
+        <Stack.Screen name="help" options={sheet([0.7, 1])} />
         <Stack.Screen name="(dev)/gallery" />
       </Stack.Protected>
       <Stack.Protected guard={gateAllows(gate, 'onboarding')}>
