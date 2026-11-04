@@ -15,6 +15,9 @@ describe('listing button and summary', () => {
     expect(listingButtonLabel('Ticketmaster')).toBe('Get tickets on Ticketmaster');
     expect(listingButtonLabel('Listed via SeatGeek')).toBe('Get tickets on SeatGeek');
     expect(listingButtonLabel('Google')).toBe('View listing on Google');
+    // Instagram handles say where the link goes instead of naming the account.
+    expect(listingButtonLabel('@vintagemarketclt', 'https://www.instagram.com/p/abc/')).toBe('View on Instagram');
+    expect(listingButtonLabel('Listed via @cltguide', 'https://example.com/event')).toBe('View listing');
   });
   it('builds a summary from known facts only', () => {
     expect(eventSummary({ category: 'Music', venue: 'The Fillmore' })).toBe('Music at The Fillmore.');

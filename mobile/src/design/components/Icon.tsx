@@ -33,6 +33,7 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'mappin.circle.fill': 'location',
   map: 'map-outline',
   'square.and.arrow.up': 'share-outline',
+  'arrow.up.right': 'open-outline',
   'music.note': 'musical-notes',
   'fork.knife': 'restaurant',
   'figure.run': 'walk',
