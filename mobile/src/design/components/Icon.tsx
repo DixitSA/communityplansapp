@@ -87,6 +87,7 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'hand.raised': 'hand-left-outline',
   'questionmark.circle': 'help-circle-outline',
   'calendar.badge.exclamationmark': 'calendar-clear-outline',
+  trash: 'trash-outline',
 };
 
 /**

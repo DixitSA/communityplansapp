@@ -72,7 +72,6 @@ export function Facepile({
 }: FacepileProps) {
   const { space, colors, radius } = useTheme();
   const names = people.map((p) => p.name);
-  const avatarSize = avatarSizeProp ?? (compact ? 24 : 26);
   const faces = people.slice(0, compact ? COMPACT_MAX_FACES : MAX_FACES);
   const label = formatFriendsLabel(names, total);
   const compactText = formatAttendeeCount(people.length, total);
@@ -80,6 +79,8 @@ export function Facepile({
   const spoken = compact ? formatCompactSpoken(names, total) : label;
   // Friends on a compact pile sit in a soft accent capsule so the row's social proof reads first.
   const capsule = emphasis && compact && faces.length > 0;
+  // The capsule's padding costs width a list row needs for its time range, so its faces are a little smaller.
+  const avatarSize = avatarSizeProp ?? (capsule ? 20 : compact ? 24 : 26);
   // Friends are the headline (accent); a bare count of strangers is bold but neutral.
   const labelTone: ColorToken =
     emphasis && labelColor === 'inkSecondary' ? (faces.length > 0 ? 'accent' : 'ink') : labelColor;
@@ -88,20 +89,20 @@ export function Facepile({
       accessible
       accessibilityLabel={spoken}
       style={[
-        { flexDirection: 'row', alignItems: 'center', gap: compact ? space.xs + 2 : space.sm },
+        { flexDirection: 'row', alignItems: 'center', gap: capsule ? space.xs : compact ? space.xs + 2 : space.sm },
         capsule && {
           backgroundColor: colors.accentSoft,
           borderRadius: radius.pill,
           borderCurve: 'continuous',
           padding: 2,
-          paddingRight: compactText ? space.sm : 2,
+          paddingRight: compactText ? space.xs + 2 : 2,
         },
       ]}
     >
       {faces.length > 0 ? (
         <View style={{ flexDirection: 'row' }}>
           {faces.map((p, i) => (
-            <View key={p.id} style={{ marginLeft: i === 0 ? 0 : compact ? -8 : -avatarSize * 0.3 }}>
+            <View key={p.id} style={{ marginLeft: i === 0 ? 0 : capsule ? -6 : compact ? -8 : -avatarSize * 0.3 }}>
               <Avatar
                 name={p.name}
                 size={avatarSize}
