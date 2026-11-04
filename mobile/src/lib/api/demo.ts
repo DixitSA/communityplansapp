@@ -141,6 +141,10 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
   return {
     ...chat,
     ...friends,
+    async reportEvent() {
+      // Nothing to record in demo mode.
+    },
+
     async blockUser(userId) {
       await chat.blockUser(userId);
       // A blocked person vanishes from search, friends and profiles, like on the server.

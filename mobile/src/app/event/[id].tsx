@@ -265,12 +265,7 @@ export default function EventScreen() {
             <AppText variant="headline" rounded>
               {dateLine}
             </AppText>
-            <Pressable
-              onPress={() => openDirections(event)}
-              accessibilityRole="link"
-              accessibilityLabel={`${event.venue}${hasDistance ? `, ${event.distanceMi.toFixed(1)} miles away` : ''}. Open directions.`}
-              style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}
-            >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
               <View style={{ paddingTop: 2 }}>
                 <Icon name="mappin" size={17} color="accent" />
               </View>
@@ -282,7 +277,15 @@ export default function EventScreen() {
                   {event.address}
                 </AppText>
               </View>
-            </Pressable>
+            </View>
+            <View style={{ flexDirection: 'row' }}>
+              <Button
+                label="Directions"
+                symbol="location.fill"
+                accessibilityLabel={`Get directions to ${event.venue}`}
+                onPress={() => openDirections(event)}
+              />
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, paddingTop: space.xs }}>
               {event.tags.map((t) => (
                 <Chip key={t.label} label={t.label} category={t.interest} />

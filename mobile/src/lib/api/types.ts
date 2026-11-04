@@ -122,6 +122,7 @@ export type ChatSubscription = {
 
 /** Why someone reports a message. Stored as the report's `reason` text. */
 export type ReportReason = 'spam' | 'harassment' | 'other';
+export type EventReportReason = 'wrong_details' | 'spam_or_scam' | 'unsafe' | 'other';
 
 /** Messages per page of `get_chat_messages`. */
 export const CHAT_PAGE_SIZE = 50;
@@ -184,6 +185,8 @@ export type Api = {
   reportMessage(messageId: string, reason: ReportReason): Promise<void>;
   /** For people whose message is gone (deleted): a plain user report. */
   reportUser(userId: string, reason: ReportReason): Promise<void>;
+  /** Flags an event for review. Reporting the same event twice is not an error. */
+  reportEvent(eventId: string, reason: EventReportReason): Promise<void>;
   blockUser(userId: string): Promise<void>;
   /** People matching a name or @username. Under 2 characters answers an empty list. Blocked people never appear. */
   searchProfiles(query: string, limit?: number): Promise<PersonSearchResult[]>;
