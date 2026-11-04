@@ -18,6 +18,12 @@ describe('matchEvents', () => {
   it('does not match other text', () => {
     expect(matchEvents(events, 'zzzz')).toEqual([]);
   });
+  it('limits a shortcut chip to its own field', () => {
+    const more = [...events, { title: 'Smart Startups Musical', venue: 'Hall', categoryLabel: 'Tech' }];
+    expect(matchEvents(more, 'Music').map((e) => e.title)).toEqual(['Jazz Night', 'Smart Startups Musical']);
+    expect(matchEvents(more, 'Music', 'category').map((e) => e.title)).toEqual(['Jazz Night']);
+    expect(matchEvents(more, 'noda', 'neighborhood').map((e) => e.title)).toEqual(['Jazz Night']);
+  });
   it('keeps input order and ignores blank queries', () => {
     expect(matchEvents(events, 'e').map((e) => e.title)).toEqual(['Jazz Night', 'Trivia', 'Market']);
     expect(matchEvents(events, '  ')).toEqual([]);

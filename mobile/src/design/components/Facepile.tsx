@@ -55,8 +55,8 @@ export function formatCompactSpoken(names: string[], total: number): string {
   if (names.length === 0) return `${count} going`;
   const shown = names.slice(0, 2);
   const rest = count - shown.length;
-  if (rest <= 0) return `${shown.join(' and ')} going`;
-  return `${shown.join(', ')} and ${rest} ${rest === 1 ? 'other' : 'others'} going`;
+  if (rest <= 0) return `${shown.join(' and ')} ${shown.length === 1 ? 'is' : 'are'} going`;
+  return `${shown.join(', ')} and ${rest} ${rest === 1 ? 'other' : 'others'} are going`;
 }
 
 export function Facepile({

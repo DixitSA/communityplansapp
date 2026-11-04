@@ -50,9 +50,10 @@ describe('quick plan button', () => {
 
 describe('formatCompactSpoken', () => {
   it('names friends and counts the rest as others', () => {
-    expect(formatCompactSpoken(['Maya', 'Jordan'], 5)).toBe('Maya, Jordan and 3 others going');
-    expect(formatCompactSpoken(['Maya', 'Jordan'], 3)).toBe('Maya, Jordan and 1 other going');
-    expect(formatCompactSpoken(['Maya'], 1)).toBe('Maya going');
+    expect(formatCompactSpoken(['Maya', 'Jordan'], 5)).toBe('Maya, Jordan and 3 others are going');
+    expect(formatCompactSpoken(['Maya', 'Jordan'], 3)).toBe('Maya, Jordan and 1 other are going');
+    expect(formatCompactSpoken(['Maya'], 1)).toBe('Maya is going');
+    expect(formatCompactSpoken(['Maya', 'Jordan'], 2)).toBe('Maya and Jordan are going');
   });
   it('says N going with no friends', () => {
     expect(formatCompactSpoken([], 7)).toBe('7 going');

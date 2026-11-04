@@ -16,11 +16,21 @@ export function isPeopleQuery(query: string): boolean {
   return query.trimStart().startsWith('@');
 }
 
-/** Case-insensitive match on title, venue, neighborhood and category. Keeps the input (feed) order. */
-export function matchEvents<T extends SearchableEvent>(events: readonly T[], query: string): T[] {
+/** A shortcut chip searches one field only, so "Arts" doesn't also catch "Smart Startups". */
+export type SearchScope = 'category' | 'neighborhood';
+
+/**
+ * Case-insensitive match on title, venue, neighborhood and category, or, with a scope, the exact
+ * category or neighborhood a shortcut chip named. Keeps the input (feed) order.
+ */
+export function matchEvents<T extends SearchableEvent>(events: readonly T[], query: string, scope?: SearchScope): T[] {
   // A leading "@" means a person; if someone switches to Events anyway, search the rest.
   const q = query.trim().replace(/^@/, '').toLowerCase();
   if (!q) return [];
+  if (scope === 'category') return events.filter((e) => e.categoryLabel.toLowerCase() === q);
+  if (scope === 'neighborhood') {
+    return events.filter((e) => (neighborhoodFor(e)?.name ?? e.neighborhood)?.toLowerCase() === q);
+  }
   return events.filter((e) =>
     [e.title, e.venue, e.neighborhood, neighborhoodFor(e)?.name, e.categoryLabel].some((f) =>
       f?.toLowerCase().includes(q),

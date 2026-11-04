@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AppText, Icon, useTheme, type SymbolName } from '@/design';
+import { AppText, Icon, minTouchTarget, useTheme, type SymbolName } from '@/design';
 
 type Item = { symbol: SymbolName; title: string; detail: string };
 
@@ -107,7 +107,7 @@ export default function HelpSheet() {
           accessibilityRole="button"
           accessibilityLabel="Done"
           hitSlop={space.sm}
-          style={{ minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' }}
+          style={{ minHeight: minTouchTarget, minWidth: minTouchTarget, alignItems: 'flex-end', justifyContent: 'center' }}
           onPress={() => router.back()}>
           <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
             Done

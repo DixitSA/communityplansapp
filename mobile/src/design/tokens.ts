@@ -92,6 +92,9 @@ export const space = {
   xxxl: 32,
 } as const;
 
+/** Apple's minimum tappable size, in points. */
+export const minTouchTarget = 44;
+
 export const radius = {
   thumb: 12,
   card: 16,

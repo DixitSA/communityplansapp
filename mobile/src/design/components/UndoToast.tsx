@@ -4,12 +4,13 @@ import Animated, { Easing, FadeIn, FadeOut, SlideInDown, SlideOutDown, useReduce
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme';
+import { minTouchTarget as MIN_TARGET } from '../tokens';
 import { AppText } from './AppText';
 
 export type UndoToastProps = {
   message: string;
   onUndo: () => void;
-  /** Called when the toast times out. */
+  /** Called when the toast times out, or VoiceOver's escape gesture (two-finger scrub) dismisses it. */
   onDismiss: () => void;
   /** Auto-hide delay in ms. */
   duration?: number;
@@ -17,7 +18,6 @@ export type UndoToastProps = {
   bottomOffset?: number;
 };
 
-const MIN_TARGET = 44;
 const DEFAULT_OFFSET = 96;
 
 /** A pill with a message and an Undo button. Announces itself to VoiceOver and hides after a few seconds. */
@@ -57,6 +57,8 @@ export function UndoToast({ message, onUndo, onDismiss, duration = 5000, bottomO
       entering={enter}
       exiting={exit}
       accessibilityLiveRegion="polite"
+      // With VoiceOver on there is no timeout, so the escape gesture closes it.
+      onAccessibilityEscape={onDismiss}
       style={{ position: 'absolute', left: space.lg, right: space.lg, bottom: insets.bottom + bottomOffset }}
     >
       <View

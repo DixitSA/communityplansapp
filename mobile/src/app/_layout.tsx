@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, View } from 'react-native';
 
 import { Button, EmptyState, UndoToast, useTheme } from '@/design';
 import { useUndoStore } from '@/features/event/undoStore';
@@ -99,6 +99,18 @@ function UndoHost() {
   const dismiss = useUndoStore((s) => s.dismiss);
   const lift = useUndoStore((s) => s.lift);
   const { space } = useTheme();
+
+  // With VoiceOver on the toast has no timeout, so leaving the screen closes it instead.
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    if (pathname === lastPath.current) return;
+    lastPath.current = pathname;
+    void AccessibilityInfo.isScreenReaderEnabled().then((on) => {
+      if (on) useUndoStore.getState().dismiss();
+    });
+  }, [pathname]);
+
   if (!toast) return null;
   return (
     <UndoToast

@@ -19,7 +19,13 @@ import {
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type FeedEvent, type PersonSearchResult } from '@/lib/api';
 import { EventRowLink } from '@/features/event/EventCardLink';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
-import { isPeopleQuery, matchEvents, searchShortcuts, type SearchMode } from '@/features/search/matchEvents';
+import {
+  isPeopleQuery,
+  matchEvents,
+  searchShortcuts,
+  type SearchMode,
+  type SearchScope,
+} from '@/features/search/matchEvents';
 import { useFriendButton } from '@/features/friends/useFriendButton';
 import { useFriendRequests } from '@/features/friends/useFriends';
 import { useFriendSearch } from '@/features/friends/useFriendSearch';
@@ -91,18 +97,26 @@ export default function SearchScreen() {
   const { colors, space } = useTheme();
   const navHeader = useLargeTitleHeader('Search');
   const [text, setText] = useState('');
+  // Set by a shortcut chip; typing goes back to searching every field.
+  const [scope, setScope] = useState<SearchScope | undefined>(undefined);
   const [mode, setMode] = useState<SearchMode>('events');
   const people = mode === 'people';
   const { status, results, typed, refetch } = useFriendSearch(people ? text : '');
   const { upcoming } = useFeedEvents();
   const eventQuery = text.trim();
-  const eventResults = useMemo(() => (people ? [] : matchEvents(upcoming, eventQuery)), [people, upcoming, eventQuery]);
+  const eventResults = useMemo(() => (people ? [] : matchEvents(upcoming, eventQuery, scope)), [people, upcoming, eventQuery, scope]);
 
   const shortcuts = useMemo(() => searchShortcuts(upcoming), [upcoming]);
 
   const onChangeText = (next: string) => {
     setText(next);
+    setScope(undefined);
     if (isPeopleQuery(next)) setMode('people');
+  };
+
+  const pickShortcut = (q: string, chipScope: SearchScope) => {
+    setText(q);
+    setScope(chipScope);
   };
 
   const header = (
@@ -138,8 +152,8 @@ export default function SearchScreen() {
           title="Find an event"
           message="Search the next 2 weeks by title, venue, neighborhood or category."
         />
-        <ShortcutGroup label="Neighborhoods" items={shortcuts.neighborhoods} onPick={onChangeText} />
-        <ShortcutGroup label="Categories" items={shortcuts.categories} onPick={onChangeText} />
+        <ShortcutGroup label="Neighborhoods" items={shortcuts.neighborhoods} onPick={(q) => pickShortcut(q, 'neighborhood')} />
+        <ShortcutGroup label="Categories" items={shortcuts.categories} onPick={(q) => pickShortcut(q, 'category')} />
       </View>
     ) : eventResults.length === 0 ? (
       <EmptyState
