@@ -301,12 +301,14 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
             'status, events!inner(id, title, starts_at, ends_at, venue_name, neighborhood, image_url, image_sensitive, event_interests(interest_id))',
           )
           .eq('user_id', uid)
-          .or(`ends_at.gte.${nowIso},starts_at.gte.${nowIso}`, { referencedTable: 'events' })
-          .order('starts_at', { referencedTable: 'events', ascending: true }),
+          .or(`ends_at.gte.${nowIso},starts_at.gte.${nowIso}`, { referencedTable: 'events' }),
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => mapPlanRow(row, interests));
+      // Ordering by an embedded table's column only sorts inside the embed, so sort the plans here.
+      return (data ?? [])
+        .map((row) => mapPlanRow(row, interests))
+        .sort((a, b) => a.event.startsAt.getTime() - b.event.startsAt.getTime());
     },
 
     async getMyChats() {
