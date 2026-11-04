@@ -125,13 +125,13 @@ describe('day headers', () => {
   const at = (h: number) => new Date(2026, 9, 31, h, 0);
 
   it('gives today a mood for the time of day', () => {
-    expect(agendaHeadline(today, today, at(9))).toBe('This morning');
-    expect(agendaHeadline(today, today, at(14))).toBe('This afternoon');
-    expect(agendaHeadline(today, today, at(20))).toBe('Tonight');
+    expect(agendaHeadline(today, today, at(9))).toBe('this morning');
+    expect(agendaHeadline(today, today, at(14))).toBe('this afternoon');
+    expect(agendaHeadline(today, today, at(20))).toBe('tonight');
   });
 
   it('names tomorrow and the rest of the week, then falls back to the date', () => {
-    expect(agendaHeadline('2026-11-01', today, at(20))).toBe('Tomorrow'); // across the clock change
+    expect(agendaHeadline('2026-11-01', today, at(20))).toBe('tomorrow'); // across the clock change
     expect(agendaHeadline('2026-11-05', today, at(20))).toBe('Thursday');
     expect(agendaHeadline('2026-11-07', today, at(20))).toBe('Sat, Nov 7');
   });
@@ -139,7 +139,7 @@ describe('day headers', () => {
   it('keeps the date in the detail line unless the headline is the date', () => {
     expect(agendaDetail('2026-11-05', 'Thursday', 9)).toBe('Thu, Nov 5 · 9 events');
     expect(agendaDetail('2026-11-07', 'Sat, Nov 7', 1)).toBe('1 event');
-    expect(agendaDetail('2026-10-31', 'Tonight', 8, 3)).toBe('Sat, Oct 31 · 8 events · 3 live');
+    expect(agendaDetail('2026-10-31', 'tonight', 8, 3)).toBe('Sat, Oct 31 · 8 events · 3 live');
   });
 });
 

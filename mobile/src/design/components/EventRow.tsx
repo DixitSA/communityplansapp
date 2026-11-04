@@ -5,17 +5,20 @@ import { Pressable, View } from 'react-native';
 import { formatEventTime, formatTime } from '@/lib/dates';
 
 import { useTheme } from '../theme';
+import { PressScaleView, usePressScale } from '../usePressScale';
 import { categoryColors, isCategory } from '../tokens';
 import { AppText } from './AppText';
 import { eventA11yLabel, type CardPlan, type EventCardData } from './EventCard';
 import { EventArt } from './EventArt';
 import { LiveDot } from './LiveDot';
 import { Facepile } from './Facepile';
+import { HotBadge, isPopping } from './HotBadge';
 import { Icon } from './Icon';
 import { PlanMenu } from './PlanMenu';
 
 export const EVENT_ROW_THUMB = 64;
 const CATEGORY_DOT = 7;
+const CATEGORY_GLYPH = 13;
 
 /** "6:00 – 9:00 PM" (just the start without an end time). */
 export function eventRowTime(e: Pick<EventCardData, 'startsAt' | 'endsAt'>): string {
@@ -45,6 +48,9 @@ export type EventRowProps = {
  */
 export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuActions }: EventRowProps) {
   const { colors, space, radius } = useTheme();
+  const press = usePressScale();
+  const popping = isPopping(event.goingCount) && !event.liveUntil;
+  const categoryColor = isCategory(event.interest) ? categoryColors[event.interest].solid : colors.inkSecondary;
 
   const thumb = (
     <View
@@ -64,30 +70,33 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
     <Pressable
       accessible
       accessibilityRole={href ? 'link' : 'button'}
-      accessibilityLabel={eventA11yLabel(event, plan)}
+      accessibilityLabel={`${popping ? 'Popping. ' : ''}${eventA11yLabel(event, plan)}`}
       onPress={onPress}
+      onPressIn={press.handlers.onPressIn}
+      onPressOut={press.handlers.onPressOut}
       // A static style: `Link asChild` merges props onto this element and drops style functions on web.
       style={{ flex: 1, minWidth: 0 }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        {href ? <Link.AppleZoom>{thumb}</Link.AppleZoom> : thumb}
+        <View>
+          {href ? <Link.AppleZoom>{thumb}</Link.AppleZoom> : thumb}
+          {/* Lots going: a flame on the thumbnail's corner (VoiceOver gets "Popping" in the row's label). */}
+          {popping ? (
+            <View pointerEvents="none" style={{ position: 'absolute', top: -space.xs, left: -space.xs }}>
+              <HotBadge label="Popping" iconOnly />
+            </View>
+          ) : null}
+        </View>
         <View style={{ flex: 1, gap: 1 }}>
-          <AppText variant="headline" numberOfLines={2}>
+          <AppText variant="rowTitle" numberOfLines={2}>
             {event.title}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
             {event.liveUntil ? (
               <LiveDot color={colors.accent} size={CATEGORY_DOT} />
             ) : (
-              // The category's color as a dot; the art already says the rest, so no chip.
-              <View
-                style={{
-                  width: CATEGORY_DOT,
-                  height: CATEGORY_DOT,
-                  borderRadius: CATEGORY_DOT / 2,
-                  backgroundColor: isCategory(event.interest) ? categoryColors[event.interest].solid : colors.inkSecondary,
-                }}
-              />
+              // The category's own glyph in its color; the art already says the rest, so no chip.
+              <Icon name={event.symbol} size={CATEGORY_GLYPH} tintColor={categoryColor} weight="semibold" />
             )}
             <AppText
               variant="footnote"
@@ -97,12 +106,10 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
             >
               {event.liveUntil ? (
                 // Only the dot is accent, so a busy night doesn't turn into a wall of green.
-                <>
-                  <AppText variant="footnote" color="ink" style={{ fontWeight: '600', lineHeight: 16 }}>
-                    {`Live · until ${formatTime(event.liveUntil, true)}`}
-                  </AppText>
-                  {` · ${event.categoryLabel}`}
-                </>
+                // The category stays in the thumbnail art and the accessibility label, so it isn't repeated (it truncated).
+                <AppText variant="footnote" color="ink" style={{ fontWeight: '600', lineHeight: 16 }}>
+                  {`Live · until ${formatTime(event.liveUntil, true)}`}
+                </AppText>
               ) : (
                 `${event.categoryLabel} · ${eventRowTime(event)}`
               )}
@@ -142,16 +149,19 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
 
   return (
     // The right column is a sibling of the row's Pressable so buttons never nest on web.
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: space.sm,
-        padding: space.sm,
-        borderRadius: radius.card,
-        borderCurve: 'continuous',
-        backgroundColor: colors.surface,
-      }}
+    <PressScaleView
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: space.sm,
+          padding: space.sm,
+          borderRadius: radius.card,
+          borderCurve: 'continuous',
+          backgroundColor: colors.surface,
+        },
+        press.style,
+      ]}
     >
       {!href ? (
         pressable
@@ -175,9 +185,9 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
         }}
       >
         {/* Friends' faces only; with no friends going this is just "N going". */}
-        <Facepile people={event.friends} total={event.goingCount ?? event.friendsGoing} compact />
+        <Facepile people={event.friends} total={event.goingCount ?? event.friendsGoing} compact emphasis />
         <PlanMenu plan={plan} title={event.title} onChange={(p) => onSetPlan?.(p)} />
       </View>
-    </View>
+    </PressScaleView>
   );
 }

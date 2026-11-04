@@ -31,3 +31,9 @@ export const isBackendConfigured = hasBackendConfig(url, anonKey);
  * link from anyone could sign a person into that sender's account.
  */
 export const devSessionLinkEnabled = process.env.EXPO_PUBLIC_DEV_SESSION_LINK === '1';
+
+/**
+ * yard's App Store listing (https://apps.apple.com/app/id…). Shared events link to it so friends can get the
+ * app. Unset until the app is listed; shares then go out without a link.
+ */
+export const appStoreUrl = process.env.EXPO_PUBLIC_APP_STORE_URL || null;

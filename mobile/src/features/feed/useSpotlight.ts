@@ -7,7 +7,7 @@ import { CHARLOTTE_CENTER, getOrigin } from './origin';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
-/** "Popping this week" for the feed's spotlight row. It ignores the feed's filters: it's what the city is doing. */
+/** "Popping this week" for the feed's spotlight row. Fetched unfiltered; the feed screen narrows it with the same filters as the agenda (see filterSpotlight). */
 export function useSpotlight() {
   const origin = useQuery({ queryKey: ['origin'], queryFn: getOrigin, staleTime: FIVE_MINUTES, enabled: isBackendConfigured });
   const where = origin.data ?? CHARLOTTE_CENTER;

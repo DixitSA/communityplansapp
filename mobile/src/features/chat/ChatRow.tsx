@@ -11,10 +11,12 @@ export type ChatRowProps = {
   chat: ChatSummary;
   now: Date;
   onPress: () => void;
+  /** Press and hold; the list uses it for "Leave chat". */
+  onLongPress?: () => void;
 };
 
 /** One chat in the list: event picture, title, the last message, when, and what's new. */
-export function ChatRow({ chat, now, onPress }: ChatRowProps) {
+export function ChatRow({ chat, now, onPress, onLongPress }: ChatRowProps) {
   const { colors, space, radius } = useTheme();
   const unread = unreadBadge(chat.unreadCount);
   const label = countdownLabel(chat.startsAt, now);
@@ -37,9 +39,10 @@ export function ChatRow({ chat, now, onPress }: ChatRowProps) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
       accessibilityLabel={a11y}
-      accessibilityHint="Opens the chat"
+      accessibilityHint={onLongPress ? 'Opens the chat. Press and hold to leave it' : 'Opens the chat'}
       style={({ pressed }) => [
         { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md },
         pressed && { backgroundColor: colors.surfaceMuted },

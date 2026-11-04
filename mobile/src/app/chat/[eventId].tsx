@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, Button, EmptyState, Icon, Skeleton, useTheme } from '@/design';
 import { ChatHeader } from '@/features/chat/ChatHeader';
+import { canLeaveChat, openChatMenu } from '@/features/chat/leaveChat';
 import { Composer } from '@/features/chat/Composer';
 import { MessageRow } from '@/features/chat/MessageRow';
 import { openMessageMenu } from '@/features/chat/messageActions';
@@ -69,7 +70,7 @@ export default function ChatScreen() {
 
   const { data: event, isPending: eventPending } = useEvent(eventId);
   const plan = usePlan(eventId, event?.myStatus);
-  const { setStatus } = useSetRsvp();
+  const { setStatus, changePlan } = useSetRsvp();
   const going = plan === 'going';
 
   const chat = useChat(eventId, going);
@@ -85,6 +86,11 @@ export default function ChatScreen() {
 
   if (!hydrated) return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
 
+  const leaveChat = () => {
+    changePlan(eventId, 'going', 'interested', event?.title ?? 'this event');
+    goBack();
+  };
+
   const joinChat = () => {
     success();
     setStatus(eventId, 'going');
@@ -98,8 +104,8 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="sparkles"
-          title="We can’t find that chat"
-          message="The event may have been taken down. Head back to your chats."
+          title="can’t find that chat"
+          message="That event may have been taken down. Head back to your chats."
         />
       </View>
     );
@@ -108,7 +114,7 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="lock.fill"
-          title="Tap Going to join the chat"
+          title="tap Going to join the chat"
           message="Only people who are going can read and send messages."
         >
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -122,7 +128,7 @@ export default function ChatScreen() {
   } else if (chat.isError) {
     body = (
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
-        <EmptyState symbol="wifi.slash" title="Couldn’t load the chat" message="Check your connection and try again.">
+        <EmptyState symbol="wifi.slash" title="couldn’t load the chat" message="Check your connection and try again.">
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
             <Button label="Try again" onPress={() => void chat.refetch()} />
           </View>
@@ -134,8 +140,8 @@ export default function ChatScreen() {
       <View style={{ flex: 1, justifyContent: 'center', paddingTop: headerHeight }}>
         <EmptyState
           symbol="bubble.left.and.bubble.right"
-          title="No messages yet"
-          message={open ? 'Say hi and make a plan to meet up.' : 'Nobody wrote in this chat.'}
+          title="no messages yet"
+          message={open ? 'Say hi and make a plan to meet up.' : 'Nobody said anything in this chat.'}
         />
       </View>
     );
@@ -211,7 +217,13 @@ export default function ChatScreen() {
         interest={event?.interest}
         symbol={event?.symbol}
         onBack={goBack}
-        onOpenEvent={() => router.push({ pathname: '/event/[id]', params: { id: eventId } })}
+        onMenu={() =>
+          openChatMenu({
+            canLeave: canLeaveChat(plan, open),
+            onViewEvent: () => router.push({ pathname: '/event/[id]', params: { id: eventId } }),
+            onLeave: leaveChat,
+          })
+        }
         onDirections={() => event && openDirections(event)}
         onLayoutHeight={setHeaderHeight}
       />

@@ -34,6 +34,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    ['expo-image-picker', { photosPermission: 'yard uses your photos so you can pick a profile picture.' }],
     [
       'expo-splash-screen',
       {

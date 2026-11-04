@@ -5,7 +5,7 @@ import { createAppleNonce } from '../nonce';
 import { mapChatRow, mapMessageRow, mapTableRow, normalizeMessageBody } from './chatMapping';
 import { ApiError, errorCode } from './errors';
 import { mapFriendRow, mapProfileRow, mapRequestRow, mapSearchRow, type AvatarUrl } from './friendsMapping';
-import { mapFeedRow, parseFriends, primaryInterest, priceLabel, spotlightReason } from './feedMapping';
+import { mapFeedRow, mapPlanRow, parseFriends, primaryInterest, priceLabel, spotlightReason } from './feedMapping';
 import { SEARCH_LIMIT } from './friendTypes';
 import { CHAT_PAGE_SIZE, type Api, type AuthSession, type ChatMessage, type EventPage, type Interest, type MyProfile, type RsvpStatus } from './types';
 
@@ -42,6 +42,14 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
   // Avatars live in the public `avatars` bucket (docs/DATA_MODEL.md, Storage). Building the URL needs no request.
   const avatarUrl: AvatarUrl = (path) =>
     path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : null;
+
+  /** Deletes the user's files in their avatar folder except `keep`. Best effort: a leftover file is harmless. */
+  const removeOldAvatars = async (uid: string, keep: string | null) => {
+    const folder = supabase.storage.from('avatars');
+    const { data } = await folder.list(uid);
+    const stale = (data ?? []).map((f) => `${uid}/${f.name}`).filter((p) => p !== keep);
+    if (stale.length > 0) await folder.remove(stale);
+  };
 
   // Chat helpers. Names and avatars of people who write while the chat is open are looked up once each.
   const authors = new Map<string, { displayName: string; avatarPath: string | null }>();
@@ -134,7 +142,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (!uid) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, home_city_id, profile_interests(interests(id, slug, label, symbol))')
+        .select('id, username, display_name, bio, avatar_path, home_city_id, profile_interests(interests(id, slug, label, symbol))')
         .eq('id', uid)
         .maybeSingle();
       if (error) fail(error);
@@ -144,6 +152,8 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         username: data.username,
         displayName: data.display_name,
         homeCityId: data.home_city_id,
+        bio: data.bio,
+        avatarUrl: avatarUrl(data.avatar_path),
         interests: data.profile_interests.flatMap((row) => (row.interests ? [row.interests] : [])),
       };
     },
@@ -165,6 +175,43 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error) fail(error);
     },
 
+    async updateMyProfile(input) {
+      const { error } = await supabase.rpc('update_my_profile', {
+        p_display_name: input.displayName,
+        p_username: input.username,
+        p_bio: input.bio,
+        p_interest_ids: input.interestIds,
+      });
+      if (error) fail(error);
+    },
+
+    async setMyAvatar(fileUri) {
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user.id;
+      if (!uid) throw new ApiError('not_authenticated');
+      const folder = supabase.storage.from('avatars');
+      // A new file name each time, so image caches show the new photo straight away.
+      const path = `${uid}/avatar-${Date.now()}.jpg`;
+      const bytes = await (await fetch(fileUri)).arrayBuffer();
+      const { error: uploadError } = await folder.upload(path, bytes, { contentType: 'image/jpeg' });
+      if (uploadError) fail(uploadError);
+      const { error } = await supabase.rpc('set_my_avatar', { p_path: path });
+      if (error) fail(error);
+      await removeOldAvatars(uid, path);
+    },
+
+    async removeMyAvatar() {
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user.id;
+      if (!uid) throw new ApiError('not_authenticated');
+      // The generated type says string, but the function accepts null (that clears the photo).
+      const { error } = await supabase.rpc('set_my_avatar', { p_path: null as unknown as string });
+      if (error) fail(error);
+      await removeOldAvatars(uid, null);
+    },
+
+    avatarUrl,
+
     async listInterests() {
       return cachedInterests();
     },
@@ -184,7 +231,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => mapFeedRow(row, interests));
+      return (data ?? []).map((row) => mapFeedRow(row, interests, avatarUrl));
     },
 
     async getFeedRange(params) {
@@ -203,7 +250,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => mapFeedRow(row, interests));
+      return (data ?? []).map((row) => mapFeedRow(row, interests, avatarUrl));
     },
 
     async getSpotlight(params) {
@@ -219,7 +266,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       ]);
       if (error) fail(error);
       return (data ?? []).map((row) => {
-        const e = mapFeedRow(row, interests);
+        const e = mapFeedRow(row, interests, avatarUrl);
         return { ...e, picked: row.picked === true, spotlightReason: spotlightReason(row.picked === true, e.goingCount) };
       });
     },
@@ -243,7 +290,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       const e = eventRes.data;
       if (!e) return null;
       const social = socialRes.data?.[0];
-      const friends = parseFriends(social?.friends_going);
+      const friends = parseFriends(social?.friends_going, avatarUrl);
       const interestIds = e.event_interests.map((r) => r.interest_id);
       const primary = primaryInterest(interestIds, interests);
       const page: EventPage = {
@@ -289,6 +336,26 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         p_status: status as RsvpStatus,
       });
       if (error) fail(error);
+    },
+
+    async getMyPlans() {
+      const uid = await myUserId();
+      const nowIso = new Date().toISOString();
+      const [{ data, error }, interests] = await Promise.all([
+        supabase
+          .from('rsvps')
+          .select(
+            'status, events!inner(id, title, starts_at, ends_at, venue_name, neighborhood, image_url, image_sensitive, event_interests(interest_id))',
+          )
+          .eq('user_id', uid)
+          .or(`ends_at.gte.${nowIso},starts_at.gte.${nowIso}`, { referencedTable: 'events' }),
+        cachedInterests(),
+      ]);
+      if (error) fail(error);
+      // Ordering by an embedded table's column only sorts inside the embed, so sort the plans here.
+      return (data ?? [])
+        .map((row) => mapPlanRow(row, interests))
+        .sort((a, b) => a.event.startsAt.getTime() - b.event.startsAt.getTime());
     },
 
     async getMyChats() {
@@ -383,11 +450,59 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error && error.code !== '23505') fail(error);
     },
 
+    async reportEvent(eventId, reason) {
+      const uid = await myUserId();
+      const { error } = await supabase
+        .from('reports')
+        .insert({ reporter_id: uid, target_type: 'event', target_id: eventId, reason });
+      // Reported before: same result the person wanted.
+      if (error && error.code !== '23505') fail(error);
+    },
+
     async blockUser(userId) {
       const uid = await myUserId();
       const { error } = await supabase.from('blocks').insert({ blocker_id: uid, blocked_id: userId });
       // Already blocked: same result the person wanted.
       if (error && error.code !== '23505') fail(error);
+    },
+
+    async unblockUser(userId) {
+      const uid = await myUserId();
+      const { error } = await supabase.from('blocks').delete().eq('blocker_id', uid).eq('blocked_id', userId);
+      if (error) fail(error);
+    },
+
+    async listBlockedUsers() {
+      const { data, error } = await supabase.rpc('list_my_blocks');
+      if (error) fail(error);
+      return (data ?? []).map((row) => ({
+        id: row.id,
+        username: row.username,
+        displayName: row.display_name,
+        avatarUrl: avatarUrl(row.avatar_path),
+        blockedAt: new Date(row.blocked_at),
+      }));
+    },
+
+    async getDiscoverableByPhone() {
+      const uid = await myUserId();
+      const { data, error } = await supabase.from('profiles_private').select('discoverable_by_phone').eq('id', uid).maybeSingle();
+      if (error) fail(error);
+      return data?.discoverable_by_phone ?? true;
+    },
+
+    async setDiscoverableByPhone(value) {
+      const uid = await myUserId();
+      const { error } = await supabase.from('profiles_private').update({ discoverable_by_phone: value }).eq('id', uid);
+      if (error) fail(error);
+    },
+
+    async deleteAccount() {
+      // The Edge Function reads who you are from your login token, never from the request body.
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) fail(error);
+      // The account is gone; clear the local session. A failure here changes nothing for the person.
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
     },
 
     async searchProfiles(query, limit = SEARCH_LIMIT) {

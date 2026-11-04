@@ -14,6 +14,7 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   sparkles: 'sparkles',
   plus: 'add',
   'flame.fill': 'flame',
+  eye: 'eye-outline',
   'eye.slash': 'eye-off-outline',
   'plus.bubble': 'chatbubble-ellipses-outline',
   'house.fill': 'home',
@@ -82,6 +83,11 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   'person.crop.circle.badge.questionmark': 'help-circle-outline',
   'person.crop.circle.badge.xmark': 'person-remove-outline',
   'wifi.slash': 'cloud-offline-outline',
+  flame: 'flame-outline',
+  'hand.raised': 'hand-left-outline',
+  'questionmark.circle': 'help-circle-outline',
+  'calendar.badge.exclamationmark': 'calendar-clear-outline',
+  trash: 'trash-outline',
 };
 
 /**

@@ -29,8 +29,8 @@ export default function InterestsScreen() {
       back
       fade
       step={2}
-      title="What are you into?"
-      subtitle={`Pick ${MIN_INTERESTS} or more. We’ll use them to put the right events first.`}
+      title="what are you into?"
+      subtitle={`Pick ${MIN_INTERESTS} or more and we’ll put the good stuff first.`}
       footer={
         <PrimaryButton
           label={interestsContinueLabel(selected.length)}
@@ -49,7 +49,7 @@ export default function InterestsScreen() {
           ))}
         </View>
       ) : interests.isError ? (
-        <EmptyState symbol="exclamationmark.circle.fill" title="Couldn’t load interests" message="Check your connection and try again.">
+        <EmptyState symbol="exclamationmark.circle.fill" title="couldn’t load interests" message="Check your connection and try again.">
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
             <Button label="Try again" onPress={() => interests.refetch()} />
           </View>

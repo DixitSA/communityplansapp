@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, View } from 'react-native';
 
-import { Button, EmptyState, useTheme } from '@/design';
+import { Button, EmptyState, UndoToast, useTheme } from '@/design';
+import { useUndoStore } from '@/features/event/undoStore';
 import { AuthProvider, useSession } from '@/features/auth/AuthProvider';
 import { gateAllows } from '@/features/auth/gate';
 import { LoadingScreen } from '@/features/auth/LoadingScreen';
@@ -40,7 +41,7 @@ function GatedStack() {
         <View style={{ flex: 1, justifyContent: 'center', padding: space.lg, backgroundColor: colors.canvas }}>
           <EmptyState
             symbol="exclamationmark.circle.fill"
-            title="Couldn’t load your profile"
+            title="couldn’t load your profile"
             message="Check your connection and try again."
           >
             <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -71,14 +72,17 @@ function GatedStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="event/[id]" />
         <Stack.Screen name="event/[id]/going" options={sheet('fitToContents')} />
-        <Stack.Screen name="filters" options={sheet([0.6, 1])} />
+        <Stack.Screen name="filters" options={sheet([1])} />
         <Stack.Screen name="city" options={sheet('fitToContents')} />
         <Stack.Screen name="chat/[eventId]" />
         <Stack.Screen name="activity" />
         <Stack.Screen name="friends" />
         <Stack.Screen name="user/[id]" />
         <Stack.Screen name="suggest" options={sheet([0.9, 1])} />
+        <Stack.Screen name="edit-profile" options={sheet([0.9, 1])} />
         <Stack.Screen name="settings" options={sheet([0.5, 1])} />
+        <Stack.Screen name="blocked" options={sheet([0.6, 1])} />
+        <Stack.Screen name="help" options={sheet([0.7, 1])} />
         <Stack.Screen name="(dev)/gallery" />
       </Stack.Protected>
       <Stack.Protected guard={gateAllows(gate, 'onboarding')}>
@@ -88,6 +92,39 @@ function GatedStack() {
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
     </Stack>
+  );
+}
+
+/** Shows the shared undo toast above every screen, so it survives navigation. */
+function UndoHost() {
+  const toast = useUndoStore((s) => s.toast);
+  const dismiss = useUndoStore((s) => s.dismiss);
+  const lift = useUndoStore((s) => s.lift);
+  const { space } = useTheme();
+
+  // With VoiceOver on the toast has no timeout, so leaving the screen closes it instead.
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    if (pathname === lastPath.current) return;
+    lastPath.current = pathname;
+    void AccessibilityInfo.isScreenReaderEnabled().then((on) => {
+      if (on) useUndoStore.getState().dismiss();
+    });
+  }, [pathname]);
+
+  if (!toast) return null;
+  return (
+    <UndoToast
+      key={toast.id}
+      bottomOffset={lift === null ? undefined : lift + space.sm}
+      message={toast.message}
+      onDismiss={dismiss}
+      onUndo={() => {
+        dismiss();
+        toast.onUndo();
+      }}
+    />
   );
 }
 
@@ -105,6 +142,7 @@ export default function RootLayout() {
       <AuthProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
         <GatedStack />
+        <UndoHost />
       </AuthProvider>
     </QueryClientProvider>
   );

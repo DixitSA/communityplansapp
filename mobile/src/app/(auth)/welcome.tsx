@@ -51,7 +51,7 @@ export default function WelcomeScreen() {
             yard.
           </AppText>
           <AppText variant="title2" color="inkSecondary" style={{ textAlign: 'center' }}>
-            Find your people.
+            find your people.
           </AppText>
         </View>
       </View>

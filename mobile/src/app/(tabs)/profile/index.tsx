@@ -21,12 +21,11 @@ import { getActivityItems } from '@/features/activity/fixtures';
 import { useDemoPlans } from '@/features/event/demoPlans';
 import { SuggestedEvents } from '@/features/feed/SuggestedEvents';
 import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
-import { usePlansStore } from '@/features/event/plansStore';
-import { getFixtureEvents } from '@/features/feed/fixtures';
 import { friendsHref } from '@/features/friends/routes';
 import { useFriendRequests, useFriends } from '@/features/friends/useFriends';
 import { PlanTicket } from '@/features/profile/PlanTicket';
-import { deriveProfileStats, upcomingPlans } from '@/features/profile/stats';
+import { deriveProfileStats, splitMyPlans } from '@/features/profile/stats';
+import { useMyPlans } from '@/features/profile/useMyPlans';
 import { useMyProfile } from '@/features/profile/useMyProfile';
 import { isBackendConfigured } from '@/lib/env';
 
@@ -101,14 +100,15 @@ export default function ProfileScreen() {
   const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
   useDemoPlans(demoPlans);
   const profile = useMyProfile();
-  const statuses = usePlansStore((s) => s.statuses);
-  const plans = useMemo(() => upcomingPlans(statuses, getFixtureEvents(new Date())), [statuses]);
+  const myPlans = useMyPlans();
+  const { upcoming: plans, interested } = useMemo(() => splitMyPlans(myPlans.data ?? []), [myPlans.data]);
+  const interestedPlans = useMemo(() => interested.map((event) => ({ event, status: 'interested' as const })), [interested]);
   const friends = useFriends();
   const { events: suggested } = useSuggestedEvents(3);
   const incomingRequests = (useFriendRequests().data ?? []).filter((r) => r.direction === 'incoming').length;
   const stats = useMemo(
-    () => deriveProfileStats(statuses, plans, friends.data?.length ?? 0),
-    [statuses, plans, friends.data],
+    () => deriveProfileStats({ upcoming: plans, interested }, friends.data?.length ?? 0),
+    [plans, interested, friends.data],
   );
   const { width: windowWidth } = useWindowDimensions();
   // Leave a sliver of the next ticket showing so the row reads as scrollable.
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
         {header}
         <EmptyState
           symbol="exclamationmark.circle.fill"
-          title="Couldn’t load your profile"
+          title="couldn’t load your profile"
           message="Check your connection and try again."
         >
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
@@ -178,7 +178,7 @@ export default function ProfileScreen() {
           accessibilityLabel={`${me.displayName}, @${me.username}`}
           style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}
         >
-          <Avatar name={me.displayName} size={72} />
+          <Avatar name={me.displayName} uri={me.avatarUrl} size={72} />
           <View style={{ flex: 1, gap: space.xs }}>
             <AppText variant="title2" numberOfLines={2}>
               {me.displayName}
@@ -188,6 +188,10 @@ export default function ProfileScreen() {
             </AppText>
           </View>
         </View>
+
+        {me.bio ? <AppText variant="body">{me.bio}</AppText> : null}
+
+        <Button label="Edit profile" onPress={() => router.push('/edit-profile')} accessibilityLabel="Edit profile" />
 
         {me.interests.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
@@ -219,12 +223,12 @@ export default function ProfileScreen() {
 
         <View style={{ gap: space.md }}>
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header">
-            Upcoming plans
+            your plans
           </AppText>
           {plans.length === 0 ? (
             <View style={{ gap: space.lg }}>
               <AppText variant="body" color="inkSecondary">
-                Nothing on your calendar yet. Tap Going on something below and it lands here.
+                Nothing on your calendar yet. Tap Going on something and it lands here.
               </AppText>
               <SuggestedEvents events={suggested} />
               <Button label="Find something to do" onPress={() => router.navigate('/')} />
@@ -232,7 +236,7 @@ export default function ProfileScreen() {
           ) : (
             <ScrollView
               horizontal
-              accessibilityLabel="Upcoming plans"
+              accessibilityLabel="your plans"
               showsHorizontalScrollIndicator={false}
               decelerationRate="fast"
               snapToOffsets={plans.map((_, i) => i * (ticketWidth + ticketGap))}
@@ -242,6 +246,40 @@ export default function ProfileScreen() {
               contentContainerStyle={{ gap: ticketGap, paddingHorizontal: space.lg, paddingVertical: space.sm }}
             >
               {plans.map((p) => (
+                <PlanTicket key={p.event.id} plan={p} width={ticketWidth} />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <View style={{ gap: space.md }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <AppText variant="overline" color="inkSecondary" accessibilityRole="header">
+              Interested
+            </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+              <Icon name="lock.fill" size={12} color="inkSecondary" />
+              <AppText variant="caption" color="inkSecondary">
+                Only you see this
+              </AppText>
+            </View>
+          </View>
+          {interestedPlans.length === 0 ? (
+            <AppText variant="body" color="inkSecondary">
+              Tap ♡ Interested on an event to stash it here.
+            </AppText>
+          ) : (
+            <ScrollView
+              horizontal
+              accessibilityLabel="Interested events"
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToOffsets={interestedPlans.map((_, i) => i * (ticketWidth + ticketGap))}
+              snapToAlignment="start"
+              style={{ marginHorizontal: -space.lg }}
+              contentContainerStyle={{ gap: ticketGap, paddingHorizontal: space.lg, paddingVertical: space.sm }}
+            >
+              {interestedPlans.map((p) => (
                 <PlanTicket key={p.event.id} plan={p} width={ticketWidth} />
               ))}
             </ScrollView>

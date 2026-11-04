@@ -5,8 +5,10 @@ import { View } from 'react-native';
 
 import { AppText, Button, EmptyState, Screen, Skeleton, useLargeTitleHeader, useTheme } from '@/design';
 import { ChatList } from '@/features/chat/ChatList';
+import { confirmLeaveChat } from '@/features/chat/leaveChat';
 import { CHATS_KEY, useMyChats } from '@/features/chat/useMyChats';
 import { useDemoPlans } from '@/features/event/demoPlans';
+import { useSetRsvp } from '@/features/event/useRsvp';
 import { SuggestedEvents } from '@/features/feed/SuggestedEvents';
 import { useSuggestedEvents } from '@/features/feed/useSuggestedEvents';
 
@@ -17,6 +19,7 @@ export default function ChatsScreen() {
   const queryClient = useQueryClient();
   const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
   useDemoPlans(demoPlans);
+  const { changePlan } = useSetRsvp();
   const { events: suggested } = useSuggestedEvents(3);
 
   const { data, isPending, isError, refetch, dataUpdatedAt } = useMyChats();
@@ -41,7 +44,7 @@ export default function ChatsScreen() {
           ))}
         </View>
       ) : isError ? (
-        <EmptyState symbol="wifi.slash" title="Couldn’t load your chats" message="Check your connection and try again.">
+        <EmptyState symbol="wifi.slash" title="couldn’t load your chats" message="Check your connection and try again.">
           <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
             <Button label="Try again" onPress={() => void refetch()} />
           </View>
@@ -49,7 +52,7 @@ export default function ChatsScreen() {
       ) : data.length === 0 ? (
         <View style={{ gap: space.lg }}>
           <AppText variant="body" color="inkSecondary">
-            Every event has a group chat for the people going. Pick one and meet them before the night.
+            Every event has a group chat for the people going. Pick one and meet people before the night even starts.
           </AppText>
           <SuggestedEvents events={suggested} note="chat opens when you tap Going" />
           <Button variant="primary" symbol="sparkles" label="Browse the Feed" onPress={() => router.navigate('/')} />
@@ -59,6 +62,7 @@ export default function ChatsScreen() {
           chats={data}
           now={now}
           onOpen={(eventId) => router.push({ pathname: '/chat/[eventId]', params: { eventId } })}
+          onLeave={(chat) => confirmLeaveChat(() => changePlan(chat.eventId, 'going', 'interested', chat.title))}
         />
       )}
     </Screen>

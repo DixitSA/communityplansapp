@@ -189,7 +189,7 @@ export function relativeTime(date: Date, now: Date): string {
 
 /** "Maya: see you there" (first name only), or a nudge when nobody has written yet. */
 export function chatPreview(chat: Pick<ChatSummary, 'lastBody' | 'lastAuthorName'>): string {
-  if (chat.lastBody === null) return 'No messages yet. Say hi.';
+  if (chat.lastBody === null) return 'no messages yet. say hi.';
   const first = chat.lastAuthorName?.trim().split(/\s+/)[0];
   return first ? `${first}: ${chat.lastBody}` : chat.lastBody;
 }

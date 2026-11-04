@@ -1108,7 +1108,7 @@ export type Database = {
           created_at: string
           id: number
           reason: string
-          reporter_id: string
+          reporter_id: string | null
           resolved_at: string | null
           snapshot_author_id: string | null
           snapshot_body: string | null
@@ -1120,7 +1120,7 @@ export type Database = {
           created_at?: string
           id?: never
           reason: string
-          reporter_id: string
+          reporter_id: string | null
           resolved_at?: string | null
           snapshot_author_id?: string | null
           snapshot_body?: string | null
@@ -1132,7 +1132,7 @@ export type Database = {
           created_at?: string
           id?: never
           reason?: string
-          reporter_id?: string
+          reporter_id?: string | null
           resolved_at?: string | null
           snapshot_author_id?: string | null
           snapshot_body?: string | null
@@ -1433,6 +1433,16 @@ export type Database = {
           username: string
         }[]
       }
+      list_my_blocks: {
+        Args: never
+        Returns: {
+          avatar_path: string
+          blocked_at: string
+          display_name: string
+          id: string
+          username: string
+        }[]
+      }
       mark_chat_read: { Args: { p_event_id: string }; Returns: undefined }
       purge_old_reports: { Args: never; Returns: number }
       remove_friend: { Args: { p_user: string }; Returns: undefined }
@@ -1455,6 +1465,7 @@ export type Database = {
         }[]
       }
       send_friend_request: { Args: { p_user: string }; Returns: string }
+      set_my_avatar: { Args: { p_path: string }; Returns: undefined }
       set_rsvp: {
         Args: {
           p_event_id: string
@@ -1472,6 +1483,15 @@ export type Database = {
           p_venue: string
         }
         Returns: string
+      }
+      update_my_profile: {
+        Args: {
+          p_bio: string
+          p_display_name: string
+          p_interest_ids: number[]
+          p_username: string
+        }
+        Returns: undefined
       }
       username_available: { Args: { p_username: string }; Returns: boolean }
     }

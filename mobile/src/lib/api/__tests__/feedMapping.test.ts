@@ -40,8 +40,8 @@ describe('mapFeedRow', () => {
 
   it('maps friends, counts, coordinates and status', () => {
     expect(e.friends).toEqual([
-      { id: 'u1', name: 'Maya' },
-      { id: 'u2', name: 'Jordan' },
+      { id: 'u1', name: 'Maya', avatarUrl: null },
+      { id: 'u2', name: 'Jordan', avatarUrl: null },
     ]);
     expect(e.friendsGoing).toBe(2);
     expect(e.goingCount).toBe(7);

@@ -75,7 +75,7 @@ export default function UserProfileScreen() {
     );
   } else if (profile.isError) {
     content = (
-      <EmptyState symbol="wifi.slash" title="Couldn’t load this profile" message="Check your connection and try again.">
+      <EmptyState symbol="wifi.slash" title="couldn’t load this profile" message="Check your connection and try again.">
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Try again" onPress={() => void profile.refetch()} />
         </View>
@@ -86,8 +86,8 @@ export default function UserProfileScreen() {
     content = (
       <EmptyState
         symbol="person.crop.circle.badge.xmark"
-        title="This profile isn’t available"
-        message="It may have been removed, or the link is out of date."
+        title="this profile isn’t available"
+        message="It may have been removed, or the link is old."
       >
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Go back" onPress={() => router.back()} />
@@ -146,7 +146,7 @@ export default function UserProfileScreen() {
         {me.sharedEvents.length > 0 ? (
           <View style={{ gap: space.sm }}>
             <AppText variant="overline" color="inkSecondary" accessibilityRole="header">
-              You both went to
+              you both went to
             </AppText>
             <View style={{ borderRadius: radius.card, borderCurve: 'continuous', backgroundColor: colors.surface, overflow: 'hidden' }}>
               {me.sharedEvents.map((e, i) => (

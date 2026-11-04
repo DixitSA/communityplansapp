@@ -56,7 +56,7 @@ export default function ProfileBasicsScreen() {
       step={1}
       back
       onBack={leaveOnboarding}
-      title="The basics"
+      title="the basics"
       subtitle="Tell us who you are. You can change your name later."
       footer={<PrimaryButton label="Continue" disabled={!ready} onPress={() => router.push('/onboarding/interests')} />}
     >

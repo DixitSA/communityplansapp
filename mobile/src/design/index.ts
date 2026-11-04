@@ -1,5 +1,6 @@
 export { useTheme, type Theme } from './theme';
 export * from './tokens';
+export { PressScaleView, usePressScale } from './usePressScale';
 export { AppText, type AppTextProps } from './components/AppText';
 export { Avatar, initialsOf, type AvatarProps } from './components/Avatar';
 export {
@@ -30,6 +31,7 @@ export {
 export { PlanPill, planMenuOptions, planPillSpec, type PlanMenuOption } from './components/PlanPill';
 export { PlanMenu, type PlanMenuProps } from './components/PlanMenu';
 export { Facepile, formatFriendsLabel, formatAttendeeCount, type FacepileProps } from './components/Facepile';
+export { HotBadge, isPopping, POPPING_THRESHOLD, type HotBadgeProps } from './components/HotBadge';
 export { LiveDot, type LiveDotProps } from './components/LiveDot';
 export { EventArt, type EventArtProps } from './components/EventArt';
 export { stockImageFor } from './stockImages';
@@ -43,6 +45,7 @@ export { Icon, asSymbol, type IconProps, type SymbolName } from './components/Ic
 export { MeshBackground, type MeshBackgroundProps } from './components/MeshBackground';
 export { MeshArt, buildMesh, seededRandom, type MeshArtProps } from './components/MeshArt';
 export { SegmentedControl, type SegmentedControlProps } from './components/SegmentedControl';
+export { UndoToast, type UndoToastProps } from './components/UndoToast';
 export { Skeleton, type SkeletonProps } from './components/Skeleton';
 export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { Screen } from './components/Screen';

@@ -11,7 +11,7 @@ import { goingTogetherLine, othersCount } from '@/features/event/plansLogic';
 import { TicketCard } from '@/features/event/TicketCard';
 import { useEvent } from '@/features/event/useEvent';
 import { countdownLabel } from '@/lib/dates';
-import { success } from '@/lib/haptics';
+import { celebrate } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 import { useNow } from '@/lib/useNow';
 import { hasEnded } from '@/features/feed/agenda';
@@ -28,9 +28,9 @@ export default function GoingSheet() {
   const now = useNow();
   const ended = !!event && hasEnded(event, now);
 
-  // One success haptic as the sheet appears, in step with the burst.
+  // The success haptic and two follow-up taps as the sheet appears, in step with the burst.
   useEffect(() => {
-    if (!ended) success();
+    if (!ended) celebrate();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on first appearance
   }, []);
 
@@ -44,7 +44,7 @@ export default function GoingSheet() {
       : othersCount(event.goingCount, event.friendsGoing, event.myStatus === 'going');
 
   if (ended) {
-    return <EmptyState symbol="clock" title="This event has ended" message="Close this and see what's on next." />;
+    return <EmptyState symbol="clock" title="that one's over" message="Close this and see what's on next." />;
   }
 
   return (
@@ -59,7 +59,7 @@ export default function GoingSheet() {
             <View style={{ width: BADGE, height: BADGE }}>
               {/* Layout animations follow the system Reduce Motion setting, so the badge just appears there. */}
               <Animated.View
-                entering={ZoomIn.springify().damping(12)}
+                entering={ZoomIn.springify().damping(8).stiffness(180)}
                 style={{
                   width: BADGE,
                   height: BADGE,
@@ -83,7 +83,7 @@ export default function GoingSheet() {
                   <View style={{ flexDirection: 'row' }}>
                     {event.friends.slice(0, 3).map((f, i) => (
                       <View key={f.id} style={{ marginLeft: i === 0 ? 0 : -space.sm }}>
-                        <Avatar name={f.name} size={28} ring ringColor="canvas" />
+                        <Avatar name={f.name} uri={f.avatarUrl} size={28} ring ringColor="canvas" />
                       </View>
                     ))}
                   </View>
@@ -117,13 +117,13 @@ export default function GoingSheet() {
             />
             <Button
               symbol="person.badge.plus"
-              label="Invite a friend"
+              label="Bring a friend"
               onPress={() => shareEvent(event, 'invite')}
             />
           </View>
         </ScrollView>
       ) : (
-        <EmptyState symbol="sparkles" title="We can't find that event" message="Close this and pick another plan." />
+        <EmptyState symbol="sparkles" title="can't find that event" message="Close this and pick another plan." />
       )}
     </>
   );

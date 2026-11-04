@@ -40,7 +40,7 @@ export default function CitySheet() {
         <Icon name="checkmark" size={18} color="accent" weight="semibold" />
       </Pressable>
       <AppText variant="footnote" color="inkSecondary" style={{ textAlign: 'center' }}>
-        More cities soon. yard starts in Charlotte, then grows from here.
+        more cities soon. yard starts in Charlotte, then grows from here.
       </AppText>
     </View>
   );

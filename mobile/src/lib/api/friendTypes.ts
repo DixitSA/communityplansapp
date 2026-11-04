@@ -17,6 +17,9 @@ export type PersonSearchResult = PersonSummary & { friendship: Friendship };
 /** One row of `list_friends`. */
 export type FriendEntry = PersonSummary & { since: Date };
 
+/** Someone the viewer blocked (`list_my_blocks`), newest first. */
+export type BlockedPerson = PersonSummary & { blockedAt: Date };
+
 /** One row of `list_friend_requests`. `incoming` asks you; `outgoing` is yours, still waiting. */
 export type FriendRequest = PersonSummary & {
   direction: 'incoming' | 'outgoing';

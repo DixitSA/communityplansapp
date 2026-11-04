@@ -31,7 +31,7 @@ export function useProfileMenu(person: PersonSummary | null, onBlocked: () => vo
           run: () => {
             api
               .reportUser(person.id, reason)
-              .then(() => Alert.alert('Thanks for telling us', 'We’ll review this report.'))
+              .then(() => Alert.alert('Thanks for telling us', 'We’ll take a look at this report.'))
               .catch(failed);
           },
         })),

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, ScrollView, SectionList, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,7 @@ import {
   PrimaryButton,
   SegmentedControl,
   Skeleton,
+  minTouchTarget,
   useTheme,
 } from '@/design';
 import { agendaItemLayouts, dayToDate, sectionIndexForDay, type AgendaSection } from '@/features/feed/agenda';
@@ -23,6 +24,7 @@ import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
 import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
+import { filterSpotlight } from '@/features/feed/spotlight';
 import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { useSpotlight } from '@/features/feed/useSpotlight';
@@ -63,9 +65,15 @@ export default function FeedScreen() {
   const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
   const neighborhood = useFiltersStore((s) => s.neighborhood);
   const spotlight = useSpotlight();
-  // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
-  const spotlightEvents = scope === 'nearby' && (spotlight.data?.length ?? 0) >= 2 ? spotlight.data : undefined;
-  const criteria = { timeOfDay, interests, distanceMi, price, scope };
+  const criteria = useMemo(
+    () => ({ timeOfDay, interests, distanceMi, price, scope }),
+    [timeOfDay, interests, distanceMi, price, scope],
+  );
+  // The spotlight follows every feed filter (scope included), and shows only with enough to swipe through.
+  const spotlightEvents = useMemo(() => {
+    const list = filterSpotlight(spotlight.data ?? [], criteria, neighborhood);
+    return list.length >= 2 ? list : undefined;
+  }, [spotlight.data, criteria, neighborhood]);
   const chips = chipStates(criteria);
   const isMap = view === 'map';
 
@@ -208,7 +216,7 @@ export default function FeedScreen() {
 
   const topRow = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg }}>
-      <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1 }}>
+      <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1, fontWeight: '800' }}>
         yard.
       </AppText>
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -242,6 +250,36 @@ export default function FeedScreen() {
           <Icon name="chevron.down" size={10} color="inkSecondary" weight="semibold" />
         </Pressable>
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isMap ? 'Show list' : 'Show map'}
+        hitSlop={{ top: space.sm, bottom: space.sm }}
+        onPress={() => {
+          selection();
+          // Coming back from the map, the list places itself on the selected day again.
+          placed.current = false;
+          setTodayOff(false);
+          setView(isMap ? 'list' : 'map');
+        }}
+        style={({ pressed }) => ({
+          minHeight: 32,
+          minWidth: minTouchTarget,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: space.xs,
+          paddingHorizontal: space.md,
+          borderRadius: radius.pill,
+          borderCurve: 'continuous',
+          backgroundColor: colors.surfaceMuted,
+          opacity: pressed ? 0.7 : 1,
+        })}
+      >
+        <Icon name={isMap ? 'list.bullet' : 'map'} size={16} color="accent" />
+        <AppText variant="subheadline" numberOfLines={1} style={{ fontWeight: '600' }}>
+          {isMap ? 'List' : 'Map'}
+        </AppText>
+      </Pressable>
       <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
     </View>
   );
@@ -258,7 +296,7 @@ export default function FeedScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ flex: 1 }}
-        contentContainerStyle={{ gap: space.xs + 2, paddingLeft: space.lg, paddingRight: space.sm, alignItems: 'center' }}
+        contentContainerStyle={{ gap: space.xs + 2, paddingLeft: space.lg, paddingRight: space.lg, alignItems: 'center' }}
       >
         {neighborhood ? (
           <Chip
@@ -298,33 +336,6 @@ export default function FeedScreen() {
           onChange={setDistance}
         />
       </ScrollView>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={isMap ? 'Show list' : 'Show map'}
-        hitSlop={space.xs}
-        onPress={() => {
-          selection();
-          // Coming back from the map, the list places itself on the selected day again.
-          placed.current = false;
-          setTodayOff(false);
-          setView(isMap ? 'list' : 'map');
-        }}
-        style={{
-          width: 36,
-          height: 36,
-          marginRight: space.lg,
-          borderRadius: radius.pill,
-          borderCurve: 'continuous',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: colors.surface,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: colors.line,
-        }}
-      >
-        {/* Icon only: with a "List" label the three chips and the toggle don't fit in 393pt. */}
-        <Icon name={isMap ? 'list.bullet' : 'map'} size={18} />
-      </Pressable>
     </View>
   );
 
@@ -364,20 +375,20 @@ export default function FeedScreen() {
       ))}
     </View>
   ) : isError ? (
-    <EmptyState symbol="wifi.slash" title="Couldn't load events" message="Check your connection and try again.">
+    <EmptyState symbol="wifi.slash" title="couldn't load events" message="Check your connection and try again.">
       <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
         <Button label="Retry" onPress={refetch} />
       </View>
     </EmptyState>
   ) : total === 0 ? (
-    <EmptyState symbol="sparkles" title="Nothing planned yet" message="No events in the next two weeks. Check back soon.">
+    <EmptyState symbol="sparkles" title="nothing's happening yet" message="No events in the next two weeks. Check back soon, it fills up fast.">
       <SuggestRow />
     </EmptyState>
   ) : friendsOnly ? (
     <EmptyState
       symbol="person.2"
-      title="None of your friends have plans yet"
-      message="When friends tap Going, their plans show up here. Add a few friends to get started."
+      title="your friends are quiet rn"
+      message="When friends tap Going, their plans show up here. Add a few friends to get things moving."
     >
       <View style={{ alignSelf: 'stretch', gap: space.sm, paddingTop: space.md, paddingHorizontal: space.lg }}>
         <PrimaryButton label="Find friends" onPress={() => router.navigate('/search')} />
@@ -387,8 +398,8 @@ export default function FeedScreen() {
   ) : (
     <EmptyState
       symbol="line.3.horizontal.decrease.circle"
-      title="No events match"
-      message="Your filters leave nothing in the next two weeks. Loosen them to see more."
+      title="nothing matches"
+      message="Your filters leave nothing in the next two weeks. Loosen them up to see more."
     >
       <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
         <PrimaryButton label="Clear filters" onPress={clearFilters} />
@@ -439,10 +450,10 @@ export default function FeedScreen() {
           >
             {/* A mood line ("Tonight", "Tomorrow", "Thursday") over the date and count. */}
             <View accessible accessibilityRole="header" accessibilityLabel={`${section.headline}, ${section.detail}`}>
-              <AppText variant="title2" color={section.isToday ? 'accent' : 'ink'} style={{ fontWeight: '700' }}>
+              <AppText variant="sectionTitle" color={section.isToday ? 'accent' : 'ink'}>
                 {section.headline}
               </AppText>
-              <AppText variant="footnote" color="inkSecondary">
+              <AppText variant="footnote" color="inkSecondary" style={{ fontWeight: '600' }}>
                 {section.detail}
               </AppText>
             </View>

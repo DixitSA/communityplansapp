@@ -24,7 +24,7 @@ export function SuggestedEvents({ events, note }: { events: FeedEvent[]; note?: 
       ))}
       {nobodyYet ? (
         <AppText variant="footnote" color="inkSecondary" style={{ paddingHorizontal: space.sm }}>
-          Nobody’s claimed these yet. Be the first one in.
+          nobody’s claimed these yet. be first?
         </AppText>
       ) : null}
     </View>

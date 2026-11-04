@@ -40,6 +40,18 @@ export function mapOnboardingError(code: string | null | undefined): string {
   return GENERIC_ERROR;
 }
 
+const EDIT_PROFILE_COPY: Record<string, string> = {
+  ...ONBOARDING_COPY,
+  not_onboarded: 'Finish setting up your profile first.',
+  bio_invalid: 'Keep your bio to 160 characters or fewer.',
+  too_few_interests: 'Keep at least 3 interests so we can find your people.',
+};
+
+/** Friendly copy for an `update_my_profile` error code. */
+export function mapEditProfileError(code: string | null | undefined): string {
+  return (code && EDIT_PROFILE_COPY[code]) || GENERIC_ERROR;
+}
+
 /** Which onboarding screen can fix this error, so a failure at the end sends people to the right place. */
 export function onboardingStepForError(code: string | null | undefined): 'profile' | 'interests' | 'location' | null {
   switch (code) {

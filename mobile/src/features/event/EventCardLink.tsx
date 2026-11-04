@@ -15,7 +15,7 @@ type LinkableEvent = EventCardData & { myStatus?: RsvpStatus | null; neighborhoo
 function useEventLink(event: LinkableEvent) {
   const router = useRouter();
   const status = usePlan(event.id, event.myStatus);
-  const { setStatus, toggleInterested } = useSetRsvp();
+  const { setStatus, toggleInterested, changePlan } = useSetRsvp();
   const going = status === 'going';
   const showDownHint = useFirstTimeHint('down_if_friends');
 
@@ -34,7 +34,7 @@ function useEventLink(event: LinkableEvent) {
       if (next === 'going') {
         if (!going) goingAction();
       } else {
-        setStatus(event.id, next);
+        changePlan(event.id, status, next, event.title);
         if (next === 'down_if_friends') void showDownHint();
       }
     },

@@ -3,6 +3,11 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 // expo-router's test harness swaps in its own Reanimated mock, which has no hooks, so skip the
 // animated components these routes render (the profile tab's loading skeleton and the welcome blob).
 jest.mock('@/design/components/Skeleton', () => ({ Skeleton: () => null }));
+jest.mock('@/design/usePressScale', () => ({
+  usePressScale: () => ({ style: undefined, handlers: {} }),
+  PressScaleView: jest.requireActual('react-native').View,
+}));
+jest.mock('@/design/components/EmptyState', () => ({ EmptyState: () => null }));
 jest.mock('@/features/onboarding/WelcomeBlob', () => ({ WelcomeBlob: () => null }));
 
 // Regression: on iOS the app opened to a blank screen because two files claimed "/".

@@ -1,18 +1,24 @@
 import { ActionSheetIOS, Alert, Linking, Share } from 'react-native';
 
+import { api, errorCode, mapChatError, type EventReportReason } from '@/lib/api';
 import { formatShortDate, formatTime } from '@/lib/dates';
+import { appStoreUrl } from '@/lib/env';
 import { warning } from '@/lib/haptics';
+import { showMenu } from '@/lib/menu';
 
 import type { EventDetail } from './types';
 
 type Shareable = Pick<EventDetail, 'title' | 'startsAt' | 'venue'>;
 
 /** Text for the system share sheet. "invite" is what you send a friend after tapping Going. */
-export function shareMessage(event: Shareable, kind: 'share' | 'invite'): string {
+export function shareMessage(event: Shareable, kind: 'share' | 'invite', storeUrl: string | null = appStoreUrl): string {
   const when = `${formatShortDate(event.startsAt)} at ${formatTime(event.startsAt)}`;
-  return kind === 'invite'
-    ? `I'm going to ${event.title} on ${when} at ${event.venue}. Come with me?`
-    : `${event.title}, ${when} at ${event.venue}. Found on yard.`;
+  const text =
+    kind === 'invite'
+      ? `I'm going to ${event.title} on ${when} at ${event.venue}. Come with me?`
+      : `${event.title}, ${when} at ${event.venue}. Found on yard.`;
+  // The link goes in the text (not Share's iOS-only `url`) so Messages, WhatsApp and Android all get it.
+  return storeUrl ? `${text}\n\nGet yard: ${storeUrl}` : text;
 }
 
 export async function shareEvent(event: Shareable, kind: 'share' | 'invite'): Promise<void> {
@@ -30,16 +36,31 @@ export function directionsUrl(event: Pick<EventDetail, 'venue' | 'address'>): st
 
 export function openDirections(event: Pick<EventDetail, 'venue' | 'address'>): void {
   Linking.openURL(directionsUrl(event)).catch(() => {
-    Alert.alert("Couldn't open Maps", 'Try again in a moment.');
+    Alert.alert("Couldn't open Maps", 'Give it another try in a sec.');
   });
 }
 
-/** Placeholder until reporting is wired to the backend (App Store guideline 1.2 needs the entry point). */
-function reportPlaceholder(): void {
+const REPORT_REASONS: { reason: EventReportReason; label: string }[] = [
+  { reason: 'wrong_details', label: 'Wrong details' },
+  { reason: 'spam_or_scam', label: 'Spam or scam' },
+  { reason: 'unsafe', label: 'Unsafe or inappropriate' },
+  { reason: 'other', label: 'Something else' },
+];
+
+/** Reason picker, then the report goes to the backend (App Store guideline 1.2). */
+function reportEvent(eventId: string): void {
   warning();
-  Alert.alert(
-    'Report this event',
-    "Reporting isn't connected yet. Soon you'll be able to flag events that look wrong or unsafe.",
+  showMenu(
+    'Why are you reporting this event?',
+    REPORT_REASONS.map(({ reason, label }) => ({
+      label,
+      run: () => {
+        api
+          .reportEvent(eventId, reason)
+          .then(() => Alert.alert('Thanks for telling us', 'We’ll take a look at this report.'))
+          .catch((err: unknown) => Alert.alert('That didn’t work', mapChatError(errorCode(err))));
+      },
+    })),
   );
 }
 
@@ -55,14 +76,14 @@ export function openEventMenu(event: EventDetail): void {
       },
       (index) => {
         if (index === 0) openDirections(event);
-        if (index === 1) reportPlaceholder();
+        if (index === 1) reportEvent(event.id);
       },
     );
     return;
   }
   Alert.alert(event.title, undefined, [
     { text: 'Get directions', onPress: () => openDirections(event) },
-    { text: 'Report', style: 'destructive', onPress: reportPlaceholder },
+    { text: 'Report', style: 'destructive', onPress: () => reportEvent(event.id) },
     { text: 'Cancel', style: 'cancel' },
   ]);
 }

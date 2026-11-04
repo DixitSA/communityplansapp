@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppText, GlassSurface, Icon, useTheme, type SymbolName } from '@/design';
+import { AppText, GlassSurface, Icon, usePressScale, useTheme, type SymbolName } from '@/design';
 
 import { privacyHint } from './plansLogic';
 import type { PlanChoice, PlanStatus } from './plansStore';
@@ -26,7 +26,7 @@ export type RsvpBarProps = {
 };
 
 /** Pops the icon when a choice is made, like a symbol bounce. Still under Reduce Motion. */
-function Bounce({ active, children }: { active: boolean; children: ReactNode }) {
+function Bounce({ active, big = false, children }: { active: boolean; big?: boolean; children: ReactNode }) {
   const scale = useSharedValue(1);
   const reduced = useReducedMotion();
   const mounted = useRef(false);
@@ -37,9 +37,14 @@ function Bounce({ active, children }: { active: boolean; children: ReactNode }) 
       return;
     }
     if (active && !reduced) {
-      scale.set(withSequence(withTiming(0.8, { duration: 80 }), withSpring(1, { duration: 400, dampingRatio: 0.5 })));
+      scale.set(
+        big
+          ? // Going: squash, then overshoot to a big pop before settling.
+            withSequence(withTiming(0.7, { duration: 80 }), withSpring(1, { duration: 650, dampingRatio: 0.3 }))
+          : withSequence(withTiming(0.8, { duration: 80 }), withSpring(1, { duration: 400, dampingRatio: 0.5 })),
+      );
     }
-  }, [active, reduced, scale]);
+  }, [active, big, reduced, scale]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
   return <Animated.View style={style}>{children}</Animated.View>;
 }
@@ -61,16 +66,19 @@ type RsvpButtonProps = {
 function RsvpButton({ label, displayLabel, hint, symbol, activeSymbol, selected, primary = false, flex, onPress }: RsvpButtonProps) {
   const { colors, space, radius } = useTheme();
   const reduced = useReducedMotion();
+  const press = usePressScale(0.94);
   const fg = primary ? 'onAccent' : 'ink';
   return (
-    <Animated.View style={{ flex }} layout={reduced ? undefined : LinearTransition.duration(250)}>
+    <Animated.View style={[{ flex }, press.style]} layout={reduced ? undefined : LinearTransition.duration(250)}>
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityHint={hint}
         accessibilityState={{ selected }}
-        style={({ pressed }) => [
+        onPressIn={press.handlers.onPressIn}
+        onPressOut={press.handlers.onPressOut}
+        style={[
           {
             flex: 1,
             minHeight: 68,
@@ -85,10 +93,9 @@ function RsvpButton({ label, displayLabel, hint, symbol, activeSymbol, selected,
             borderWidth: primary ? 0 : StyleSheet.hairlineWidth,
             borderColor: selected ? colors.accent : colors.line,
           },
-          pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
         ]}
       >
-        <Bounce active={selected}>
+        <Bounce active={selected} big={primary}>
           <Icon
             name={selected ? activeSymbol : symbol}
             size={22}

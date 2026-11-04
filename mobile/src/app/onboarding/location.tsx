@@ -43,8 +43,8 @@ export default function LocationScreen() {
     <Scaffold
       back
       step={3}
-      title="See what’s near you"
-      subtitle="Share your location to see how far events are. Or skip it and just browse Charlotte."
+      title="see what’s near you"
+      subtitle="Share your location to see how far away events are. Or skip it and just browse Charlotte."
       footer={
         <>
           <PrimaryButton label={busy ? 'Asking…' : 'Use my location'} disabled={busy} onPress={useMyLocation} />

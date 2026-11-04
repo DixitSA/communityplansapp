@@ -5,6 +5,11 @@ import type { AuthSession, MyProfile } from '@/lib/api';
 // This file pretends Supabase is configured, so the root layout's guards are live.
 jest.mock('@/lib/env', () => ({ isBackendConfigured: true, backendHost: () => 'test.supabase.co', supabaseUrl: '', supabaseAnonKey: '' }));
 jest.mock('@/design/components/Skeleton', () => ({ Skeleton: () => null }));
+jest.mock('@/design/usePressScale', () => ({
+  usePressScale: () => ({ style: undefined, handlers: {} }),
+  PressScaleView: jest.requireActual('react-native').View,
+}));
+jest.mock('@/design/components/EmptyState', () => ({ EmptyState: () => null }));
 jest.mock('@/features/onboarding/WelcomeBlob', () => ({ WelcomeBlob: () => null }));
 
 const mockState: { session: AuthSession | null; profile: MyProfile | null } = { session: null, profile: null };
@@ -26,7 +31,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 const session: AuthSession = { userId: 'u1', email: 'maya@example.com' };
-const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, interests: [] };
+const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, bio: null, avatarUrl: null, interests: [] };
 
 describe('root guards with a backend', () => {
   it('shows the welcome screen to signed-out people, even when they ask for the feed', async () => {
@@ -41,7 +46,7 @@ describe('root guards with a backend', () => {
     mockState.session = session;
     mockState.profile = null;
     await renderRouter('./src/app', { initialUrl: '/' });
-    expect(await screen.findByText('The basics')).toBeTruthy();
+    expect(await screen.findByText('the basics')).toBeTruthy();
     expect(screen.queryByText('Nearby')).toBeNull();
   });
 
@@ -50,6 +55,6 @@ describe('root guards with a backend', () => {
     mockState.profile = profile;
     await renderRouter('./src/app', { initialUrl: '/' });
     expect(await screen.findByText('Nearby')).toBeTruthy();
-    expect(screen.queryByText('The basics')).toBeNull();
+    expect(screen.queryByText('the basics')).toBeNull();
   });
 });

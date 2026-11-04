@@ -32,7 +32,7 @@ export function LoadingScreen({ onRetry }: { onRetry: () => void }) {
       {slow ? (
         <View style={{ alignItems: 'center', gap: space.md, paddingHorizontal: space.xxxl }}>
           <AppText variant="subheadline" color="inkSecondary" accessibilityLiveRegion="polite">
-            Taking longer than usual…
+            taking longer than usual…
           </AppText>
           <Button
             label="Retry"

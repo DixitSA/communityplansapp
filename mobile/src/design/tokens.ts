@@ -21,6 +21,10 @@ export const lightColors = {
   deep: '#352C48',
   onAccent: '#FFFFFF',
   onImage: '#FFFFFF',
+  /** The "popping" heat: a flame-orange badge. White on it is 5.2:1. */
+  hot: '#C2410C',
+  hotSoft: '#FFE6D5',
+  onHot: '#FFFFFF',
 } as const;
 
 export type Colors = { [K in keyof typeof lightColors]: string };
@@ -43,6 +47,9 @@ export const darkColors: Colors = {
   deep: '#E8E1F5',
   onAccent: '#101411',
   onImage: '#FFFFFF',
+  hot: '#FF9A5C',
+  hotSoft: '#3D2314',
+  onHot: '#2A1204',
 };
 
 /**
@@ -92,6 +99,9 @@ export const space = {
   xxxl: 32,
 } as const;
 
+/** Apple's minimum tappable size, in points. */
+export const minTouchTarget = 44;
+
 export const radius = {
   thumb: 12,
   card: 16,
@@ -106,6 +116,10 @@ export const type = {
   display: { fontSize: 56, lineHeight: 60, fontWeight: '800', letterSpacing: -2 },
   title: { fontSize: 28, lineHeight: 34, fontWeight: '700', letterSpacing: -0.4 },
   title2: { fontSize: 22, lineHeight: 28, fontWeight: '700', letterSpacing: -0.4 },
+  /** Day and section headers in lists: big, heavy and tight. */
+  sectionTitle: { fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -0.7 },
+  /** Event titles on rows and compact cards. */
+  rowTitle: { fontSize: 18, lineHeight: 23, fontWeight: '800', letterSpacing: -0.35 },
   headline: { fontSize: 17, lineHeight: 22, fontWeight: '600' },
   body: { fontSize: 17, lineHeight: 22, fontWeight: '400' },
   subheadline: { fontSize: 15, lineHeight: 20, fontWeight: '400' },
@@ -121,6 +135,15 @@ export const type = {
 } as const satisfies Record<string, TextStyle>;
 
 export type TypeVariant = keyof typeof type;
+
+/** Press feedback shared by cards, rows and chips (see `usePressScale`). Springy, never slow. */
+export const motion = {
+  /** Scale while a finger is down. */
+  pressScale: 0.97,
+  pressSpring: { damping: 15, stiffness: 420, mass: 0.7 },
+  /** Entrance spring for empty states and other "arrived" moments. */
+  popSpring: { damping: 11, stiffness: 180, mass: 0.8 },
+} as const;
 
 /** The one soft card shadow. Light mode only (DESIGN.md §3). */
 export const cardShadow: Record<Scheme, { boxShadow?: string }> = {

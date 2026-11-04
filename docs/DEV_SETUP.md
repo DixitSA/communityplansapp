@@ -77,6 +77,7 @@ Read each plugin's files before installing. They run inside your agent.
   - `node scripts/sim-screenshot.cjs upload <build artifact URL>`.
   - `node scripts/sim-screenshot.cjs / /profile /event/<id>`.
 - Never set `EXPO_PUBLIC_DEV_SESSION_LINK` for a build people install.
+- Once yard is on the App Store, set `EXPO_PUBLIC_APP_STORE_URL` (the `https://apps.apple.com/app/id…` listing) in `.env` and the EAS environments. Shared events then end with "Get yard: <link>". It's public-safe.
 
 ## 5. Create the app (week 0)
 Claude can do these steps for you; they're listed so you know what's happening.

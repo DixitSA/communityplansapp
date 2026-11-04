@@ -2,7 +2,7 @@ import type { EventCardData } from '@/design';
 import type { EventDetail } from '@/features/event/types';
 
 import type { Tables } from '../database.types';
-import type { FriendEntry, FriendRequest, PersonSearchResult, UserProfile } from './friendTypes';
+import type { BlockedPerson, FriendEntry, FriendRequest, PersonSearchResult, UserProfile } from './friendTypes';
 
 /** A row of `interests` (the symbol is an SF Symbol name). */
 export type Interest = Pick<Tables<'interests'>, 'id' | 'slug' | 'label' | 'symbol'>;
@@ -16,7 +16,17 @@ export type MyProfile = {
   username: string;
   displayName: string;
   homeCityId: number | null;
+  bio: string | null;
+  /** Public URL of the profile photo, or null (initials show instead). */
+  avatarUrl: string | null;
   interests: Interest[];
+};
+
+export type EditProfileInput = {
+  displayName: string;
+  username: string;
+  bio: string;
+  interestIds: number[];
 };
 
 export type OnboardingInput = {
@@ -30,6 +40,9 @@ export type OnboardingInput = {
 
 /** The viewer's own plan for an event (mirrors the `rsvp_status` enum). */
 export type RsvpStatus = 'interested' | 'down_if_friends' | 'going';
+
+/** One of the viewer's own plans: the event as a card, plus how they answered. Private to the viewer. */
+export type MyPlan = { event: EventCardData; status: RsvpStatus };
 
 /** Inputs of the `get_feed` RPC, in the app's units. `day` is "YYYY-MM-DD" in the city's time zone. */
 export type FeedParams = {
@@ -122,6 +135,7 @@ export type ChatSubscription = {
 
 /** Why someone reports a message. Stored as the report's `reason` text. */
 export type ReportReason = 'spam' | 'harassment' | 'other';
+export type EventReportReason = 'wrong_details' | 'spam_or_scam' | 'unsafe' | 'other';
 
 /** Messages per page of `get_chat_messages`. */
 export const CHAT_PAGE_SIZE = 50;
@@ -159,6 +173,14 @@ export type Api = {
   getMyProfile(): Promise<MyProfile | null>;
   usernameAvailable(username: string): Promise<boolean>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
+  /** Saves name, username, bio and interests in one go. Rejects with the server's error code (`username_taken`, ...). */
+  updateMyProfile(input: EditProfileInput): Promise<void>;
+  /** Uploads a picked image (a local file URI) as the viewer's profile photo and replaces the old one. */
+  setMyAvatar(fileUri: string): Promise<void>;
+  /** Deletes the viewer's profile photo. */
+  removeMyAvatar(): Promise<void>;
+  /** Public URL for an `avatar_path` (chat messages carry paths), or null. */
+  avatarUrl(path: string | null | undefined): string | null;
   listInterests(): Promise<Interest[]>;
   /** Events for one day, ranked. Demo mode ignores `day` and returns the whole sample week. */
   getFeed(params: FeedParams): Promise<FeedEvent[]>;
@@ -170,6 +192,8 @@ export type Api = {
   getEvent(id: string): Promise<EventPage | null>;
   /** Sets the viewer's plan; null clears it. */
   setRsvp(eventId: string, status: RsvpStatus | null): Promise<void>;
+  /** The viewer's own upcoming plans (Going, Down if friends go, Interested), soonest first. */
+  getMyPlans(): Promise<MyPlan[]>;
   /** The chats the viewer can read: every event they're Going to, open ones first. */
   getMyChats(): Promise<ChatSummary[]>;
   /** A page of messages, newest first. Pass the oldest id you have as `beforeId` for the next page. */
@@ -184,7 +208,18 @@ export type Api = {
   reportMessage(messageId: string, reason: ReportReason): Promise<void>;
   /** For people whose message is gone (deleted): a plain user report. */
   reportUser(userId: string, reason: ReportReason): Promise<void>;
+  /** Flags an event for review. Reporting the same event twice is not an error. */
+  reportEvent(eventId: string, reason: EventReportReason): Promise<void>;
   blockUser(userId: string): Promise<void>;
+  /** Undoes a block. Unblocking someone you hadn't blocked is not an error. */
+  unblockUser(userId: string): Promise<void>;
+  /** The people the viewer blocked, newest first. */
+  listBlockedUsers(): Promise<BlockedPerson[]>;
+  /** The viewer's own "let people find me by phone number" choice (private; nobody else can read it). */
+  getDiscoverableByPhone(): Promise<boolean>;
+  setDiscoverableByPhone(value: boolean): Promise<void>;
+  /** Permanently deletes the viewer's account and data, then signs out on this device. */
+  deleteAccount(): Promise<void>;
   /** People matching a name or @username. Under 2 characters answers an empty list. Blocked people never appear. */
   searchProfiles(query: string, limit?: number): Promise<PersonSearchResult[]>;
   /** Asks to be friends. Answers 'friends' when they had already asked you (it accepts theirs). */

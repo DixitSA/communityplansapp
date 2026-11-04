@@ -38,11 +38,11 @@ export async function addToCalendar(event: EventDetail): Promise<CalendarResult>
 export async function addToCalendarWithAlert(event: EventDetail): Promise<void> {
   const result = await addToCalendar(event);
   if (result === 'unavailable') {
-    Alert.alert('Calendar not available here', 'Open yard on your iPhone to add this event to your calendar.');
+    Alert.alert('Calendar isn’t available here', 'Open yard on your iPhone to add this event to your calendar.');
   } else if (result === 'error') {
     Alert.alert(
       "Couldn't open your calendar",
-      'If you turned off calendar access for yard, you can allow it in Settings. Then try again.',
+      'If you turned off calendar access for yard, you can switch it back on in Settings, then try again.',
     );
   }
 }

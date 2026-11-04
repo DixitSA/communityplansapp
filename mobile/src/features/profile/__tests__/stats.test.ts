@@ -1,12 +1,13 @@
 import type { EventCardData } from '@/design';
+import type { MyPlan } from '@/lib/api/types';
 
-import type { PlanStatus } from '../../event/plansStore';
-import { deriveProfileStats, upcomingPlans } from '../stats';
+import { deriveProfileStats, splitMyPlans } from '../stats';
 
-const ev = (id: string, day: number, hour = 20): EventCardData => ({
+const ev = (id: string, day: number, hour = 20, endDay?: number): EventCardData => ({
   id,
   title: `Event ${id}`,
   startsAt: new Date(2026, 9, day, hour),
+  endsAt: endDay ? new Date(2026, 9, endDay, 22) : undefined,
   venue: 'Somewhere',
   distanceMi: 1,
   interest: 'music',
@@ -16,56 +17,48 @@ const ev = (id: string, day: number, hour = 20): EventCardData => ({
   friendsGoing: 0,
 });
 
-describe('deriveProfileStats', () => {
-  const now = new Date(2026, 9, 28, 15);
-  const events = [ev('a', 29), ev('b', 30), ev('c', 31), ev('d', 31, 22), ev('past', 20)];
+const now = new Date(2026, 9, 28, 15);
 
-  it('counts Going and Down if as Upcoming (matching the list) and counts Interested separately', () => {
-    const statuses: Record<string, PlanStatus> = {
-      a: 'going',
-      b: 'going',
-      c: 'interested',
-      d: 'down_if_friends',
-    };
-    const plans = upcomingPlans(statuses, events, now);
-    expect(deriveProfileStats(statuses, plans)).toEqual({ upcoming: 3, friends: 0, interested: 1 });
-    expect(deriveProfileStats(statuses, plans).upcoming).toBe(plans.length);
+describe('splitMyPlans', () => {
+  const plans: MyPlan[] = [
+    { event: ev('late', 30), status: 'going' },
+    { event: ev('today', 28, 21), status: 'down_if_friends' },
+    { event: ev('saved2', 31), status: 'interested' },
+    { event: ev('saved1', 29), status: 'interested' },
+    { event: ev('past', 26), status: 'going' },
+    { event: ev('pastSaved', 20), status: 'interested' },
+  ];
+
+  it('separates committed plans from Interested, soonest first, dropping past events', () => {
+    const { upcoming, interested } = splitMyPlans(plans, now);
+    expect(upcoming.map((p) => [p.event.id, p.status])).toEqual([
+      ['today', 'down_if_friends'],
+      ['late', 'going'],
+    ]);
+    expect(interested.map((e) => e.id)).toEqual(['saved1', 'saved2']);
   });
 
-  it('does not count plans that have already passed', () => {
-    const statuses: Record<string, PlanStatus> = { past: 'going', a: 'going' };
-    expect(deriveProfileStats(statuses, upcomingPlans(statuses, events, now)).upcoming).toBe(1);
+  it('keeps an event that started earlier but has not ended', () => {
+    const { upcoming } = splitMyPlans([{ event: ev('multi', 26, 10, 29), status: 'going' }], now);
+    expect(upcoming).toHaveLength(1);
   });
 
-  it('is all zeros with no plans, and passes friends through', () => {
-    expect(deriveProfileStats({}, [])).toEqual({ upcoming: 0, friends: 0, interested: 0 });
-    expect(deriveProfileStats({}, [], 4).friends).toBe(4);
-  });
-
-  it('ignores cleared entries', () => {
-    expect(deriveProfileStats({ a: undefined }, []).interested).toBe(0);
+  it('is empty with no plans', () => {
+    expect(splitMyPlans([], now)).toEqual({ upcoming: [], interested: [] });
   });
 });
 
-describe('upcomingPlans', () => {
-  const now = new Date(2026, 9, 28, 15);
-  const events = [ev('past', 26), ev('late', 30), ev('today', 28, 21), ev('soon', 29), ev('none', 29, 22), ev('saved', 29, 23)];
-
-  it('lists Going and Down if plans, soonest first, without Interested or unplanned events', () => {
-    const plans = upcomingPlans(
-      { late: 'going', today: 'down_if_friends', soon: 'going', saved: 'interested' },
-      events,
+describe('deriveProfileStats', () => {
+  it('counts from the split lists and passes friends through', () => {
+    const split = splitMyPlans(
+      [
+        { event: ev('a', 29), status: 'going' },
+        { event: ev('b', 30), status: 'interested' },
+        { event: ev('c', 31), status: 'interested' },
+      ],
       now,
     );
-    expect(plans.map((p) => [p.event.id, p.status])).toEqual([
-      ['today', 'down_if_friends'],
-      ['soon', 'going'],
-      ['late', 'going'],
-    ]);
-  });
-
-  it('drops events from earlier days but keeps ones later today', () => {
-    expect(upcomingPlans({ past: 'going' }, events, now)).toEqual([]);
-    expect(upcomingPlans({ today: 'going' }, events, now)).toHaveLength(1);
+    expect(deriveProfileStats(split, 4)).toEqual({ upcoming: 1, friends: 4, interested: 2 });
+    expect(deriveProfileStats({ upcoming: [], interested: [] })).toEqual({ upcoming: 0, friends: 0, interested: 0 });
   });
 });

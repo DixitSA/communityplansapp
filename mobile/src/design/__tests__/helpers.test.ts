@@ -48,13 +48,19 @@ describe('eventA11yLabel', () => {
 
   it('reads as one sentence group', () => {
     expect(eventA11yLabel(event)).toBe(
-      'Warehouse Party, Wednesday 9 PM, The District, 2.1 miles. Bob and Carol are going.',
+      'Warehouse Party, Nightlife, Wednesday 9 PM, The District, 2.1 miles. Bob and Carol are going.',
     );
+  });
+
+  it('keeps the category for live events (the row meta line drops it)', () => {
+    const label = eventA11yLabel({ ...event, liveUntil: new Date(2026, 9, 28, 23, 0) });
+    expect(label).toContain('Happening now.');
+    expect(label).toContain('Nightlife');
   });
 
   it('omits friends when none and appends the plan', () => {
     expect(eventA11yLabel({ ...event, friends: [], friendsGoing: 0 }, 'interested')).toBe(
-      'Warehouse Party, Wednesday 9 PM, The District, 2.1 miles. Interested.',
+      'Warehouse Party, Nightlife, Wednesday 9 PM, The District, 2.1 miles. Interested.',
     );
   });
 });

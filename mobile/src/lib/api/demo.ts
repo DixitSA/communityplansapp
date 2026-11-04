@@ -53,6 +53,8 @@ export const DEMO_PROFILE: MyProfile = {
   username: 'taylor.morgan',
   displayName: 'Taylor Morgan',
   homeCityId: CHARLOTTE_CITY_ID,
+  bio: 'Coffee, live music and finding the next thing to do.',
+  avatarUrl: null,
   interests: [DEMO_INTERESTS[1], DEMO_INTERESTS[2], DEMO_INTERESTS[0]],
 };
 
@@ -125,6 +127,7 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: () => Date } = {}): Api {
   let session: AuthSession | null = null;
   let profile: MyProfile | null = null;
+  let discoverable = true;
   const listeners = new Set<(s: AuthSession | null) => void>();
   const wait = (ms = delayMs) => (ms > 0 ? delay(ms) : Promise.resolve());
   const setSession = (s: AuthSession | null) => {
@@ -141,6 +144,10 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
   return {
     ...chat,
     ...friends,
+    async reportEvent() {
+      // Nothing to record in demo mode.
+    },
+
     async blockUser(userId) {
       await chat.blockUser(userId);
       // A blocked person vanishes from search, friends and profiles, like on the server.
@@ -162,6 +169,24 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       await wait();
       setSession({ userId: 'demo-user', email: null });
       return { givenName: 'Taylor' };
+    },
+    async unblockUser() {
+      // Nothing is blocked in demo mode.
+    },
+    async listBlockedUsers() {
+      await wait();
+      return [];
+    },
+    async getDiscoverableByPhone() {
+      await wait(delayMs / 2);
+      return discoverable;
+    },
+    async setDiscoverableByPhone(value) {
+      await wait(delayMs / 2);
+      discoverable = value;
+    },
+    async deleteAccount() {
+      throw new ApiError('validation_failed'); // demo mode has no account
     },
     async signOut() {
       session = null;
@@ -200,9 +225,33 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
         username,
         displayName: input.displayName.trim(),
         homeCityId: input.homeCityId,
+        bio: null,
+        avatarUrl: null,
         interests,
       };
     },
+    async updateMyProfile(input) {
+      await wait();
+      const current = profile ?? DEMO_PROFILE;
+      const username = input.username.toLowerCase();
+      const bio = input.bio.trim();
+      if (!isValidUsername(username)) throw new ApiError('username_invalid');
+      if (username !== current.username && DEMO_TAKEN_USERNAMES.includes(username)) throw new ApiError('username_taken');
+      if (!isValidDisplayName(input.displayName)) throw new ApiError('display_name_invalid');
+      if (bio.length > 160) throw new ApiError('bio_invalid');
+      const interests = DEMO_INTERESTS.filter((i) => input.interestIds.includes(i.id));
+      if (interests.length < MIN_INTERESTS) throw new ApiError('too_few_interests');
+      profile = { ...current, username, displayName: input.displayName.trim(), bio: bio || null, interests };
+    },
+    async setMyAvatar(fileUri) {
+      await wait();
+      profile = { ...(profile ?? DEMO_PROFILE), avatarUrl: fileUri };
+    },
+    async removeMyAvatar() {
+      await wait();
+      profile = { ...(profile ?? DEMO_PROFILE), avatarUrl: null };
+    },
+    avatarUrl: () => null,
     async listInterests() {
       await wait();
       return DEMO_INTERESTS;
@@ -221,6 +270,13 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
     },
     async setRsvp(eventId, status) {
       usePlansStore.getState().setStatus(eventId, status);
+    },
+    async getMyPlans() {
+      const { statuses } = usePlansStore.getState();
+      return getFixtureEvents(new Date()).flatMap((event) => {
+        const status = statuses[event.id];
+        return status ? [{ event, status }] : [];
+      });
     },
     async submitEvent(input) {
       await wait();

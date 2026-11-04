@@ -30,7 +30,7 @@ function pickReason(message: ChatMessage) {
       label,
       run: () => {
         file(reason)
-          .then(() => Alert.alert('Thanks for telling us', 'We’ll review this report.'))
+          .then(() => Alert.alert('Thanks for telling us', 'We’ll take a look at this report.'))
           .catch(failed);
       },
     })),
