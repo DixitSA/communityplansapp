@@ -1108,7 +1108,7 @@ export type Database = {
           created_at: string
           id: number
           reason: string
-          reporter_id: string
+          reporter_id: string | null
           resolved_at: string | null
           snapshot_author_id: string | null
           snapshot_body: string | null
@@ -1120,7 +1120,7 @@ export type Database = {
           created_at?: string
           id?: never
           reason: string
-          reporter_id: string
+          reporter_id: string | null
           resolved_at?: string | null
           snapshot_author_id?: string | null
           snapshot_body?: string | null
@@ -1132,7 +1132,7 @@ export type Database = {
           created_at?: string
           id?: never
           reason?: string
-          reporter_id?: string
+          reporter_id?: string | null
           resolved_at?: string | null
           snapshot_author_id?: string | null
           snapshot_body?: string | null

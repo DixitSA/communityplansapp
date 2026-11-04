@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 // Deletes the CALLER's account. The user id comes only from the verified JWT, never from the body.
-// Rows in profiles, rsvps, friendships, blocks, reports, notifications, messages... go with auth.users via
-// `on delete cascade` (profiles -> auth.users; everything else -> profiles). Events they created keep
+// Rows in profiles, rsvps, friendships, blocks, notifications, messages... go with auth.users via
+// `on delete cascade` (profiles -> auth.users; everything else -> profiles). Reports they filed are kept for moderation (reporter_id is set null). Events they created keep
 // existing (created_by is set null). Avatar files are removed here because storage isn't covered by FKs.
 
 const corsHeaders = {
