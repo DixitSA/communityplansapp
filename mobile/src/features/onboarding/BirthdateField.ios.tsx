@@ -89,7 +89,7 @@ export function BirthdateField({ value, onChange, status }: BirthdateFieldProps)
         <FieldStatusLine status={status} />
       ) : (
         <AppText variant="footnote" color="inkSecondary" style={{ paddingLeft: space.xs }}>
-          Only used to check you are 18 or older. Never shown to anyone.
+          only used to check you’re 18 or older. never shown to anyone.
         </AppText>
       )}
     </View>

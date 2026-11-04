@@ -24,7 +24,7 @@ export function BirthdateField({ value, onChange, status }: BirthdateFieldProps)
         setText(t);
         onChange(parseDateOnly(t));
       }}
-      status={status ?? { tone: 'neutral', text: 'Only used to check you are 18 or older. Never shown to anyone.' }}
+      status={status ?? { tone: 'neutral', text: 'only used to check you’re 18 or older. never shown to anyone.' }}
     />
   );
 }

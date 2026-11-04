@@ -36,7 +36,7 @@ export function directionsUrl(event: Pick<EventDetail, 'venue' | 'address'>): st
 
 export function openDirections(event: Pick<EventDetail, 'venue' | 'address'>): void {
   Linking.openURL(directionsUrl(event)).catch(() => {
-    Alert.alert("Couldn't open Maps", 'Try again in a moment.');
+    Alert.alert("Couldn't open Maps", 'Give it another try in a sec.');
   });
 }
 
@@ -57,7 +57,7 @@ function reportEvent(eventId: string): void {
       run: () => {
         api
           .reportEvent(eventId, reason)
-          .then(() => Alert.alert('Thanks for telling us', 'We’ll review this report.'))
+          .then(() => Alert.alert('Thanks for telling us', 'We’ll take a look at this report.'))
           .catch((err: unknown) => Alert.alert('That didn’t work', mapChatError(errorCode(err))));
       },
     })),

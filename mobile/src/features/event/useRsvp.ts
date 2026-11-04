@@ -84,7 +84,7 @@ export function useSetRsvp() {
     rsvpMutationOptions(
       queryClient,
       (v) => api.setRsvp(v.eventId, v.status),
-      () => Alert.alert('Couldn’t save your plan', 'Check your connection and try again.'),
+      () => Alert.alert('Your plan didn’t save', 'Check your connection and try again.'),
     ),
   );
   const { mutate } = mutation;

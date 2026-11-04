@@ -12,9 +12,9 @@ import { selection, warning } from '@/lib/haptics';
 
 /** Who can see each thing you do: the privacy rules from DATA_MODEL.md, in plain words. */
 const PRIVACY: { symbol: SymbolName; title: string; detail: string }[] = [
-  { symbol: 'heart', title: 'Interested and Down if friends go', detail: 'Only you. Your friends never see these.' },
+  { symbol: 'heart', title: 'Interested and Down if friends go', detail: 'Just you. Your friends never see these.' },
   { symbol: 'checkmark.circle', title: 'Going', detail: 'Your friends, and other people going to the same event.' },
-  { symbol: 'location.fill', title: 'Your location', detail: 'Used only to find what’s nearby. Never saved.' },
+  { symbol: 'location.fill', title: 'Your location', detail: 'Only used to find what’s nearby. We never save it.' },
 ];
 
 function SectionLabel({ children }: { children: string }) {
@@ -36,7 +36,7 @@ export default function SettingsSheet() {
   const confirmDelete = () => {
     warning();
     if (!isBackendConfigured) {
-      Alert.alert('No account to delete', 'You’re in demo mode, so there’s no account here.');
+      Alert.alert('No account to delete', 'You’re in demo mode, so there’s no account here yet.');
       return;
     }
     Alert.alert('Delete your account?', DELETE_ACCOUNT_DETAILS, [
@@ -46,7 +46,7 @@ export default function SettingsSheet() {
         style: 'destructive',
         onPress: () => {
           warning();
-          Alert.alert('Delete account for good?', 'Last check: your account and everything in it will be deleted right now.', [
+          Alert.alert('Delete account for good?', 'Last check: your account and everything in it will be permanently deleted right now.', [
             { text: 'Cancel', style: 'cancel' },
             {
               text: 'Delete my account',
@@ -65,7 +65,7 @@ export default function SettingsSheet() {
 
   const confirmSignOut = () => {
     warning();
-    Alert.alert('Sign out of yard?', 'You can sign back in any time with your email or Apple.', [
+    Alert.alert('Sign out of yard?', 'You can hop back in any time with your email or Apple.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign out',
@@ -264,7 +264,7 @@ export default function SettingsSheet() {
           <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>
             <Icon name="lock.shield.fill" size={14} color="inkSecondary" />
             <AppText variant="footnote" color="inkSecondary" style={{ flex: 1 }}>
-              Demo mode: there is no account to sign out of. To turn on sign-in, follow docs/SUPABASE_SETUP.md.
+              demo mode: there’s no account to sign out of. to turn on sign-in, follow docs/SUPABASE_SETUP.md.
             </AppText>
           </View>
         ) : null}

@@ -119,7 +119,7 @@ export default function SuggestSheet() {
             style={{ textAlign: 'center' }}
             accessibilityLiveRegion="polite"
           >
-            Thanks, we’ll take a look. If it’s a fit, it’ll show up in the feed.
+            Thanks, we’ll take a look. If it’s a fit, it’ll show up in the Feed.
           </AppText>
           <View style={{ alignSelf: 'stretch' }}>
             <PrimaryButton label="Done" onPress={() => router.back()} />
@@ -194,7 +194,7 @@ export default function SuggestSheet() {
         <TextField
           label="Details (optional)"
           value={details}
-          placeholder="Anything else worth knowing"
+          placeholder="Anything else we should know?"
           multiline
           textAlignVertical="top"
           onChangeText={(t) => {

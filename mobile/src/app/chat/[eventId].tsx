@@ -105,7 +105,7 @@ export default function ChatScreen() {
         <EmptyState
           symbol="sparkles"
           title="can’t find that chat"
-          message="The event may have been taken down. Head back to your chats."
+          message="That event may have been taken down. Head back to your chats."
         />
       </View>
     );
@@ -141,7 +141,7 @@ export default function ChatScreen() {
         <EmptyState
           symbol="bubble.left.and.bubble.right"
           title="no messages yet"
-          message={open ? 'Say hi and make a plan to meet up.' : 'Nobody wrote in this chat.'}
+          message={open ? 'Say hi and make a plan to meet up.' : 'Nobody said anything in this chat.'}
         />
       </View>
     );

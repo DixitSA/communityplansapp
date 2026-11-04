@@ -103,8 +103,8 @@ export default function FriendsScreen() {
         title="your Charlotte crew starts here"
         message={
           peopleGoing > 0
-            ? `This week’s events already have ${peopleGoing} going. Add friends and you’ll see which ones they pick.`
-            : 'Add friends and you’ll see which events they’re going to.'
+            ? `This week’s events already have ${peopleGoing} going. Add friends and you’ll see which ones they’re into.`
+            : 'Add friends and you’ll see where they’re headed.'
         }
       >
         <View style={{ alignSelf: 'stretch', paddingTop: space.md, gap: space.sm }}>
@@ -143,7 +143,7 @@ export default function FriendsScreen() {
           if (item.kind === 'none') {
             return (
               <AppText variant="subheadline" color="inkSecondary" style={{ paddingVertical: space.md }}>
-                No friends yet. Accept a request, or go find your people in Search.
+                no friends yet. accept a request, or go find your people in Search.
               </AppText>
             );
           }

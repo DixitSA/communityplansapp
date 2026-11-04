@@ -94,10 +94,10 @@ export default function FindFriendsScreen() {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
           <Icon name="person.badge.plus" size={18} color="accent" />
-          <AppText variant="headline">Your crew starts with one invite</AppText>
+          <AppText variant="headline">your crew starts with one invite</AppText>
         </View>
         <AppText variant="subheadline" color="inkSecondary" style={{ textAlign: 'center' }}>
-          Finding friends from your contacts is coming soon, and you’ll choose who to match. You can skip this and add friends later.
+          Finding friends from your contacts is coming soon, and you’ll choose who to match. Skip this for now and add friends whenever.
         </AppText>
       </View>
     </Scaffold>

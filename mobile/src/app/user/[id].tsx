@@ -87,7 +87,7 @@ export default function UserProfileScreen() {
       <EmptyState
         symbol="person.crop.circle.badge.xmark"
         title="this profile isn’t available"
-        message="It may have been removed, or the link is out of date."
+        message="It may have been removed, or the link is old."
       >
         <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
           <Button label="Go back" onPress={() => router.back()} />

@@ -30,7 +30,7 @@ export default function InterestsScreen() {
       fade
       step={2}
       title="what are you into?"
-      subtitle={`Pick ${MIN_INTERESTS} or more. We’ll put the good stuff first.`}
+      subtitle={`Pick ${MIN_INTERESTS} or more and we’ll put the good stuff first.`}
       footer={
         <PrimaryButton
           label={interestsContinueLabel(selected.length)}

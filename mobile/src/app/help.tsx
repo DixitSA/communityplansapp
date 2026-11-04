@@ -11,53 +11,53 @@ type Item = { symbol: SymbolName; title: string; detail: string };
  */
 const SECTIONS: { title: string; items: Item[] }[] = [
   {
-    title: 'Your plans',
+    title: 'your plans',
     items: [
-      { symbol: 'heart', title: 'Interested', detail: 'Saves the event for later. Only you can see it.' },
+      { symbol: 'heart', title: 'Interested', detail: 'Stashes the event for later. Only you can see it.' },
       {
         symbol: 'person.2',
         title: 'Down if friends go',
-        detail: 'Only you can see it. When the first friend taps Going, we let you know in Activity.',
+        detail: 'Only you can see it. The moment a friend taps Going, we tell you in Activity.',
       },
       {
         symbol: 'checkmark.circle',
         title: 'Going',
-        detail: 'Your friends and other people going can see it. You also join the event chat.',
+        detail: 'Your friends and other people going can see it. You also hop into the event chat.',
       },
     ],
   },
   {
-    title: 'Event chats',
+    title: 'event chats',
     items: [
       {
         symbol: 'bubble.left.and.bubble.right',
         title: 'One chat per event',
-        detail: 'Just for the people going. It opens when you tap Going, and you leave it if you change your plan.',
+        detail: 'Just for the people going. It opens when you tap Going, and you drop out of it if you change your plan.',
       },
       {
         symbol: 'clock',
         title: 'When it closes',
-        detail: 'The chat turns read-only 48 hours after the event ends.',
+        detail: 'The chat goes read-only 48 hours after the event ends.',
       },
     ],
   },
   {
-    title: 'Popping this week',
+    title: 'popping this week',
     items: [
       {
         symbol: 'flame',
         title: 'What’s on the row',
-        detail: 'Picks from the yard team, plus events with lots of people going.',
+        detail: 'Picks from the yard team, plus events a lot of people are going to.',
       },
     ],
   },
   {
-    title: 'Friends',
+    title: 'friends',
     items: [
       {
         symbol: 'person.badge.plus',
         title: 'Adding friends',
-        detail: 'Search for their @username, or send them an invite. Friendships are mutual: one asks, the other accepts.',
+        detail: 'Search for their @username, or send them an invite. Friendships go both ways: one asks, the other accepts.',
       },
       {
         symbol: 'eye',
@@ -67,17 +67,17 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     ],
   },
   {
-    title: 'Privacy',
+    title: 'privacy',
     items: [
       {
         symbol: 'location.fill',
         title: 'Your location',
-        detail: 'Used only to find what’s nearby. Never saved.',
+        detail: 'Only used to find what’s nearby. We never save it.',
       },
       {
         symbol: 'hand.raised',
         title: 'Blocking',
-        detail: 'If you block someone, you stop seeing each other anywhere in yard.',
+        detail: 'Block someone and you won’t see each other anywhere in yard.',
       },
     ],
   },

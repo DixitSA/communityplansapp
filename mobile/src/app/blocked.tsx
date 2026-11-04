@@ -14,7 +14,7 @@ export default function BlockedScreen() {
 
   const confirmUnblock = (id: string, name: string) => {
     warning();
-    Alert.alert(`Unblock ${name}?`, 'They’ll be able to find you, see your profile and send you friend requests again. They won’t be told.', [
+    Alert.alert(`Unblock ${name}?`, 'They’ll be able to find you, see your profile and send you friend requests again. They won’t get a heads up.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Unblock',
@@ -51,9 +51,9 @@ export default function BlockedScreen() {
         {blocked.isLoading ? (
           <PersonRowSkeleton />
         ) : blocked.isError ? (
-          <EmptyState symbol="wifi.slash" title="Couldn’t load this" message="check your connection and try again." />
+          <EmptyState symbol="wifi.slash" title="couldn’t load this" message="check your connection and try again." />
         ) : people.length === 0 ? (
-          <EmptyState symbol="hand.raised" title="No one blocked" message="no one blocked. love that for you." />
+          <EmptyState symbol="hand.raised" title="no one blocked" message="no one blocked. love that for you." />
         ) : (
           <View style={{ borderRadius: radius.card, borderCurve: 'continuous', backgroundColor: colors.surface, paddingHorizontal: space.lg }}>
             {people.map((p) => (

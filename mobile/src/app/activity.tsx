@@ -85,9 +85,9 @@ function MetCard({ item, onDismiss }: { item: Extract<ActivityItem, { kind: 'met
     >
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.md }}>
         <View style={{ flex: 1, gap: 2 }}>
-          <AppText variant="headline">Who did you meet?</AppText>
+          <AppText variant="headline">who did you meet?</AppText>
           <AppText variant="footnote" color="inkSecondary">
-            You were both at {item.eventTitle}.
+            you were both at {item.eventTitle}.
           </AppText>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={space.md} onPress={onDismiss}>
@@ -197,7 +197,7 @@ export default function ActivityScreen() {
             <EmptyState
               symbol="bell.slash"
               title="nothing here yet"
-              message="Friend requests, friends heading to events, and people you meet at events will show up here."
+              message="Friend requests, friends heading out, and people you meet at events will show up here."
             >
               <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
                 <Button variant="primary" symbol="sparkles" label="See what’s on in Charlotte" onPress={() => router.navigate('/')} />
