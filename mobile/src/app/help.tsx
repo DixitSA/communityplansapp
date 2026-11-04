@@ -15,7 +15,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     items: [
       { symbol: 'heart', title: 'Interested', detail: 'Saves the event for later. Only you can see it.' },
       {
-        symbol: 'sparkles',
+        symbol: 'person.2',
         title: 'Down if friends go',
         detail: 'Only you can see it. When the first friend taps Going, we let you know in Activity.',
       },
@@ -60,7 +60,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
         detail: 'Search for their @username, or send them an invite. Friendships are mutual: one asks, the other accepts.',
       },
       {
-        symbol: 'person.2',
+        symbol: 'eye',
         title: 'What friends see',
         detail: 'Friends see the events you’re Going to. Not the ones you’re only Interested in.',
       },
@@ -103,7 +103,12 @@ export default function HelpSheet() {
         <AppText variant="title2" accessibilityRole="header">
           How yard works
         </AppText>
-        <Pressable accessibilityRole="button" accessibilityLabel="Done" hitSlop={space.sm} onPress={() => router.back()}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Done"
+          hitSlop={space.sm}
+          style={{ minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' }}
+          onPress={() => router.back()}>
           <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
             Done
           </AppText>

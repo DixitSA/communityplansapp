@@ -14,6 +14,7 @@ const FALLBACKS: Partial<Record<SymbolName, IoniconName>> = {
   sparkles: 'sparkles',
   plus: 'add',
   'flame.fill': 'flame',
+  eye: 'eye-outline',
   'eye.slash': 'eye-off-outline',
   'plus.bubble': 'chatbubble-ellipses-outline',
   'house.fill': 'home',

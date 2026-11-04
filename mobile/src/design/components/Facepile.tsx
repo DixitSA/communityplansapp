@@ -48,6 +48,17 @@ export function formatAttendeeCount(friendsShown: number, total: number): string
   return rest > 0 ? `+${rest}` : '';
 }
 
+/** Spoken label for compact rows: friends are named as friends, everyone else is "others". */
+export function formatCompactSpoken(names: string[], total: number): string {
+  const count = Math.max(total, names.length);
+  if (count === 0) return '';
+  if (names.length === 0) return `${count} going`;
+  const shown = names.slice(0, 2);
+  const rest = count - shown.length;
+  if (rest <= 0) return `${shown.join(' and ')} going`;
+  return `${shown.join(', ')} and ${rest} ${rest === 1 ? 'other' : 'others'} going`;
+}
+
 export function Facepile({
   people,
   total,
@@ -63,7 +74,7 @@ export function Facepile({
   const label = formatFriendsLabel(names, total);
   const compactText = formatAttendeeCount(people.length, total);
   if (compact ? !compactText && faces.length === 0 : !label) return null;
-  const spoken = label || compactText;
+  const spoken = compact ? formatCompactSpoken(names, total) : label;
   return (
     <View
       accessible
