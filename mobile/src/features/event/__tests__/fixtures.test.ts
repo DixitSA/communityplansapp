@@ -46,8 +46,10 @@ describe('event helpers', () => {
   const e = getFixtureEvent('ev-001', NOW)!;
 
   it('writes the share and invite messages', () => {
-    expect(shareMessage(e, 'share')).toContain('Sunset Vinyl Hour');
-    expect(shareMessage(e, 'invite')).toMatch(/^I'm going to Sunset Vinyl Hour on .* at Haberdish\. Come with me\?$/);
+    expect(shareMessage(e, 'share', null)).toContain('Sunset Vinyl Hour');
+    expect(shareMessage(e, 'share', null)).not.toContain('Get yard');
+    expect(shareMessage(e, 'share', 'https://apps.apple.com/app/id1')).toMatch(/Found on yard\.\n\nGet yard: https:\/\/apps\.apple\.com\/app\/id1$/);
+    expect(shareMessage(e, 'invite', null)).toMatch(/^I'm going to Sunset Vinyl Hour on .* at Haberdish\. Come with me\?$/);
   });
 
   it('builds a directions link from the venue text only', () => {

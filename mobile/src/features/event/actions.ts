@@ -1,6 +1,7 @@
 import { ActionSheetIOS, Alert, Linking, Share } from 'react-native';
 
 import { formatShortDate, formatTime } from '@/lib/dates';
+import { appStoreUrl } from '@/lib/env';
 import { warning } from '@/lib/haptics';
 
 import type { EventDetail } from './types';
@@ -8,11 +9,14 @@ import type { EventDetail } from './types';
 type Shareable = Pick<EventDetail, 'title' | 'startsAt' | 'venue'>;
 
 /** Text for the system share sheet. "invite" is what you send a friend after tapping Going. */
-export function shareMessage(event: Shareable, kind: 'share' | 'invite'): string {
+export function shareMessage(event: Shareable, kind: 'share' | 'invite', storeUrl: string | null = appStoreUrl): string {
   const when = `${formatShortDate(event.startsAt)} at ${formatTime(event.startsAt)}`;
-  return kind === 'invite'
-    ? `I'm going to ${event.title} on ${when} at ${event.venue}. Come with me?`
-    : `${event.title}, ${when} at ${event.venue}. Found on yard.`;
+  const text =
+    kind === 'invite'
+      ? `I'm going to ${event.title} on ${when} at ${event.venue}. Come with me?`
+      : `${event.title}, ${when} at ${event.venue}. Found on yard.`;
+  // The link goes in the text (not Share's iOS-only `url`) so Messages, WhatsApp and Android all get it.
+  return storeUrl ? `${text}\n\nGet yard: ${storeUrl}` : text;
 }
 
 export async function shareEvent(event: Shareable, kind: 'share' | 'invite'): Promise<void> {
