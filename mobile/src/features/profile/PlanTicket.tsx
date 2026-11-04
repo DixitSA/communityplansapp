@@ -4,20 +4,22 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText, EventArt, Icon, useTheme } from '@/design';
 import { formatShortDate, formatTime } from '@/lib/dates';
 
-import type { UpcomingPlan } from './stats';
+import type { RsvpStatus } from '@/lib/api';
+import type { EventCardData } from '@/design';
 
 const ART_HEIGHT = 96;
 const NOTCH = 16;
 const DASHES = 16;
 
 /** One upcoming plan as a ticket: art with the plan state on top, a perforation, then when and where. */
-export function PlanTicket({ plan, width }: { plan: UpcomingPlan; width: number }) {
+export function PlanTicket({ plan, width }: { plan: { event: EventCardData; status: RsvpStatus }; width: number }) {
   const { colors, space, radius, shadow } = useTheme();
   const router = useRouter();
   const { event, status } = plan;
   const going = status === 'going';
   const when = `${formatShortDate(event.startsAt)} · ${formatTime(event.startsAt, true)}`;
-  const statusLabel = going ? 'Going' : 'Down if friends go';
+  const statusLabel = going ? 'Going' : status === 'interested' ? 'Interested' : 'Down if friends go';
+  const statusIcon = going ? 'checkmark' : status === 'interested' ? 'heart.fill' : 'person.2.fill';
 
   return (
     <Pressable
@@ -54,7 +56,7 @@ export function PlanTicket({ plan, width }: { plan: UpcomingPlan; width: number 
           }}
         >
           <Icon
-            name={going ? 'checkmark' : 'person.2.fill'}
+            name={statusIcon}
             size={12}
             color={going ? 'onAccent' : 'accent'}
             weight="bold"

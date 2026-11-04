@@ -226,6 +226,13 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
     async setRsvp(eventId, status) {
       usePlansStore.getState().setStatus(eventId, status);
     },
+    async getMyPlans() {
+      const { statuses } = usePlansStore.getState();
+      return getFixtureEvents(new Date()).flatMap((event) => {
+        const status = statuses[event.id];
+        return status ? [{ event, status }] : [];
+      });
+    },
     async submitEvent(input) {
       await wait();
       const at = clock();

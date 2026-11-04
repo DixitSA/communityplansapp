@@ -5,7 +5,7 @@ import { createAppleNonce } from '../nonce';
 import { mapChatRow, mapMessageRow, mapTableRow, normalizeMessageBody } from './chatMapping';
 import { ApiError, errorCode } from './errors';
 import { mapFriendRow, mapProfileRow, mapRequestRow, mapSearchRow, type AvatarUrl } from './friendsMapping';
-import { mapFeedRow, parseFriends, primaryInterest, priceLabel, spotlightReason } from './feedMapping';
+import { mapFeedRow, mapPlanRow, parseFriends, primaryInterest, priceLabel, spotlightReason } from './feedMapping';
 import { SEARCH_LIMIT } from './friendTypes';
 import { CHAT_PAGE_SIZE, type Api, type AuthSession, type ChatMessage, type EventPage, type Interest, type MyProfile, type RsvpStatus } from './types';
 
@@ -289,6 +289,24 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         p_status: status as RsvpStatus,
       });
       if (error) fail(error);
+    },
+
+    async getMyPlans() {
+      const uid = await myUserId();
+      const nowIso = new Date().toISOString();
+      const [{ data, error }, interests] = await Promise.all([
+        supabase
+          .from('rsvps')
+          .select(
+            'status, events!inner(id, title, starts_at, ends_at, venue_name, neighborhood, image_url, image_sensitive, event_interests(interest_id))',
+          )
+          .eq('user_id', uid)
+          .or(`ends_at.gte.${nowIso},starts_at.gte.${nowIso}`, { referencedTable: 'events' })
+          .order('starts_at', { referencedTable: 'events', ascending: true }),
+        cachedInterests(),
+      ]);
+      if (error) fail(error);
+      return (data ?? []).map((row) => mapPlanRow(row, interests));
     },
 
     async getMyChats() {

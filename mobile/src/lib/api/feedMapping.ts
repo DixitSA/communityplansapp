@@ -1,7 +1,7 @@
 import type { SymbolName } from '@/design';
 
 import type { Database, Tables } from '../database.types';
-import type { FeedEvent, Interest, RsvpStatus } from './types';
+import type { FeedEvent, Interest, MyPlan, RsvpStatus } from './types';
 
 export type FeedRow = Database['public']['Functions']['get_feed']['Returns'][number];
 export type FeedRangeRow = Database['public']['Functions']['get_feed_range']['Returns'][number];
@@ -66,4 +66,39 @@ export function priceLabel(e: Pick<Tables<'events'>, 'is_free' | 'price_min' | '
   if (e.price_min == null) return UNKNOWN_PRICE_LABEL;
   if (e.price_max != null && e.price_max > e.price_min) return `${fmt(e.price_min)} to ${fmt(e.price_max)}`;
   return fmt(e.price_min);
+}
+
+/** A row of the viewer's own `rsvps` joined to its event (the distance is unknown here, so 0). */
+export type PlanRow = {
+  status: RsvpStatus;
+  events: Pick<
+    Tables<'events'>,
+    'id' | 'title' | 'starts_at' | 'ends_at' | 'venue_name' | 'neighborhood' | 'image_url' | 'image_sensitive'
+  > & { event_interests: { interest_id: number }[] };
+};
+
+export function mapPlanRow(row: PlanRow, interests: Interest[]): MyPlan {
+  const e = row.events;
+  const primary = primaryInterest(
+    e.event_interests.map((r) => r.interest_id),
+    interests,
+  );
+  return {
+    status: row.status,
+    event: {
+      id: e.id,
+      title: e.title,
+      startsAt: new Date(e.starts_at),
+      endsAt: e.ends_at ? new Date(e.ends_at) : undefined,
+      venue: e.venue_name ?? e.neighborhood ?? '',
+      distanceMi: 0,
+      imageUrl: e.image_url ?? undefined,
+      imageSensitive: e.image_sensitive === true,
+      interest: primary?.slug ?? 'community',
+      categoryLabel: primary?.label ?? 'Event',
+      symbol: (primary?.symbol ?? 'sparkles') as SymbolName,
+      friends: [],
+      friendsGoing: 0,
+    },
+  };
 }

@@ -31,6 +31,9 @@ export type OnboardingInput = {
 /** The viewer's own plan for an event (mirrors the `rsvp_status` enum). */
 export type RsvpStatus = 'interested' | 'down_if_friends' | 'going';
 
+/** One of the viewer's own plans: the event as a card, plus how they answered. Private to the viewer. */
+export type MyPlan = { event: EventCardData; status: RsvpStatus };
+
 /** Inputs of the `get_feed` RPC, in the app's units. `day` is "YYYY-MM-DD" in the city's time zone. */
 export type FeedParams = {
   cityId: number;
@@ -171,6 +174,8 @@ export type Api = {
   getEvent(id: string): Promise<EventPage | null>;
   /** Sets the viewer's plan; null clears it. */
   setRsvp(eventId: string, status: RsvpStatus | null): Promise<void>;
+  /** The viewer's own upcoming plans (Going, Down if friends go, Interested), soonest first. */
+  getMyPlans(): Promise<MyPlan[]>;
   /** The chats the viewer can read: every event they're Going to, open ones first. */
   getMyChats(): Promise<ChatSummary[]>;
   /** A page of messages, newest first. Pass the oldest id you have as `beforeId` for the next page. */
