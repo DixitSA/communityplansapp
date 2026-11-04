@@ -1483,6 +1483,15 @@ export type Database = {
         }
         Returns: string
       }
+      update_my_profile: {
+        Args: {
+          p_bio: string
+          p_display_name: string
+          p_interest_ids: number[]
+          p_username: string
+        }
+        Returns: undefined
+      }
       username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {

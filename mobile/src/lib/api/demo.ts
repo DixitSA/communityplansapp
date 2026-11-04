@@ -53,6 +53,7 @@ export const DEMO_PROFILE: MyProfile = {
   username: 'taylor.morgan',
   displayName: 'Taylor Morgan',
   homeCityId: CHARLOTTE_CITY_ID,
+  bio: 'Coffee, live music and finding the next thing to do.',
   interests: [DEMO_INTERESTS[1], DEMO_INTERESTS[2], DEMO_INTERESTS[0]],
 };
 
@@ -223,8 +224,22 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
         username,
         displayName: input.displayName.trim(),
         homeCityId: input.homeCityId,
+        bio: null,
         interests,
       };
+    },
+    async updateMyProfile(input) {
+      await wait();
+      const current = profile ?? DEMO_PROFILE;
+      const username = input.username.toLowerCase();
+      const bio = input.bio.trim();
+      if (!isValidUsername(username)) throw new ApiError('username_invalid');
+      if (username !== current.username && DEMO_TAKEN_USERNAMES.includes(username)) throw new ApiError('username_taken');
+      if (!isValidDisplayName(input.displayName)) throw new ApiError('display_name_invalid');
+      if (bio.length > 160) throw new ApiError('bio_invalid');
+      const interests = DEMO_INTERESTS.filter((i) => input.interestIds.includes(i.id));
+      if (interests.length < MIN_INTERESTS) throw new ApiError('too_few_interests');
+      profile = { ...current, username, displayName: input.displayName.trim(), bio: bio || null, interests };
     },
     async listInterests() {
       await wait();

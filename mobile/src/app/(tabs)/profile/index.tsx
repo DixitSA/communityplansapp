@@ -189,6 +189,10 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {me.bio ? <AppText variant="body">{me.bio}</AppText> : null}
+
+        <Button label="Edit profile" onPress={() => router.push('/edit-profile')} accessibilityLabel="Edit profile" />
+
         {me.interests.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
             {me.interests.map((i) => (

@@ -134,7 +134,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (!uid) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, home_city_id, profile_interests(interests(id, slug, label, symbol))')
+        .select('id, username, display_name, bio, home_city_id, profile_interests(interests(id, slug, label, symbol))')
         .eq('id', uid)
         .maybeSingle();
       if (error) fail(error);
@@ -144,6 +144,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         username: data.username,
         displayName: data.display_name,
         homeCityId: data.home_city_id,
+        bio: data.bio,
         interests: data.profile_interests.flatMap((row) => (row.interests ? [row.interests] : [])),
       };
     },
@@ -161,6 +162,16 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         p_birthdate: input.birthdate,
         p_interest_ids: input.interestIds,
         p_home_city_id: input.homeCityId,
+      });
+      if (error) fail(error);
+    },
+
+    async updateMyProfile(input) {
+      const { error } = await supabase.rpc('update_my_profile', {
+        p_display_name: input.displayName,
+        p_username: input.username,
+        p_bio: input.bio,
+        p_interest_ids: input.interestIds,
       });
       if (error) fail(error);
     },

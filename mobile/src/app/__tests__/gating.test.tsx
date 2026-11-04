@@ -26,7 +26,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 const session: AuthSession = { userId: 'u1', email: 'maya@example.com' };
-const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, interests: [] };
+const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, bio: null, interests: [] };
 
 describe('root guards with a backend', () => {
   it('shows the welcome screen to signed-out people, even when they ask for the feed', async () => {

@@ -16,7 +16,15 @@ export type MyProfile = {
   username: string;
   displayName: string;
   homeCityId: number | null;
+  bio: string | null;
   interests: Interest[];
+};
+
+export type EditProfileInput = {
+  displayName: string;
+  username: string;
+  bio: string;
+  interestIds: number[];
 };
 
 export type OnboardingInput = {
@@ -163,6 +171,8 @@ export type Api = {
   getMyProfile(): Promise<MyProfile | null>;
   usernameAvailable(username: string): Promise<boolean>;
   completeOnboarding(input: OnboardingInput): Promise<void>;
+  /** Saves name, username, bio and interests in one go. Rejects with the server's error code (`username_taken`, ...). */
+  updateMyProfile(input: EditProfileInput): Promise<void>;
   listInterests(): Promise<Interest[]>;
   /** Events for one day, ranked. Demo mode ignores `day` and returns the whole sample week. */
   getFeed(params: FeedParams): Promise<FeedEvent[]>;
