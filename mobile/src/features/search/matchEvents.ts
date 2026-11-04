@@ -18,7 +18,8 @@ export function isPeopleQuery(query: string): boolean {
 
 /** Case-insensitive match on title, venue, neighborhood and category. Keeps the input (feed) order. */
 export function matchEvents<T extends SearchableEvent>(events: readonly T[], query: string): T[] {
-  const q = query.trim().toLowerCase();
+  // A leading "@" means a person; if someone switches to Events anyway, search the rest.
+  const q = query.trim().replace(/^@/, '').toLowerCase();
   if (!q) return [];
   return events.filter((e) =>
     [e.title, e.venue, e.neighborhood, neighborhoodFor(e)?.name, e.categoryLabel].some((f) =>

@@ -97,10 +97,13 @@ function GatedStack() {
 function UndoHost() {
   const toast = useUndoStore((s) => s.toast);
   const dismiss = useUndoStore((s) => s.dismiss);
+  const lift = useUndoStore((s) => s.lift);
+  const { space } = useTheme();
   if (!toast) return null;
   return (
     <UndoToast
       key={toast.id}
+      bottomOffset={lift === null ? undefined : lift + space.sm}
       message={toast.message}
       onDismiss={dismiss}
       onUndo={() => {

@@ -1,5 +1,5 @@
 import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   interpolate,
@@ -43,6 +43,7 @@ import { useFirstTimeHint } from '@/features/event/useFirstTimeHint';
 import { usePlan, useSetRsvp } from '@/features/event/useRsvp';
 import { EndedBar } from '@/features/event/EndedBar';
 import { RsvpBar } from '@/features/event/RsvpBar';
+import { useUndoStore } from '@/features/event/undoStore';
 import { hasEnded } from '@/features/feed/agenda';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
@@ -84,6 +85,13 @@ export default function EventScreen() {
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
   const [barHeight, setBarHeight] = useState(0);
+
+  // The undo toast floats just above the RSVP bar here instead of its tab-bar spot.
+  // The bar's height already includes the bottom safe area, which the toast adds itself.
+  useEffect(() => {
+    useUndoStore.getState().setLift(barHeight > 0 ? Math.max(barHeight - insets.bottom, 0) : null);
+    return () => useUndoStore.getState().setLift(null);
+  }, [barHeight, insets.bottom]);
 
   // Scrolling: the hero stretches when you pull down and drifts up slower than the sheet.
   const scrollY = useSharedValue(0);
