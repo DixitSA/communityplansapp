@@ -1,16 +1,19 @@
 import { Link, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { formatShortDate, formatTime, WEEKDAYS_LONG } from '@/lib/dates';
 
 import { useTheme } from '../theme';
+import { usePressScale } from '../usePressScale';
 import { scrim } from '../tokens';
 import { AppText } from './AppText';
 import { Chip } from './Chip';
 import { EventArt } from './EventArt';
 import { LiveDot } from './LiveDot';
 import { Facepile, formatFriendsLabel } from './Facepile';
+import { HotBadge } from './HotBadge';
 import { PlanMenu } from './PlanMenu';
 import type { SymbolName } from './Icon';
 import { linearGradient } from './meshFallback';
@@ -106,6 +109,9 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
   const compact = size === 'compact';
   const minHeight = MIN_HEIGHT[size];
   const { space, radius, colors, scheme } = useTheme();
+  const press = usePressScale();
+  // Compact cards with friends going give the bottom line to them, and the category tag moves to the top row.
+  const chipUp = compact && event.friendsGoing > 0;
   // The zoom source is a native view that sizes to its child, so the art gets the card's measured height.
   const [cardHeight, setCardHeight] = useState<number>(minHeight);
   const [dateLine, venueLine] = eventMetaLines(event);
@@ -147,7 +153,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
           linearGradient(scrim.cardGradient),
         ]}
       />
-      {event.liveUntil || event.spotlightReason ? (
+      {event.liveUntil || event.spotlightReason || chipUp ? (
         <View
           pointerEvents="none"
           style={{
@@ -170,30 +176,31 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
               </AppText>
             </View>
           ) : null}
-          {event.spotlightReason ? (
-            <View style={pill}>
-              <AppText variant="footnote" color="onImage" style={{ fontWeight: '600' }}>
-                {event.spotlightReason}
-              </AppText>
-            </View>
-          ) : null}
+          {event.spotlightReason ? <HotBadge label={event.spotlightReason} /> : null}
+          {chipUp ? <Chip label={event.categoryLabel} size="small" category={event.interest} /> : null}
         </View>
       ) : null}
       {compact ? (
         <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl + space.md }}>
-          <AppText variant="headline" color="onImage" numberOfLines={2} style={{ paddingRight: space.xxxl }}>
+          <AppText variant="rowTitle" color="onImage" numberOfLines={2} style={{ paddingRight: space.xxxl }}>
             {event.title}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
             <AppText variant="footnote" color="onImage" numberOfLines={1} style={{ flexShrink: 1 }}>
               {`${WEEKDAYS_LONG[event.startsAt.getDay()].slice(0, 3)} ${formatTime(event.startsAt)} · ${event.venue}`}
             </AppText>
-            <Chip label={event.categoryLabel} size="small" category={event.interest} />
+            {chipUp ? null : <Chip label={event.categoryLabel} size="small" category={event.interest} />}
           </View>
+          {/* Friends first: their faces and a bold label get the whole line; the category tag moves up beside the pills. */}
+          {chipUp ? (
+            <View style={{ paddingTop: space.xs }}>
+              <Facepile people={event.friends} total={event.friendsGoing} avatarSize={26} labelColor="onImage" labelLines={1} emphasis />
+            </View>
+          ) : null}
         </View>
       ) : (
         <View style={{ gap: space.xs, padding: space.md, paddingTop: space.xxxl * 2 }}>
-          <AppText variant="title2" color="onImage">
+          <AppText variant="title" color="onImage" style={{ fontWeight: '800' }}>
             {event.title}
           </AppText>
           <View>
@@ -207,7 +214,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, paddingTop: space.xs }}>
             <View style={{ flexShrink: 1 }}>
               {event.friendsGoing > 0 ? (
-                <Facepile people={event.friends} total={event.friendsGoing} labelColor="onImage" />
+                <Facepile people={event.friends} total={event.friendsGoing} labelColor="onImage" emphasis />
               ) : null}
             </View>
             <Chip label={event.categoryLabel} size="small" category={event.interest} />
@@ -223,7 +230,9 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       accessibilityRole={href ? 'link' : 'button'}
       accessibilityLabel={eventA11yLabel(event, plan)}
       onPress={onPress}
-      style={({ pressed }) => [{ minHeight }, pressed && { opacity: 0.92 }]}
+      onPressIn={press.handlers.onPressIn}
+      onPressOut={press.handlers.onPressOut}
+      style={{ minHeight }}
     >
       {cardContent}
     </Pressable>
@@ -231,17 +240,20 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
 
   return (
     // The plan button is a sibling of the card Pressable (not a child) so buttons never nest on web.
-    <View
-      style={{
-        minHeight,
-        borderRadius: radius.card,
-        borderCurve: 'continuous',
-        // iOS uses a native menu, so the card can clip; the web popover needs to overflow it.
-        overflow: process.env.EXPO_OS === 'ios' ? 'hidden' : 'visible',
-        zIndex: 1,
-        // Light mode has a soft shadow. In dark mode a hairline keeps dark art from melting into the canvas.
-        ...(scheme === 'dark' ? { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line } : null),
-      }}
+    <Animated.View
+      style={[
+        {
+          minHeight,
+          borderRadius: radius.card,
+          borderCurve: 'continuous',
+          // iOS uses a native menu, so the card can clip; the web popover needs to overflow it.
+          overflow: process.env.EXPO_OS === 'ios' ? 'hidden' : 'visible',
+          zIndex: 1,
+          // Light mode has a soft shadow. In dark mode a hairline keeps dark art from melting into the canvas.
+          ...(scheme === 'dark' ? { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line } : null),
+        },
+        press.style,
+      ]}
     >
       {!href ? (
         pressable
@@ -262,6 +274,6 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       <View style={{ position: 'absolute', top: space.sm, right: space.sm }}>
         <PlanMenu plan={plan} title={event.title} onChange={(p) => onSetPlan?.(p)} overImage />
       </View>
-    </View>
+    </Animated.View>
   );
 }

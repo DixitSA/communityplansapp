@@ -216,7 +216,7 @@ export default function FeedScreen() {
 
   const topRow = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg }}>
-      <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1 }}>
+      <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1, fontWeight: '800' }}>
         yard.
       </AppText>
       <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -450,10 +450,10 @@ export default function FeedScreen() {
           >
             {/* A mood line ("Tonight", "Tomorrow", "Thursday") over the date and count. */}
             <View accessible accessibilityRole="header" accessibilityLabel={`${section.headline}, ${section.detail}`}>
-              <AppText variant="title2" color={section.isToday ? 'accent' : 'ink'} style={{ fontWeight: '700' }}>
+              <AppText variant="sectionTitle" color={section.isToday ? 'accent' : 'ink'}>
                 {section.headline}
               </AppText>
-              <AppText variant="footnote" color="inkSecondary">
+              <AppText variant="footnote" color="inkSecondary" style={{ fontWeight: '600' }}>
                 {section.detail}
               </AppText>
             </View>

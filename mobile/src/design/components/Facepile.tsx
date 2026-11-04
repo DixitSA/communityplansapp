@@ -30,6 +30,8 @@ export type FacepileProps = {
   labelLines?: number;
   /** List-row size: smaller faces and a short "+N" (or "N going" with no friends). VoiceOver reads the full sentence when there are friends. */
   compact?: boolean;
+  /** Social proof up front: a bold label, and on compact piles an accent capsule around friends' faces. */
+  emphasis?: boolean;
 };
 
 const MAX_FACES = 3;
@@ -66,8 +68,9 @@ export function Facepile({
   labelColor = 'inkSecondary',
   labelLines,
   compact = false,
+  emphasis = false,
 }: FacepileProps) {
-  const { space } = useTheme();
+  const { space, colors, radius } = useTheme();
   const names = people.map((p) => p.name);
   const avatarSize = avatarSizeProp ?? (compact ? 24 : 26);
   const faces = people.slice(0, compact ? COMPACT_MAX_FACES : MAX_FACES);
@@ -75,26 +78,45 @@ export function Facepile({
   const compactText = formatAttendeeCount(people.length, total);
   if (compact ? !compactText && faces.length === 0 : !label) return null;
   const spoken = compact ? formatCompactSpoken(names, total) : label;
+  // Friends on a compact pile sit in a soft accent capsule so the row's social proof reads first.
+  const capsule = emphasis && compact && faces.length > 0;
+  // Friends are the headline (accent); a bare count of strangers is bold but neutral.
+  const labelTone: ColorToken =
+    emphasis && labelColor === 'inkSecondary' ? (faces.length > 0 ? 'accent' : 'ink') : labelColor;
   return (
     <View
       accessible
       accessibilityLabel={spoken}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? space.xs + 2 : space.sm }}
+      style={[
+        { flexDirection: 'row', alignItems: 'center', gap: compact ? space.xs + 2 : space.sm },
+        capsule && {
+          backgroundColor: colors.accentSoft,
+          borderRadius: radius.pill,
+          borderCurve: 'continuous',
+          padding: 2,
+          paddingRight: compactText ? space.sm : 2,
+        },
+      ]}
     >
       {faces.length > 0 ? (
         <View style={{ flexDirection: 'row' }}>
           {faces.map((p, i) => (
             <View key={p.id} style={{ marginLeft: i === 0 ? 0 : compact ? -8 : -avatarSize * 0.3 }}>
-              <Avatar name={p.name} size={avatarSize} ring ringColor={compact ? 'canvas' : 'surface'} />
+              <Avatar
+                name={p.name}
+                size={avatarSize}
+                ring
+                ringColor={compact && !capsule ? 'canvas' : 'surface'}
+              />
             </View>
           ))}
         </View>
       ) : null}
       <AppText
         variant="footnote"
-        color={labelColor}
+        color={labelTone}
         numberOfLines={labelLines}
-        style={{ flexShrink: 1 }}
+        style={[{ flexShrink: 1 }, emphasis && { fontWeight: '700' }, capsule && { marginLeft: -2 }]}
       >
         {compact ? compactText : label}
       </AppText>

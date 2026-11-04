@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
-import { AppText, Avatar, Icon, useTheme } from '@/design';
+import { AppText, Avatar, Icon, usePressScale, useTheme } from '@/design';
 
 import { userHref } from '../friends/routes';
 import { othersLabel } from './plansLogic';
@@ -32,18 +32,23 @@ function firstName(name: string): string {
 
 function PersonTile({ person }: { person: Person }) {
   const { space } = useTheme();
+  const press = usePressScale(0.92);
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${person.name}`}
       accessibilityHint="Opens profile"
       onPress={() => router.push(userHref(person.id))}
-      style={({ pressed }) => ({ width: FACE + space.md, alignItems: 'center', gap: space.xs, opacity: pressed ? 0.7 : 1 })}
+      onPressIn={press.handlers.onPressIn}
+      onPressOut={press.handlers.onPressOut}
+      style={{ width: FACE + space.md }}
     >
-      <Avatar name={person.name} size={FACE} />
-      <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={2}>
-        {firstName(person.name)}
-      </AppText>
+      <Animated.View style={[{ alignItems: 'center', gap: space.xs }, press.style]}>
+        <Avatar name={person.name} size={FACE} />
+        <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={2} style={{ fontWeight: '600' }}>
+          {firstName(person.name)}
+        </AppText>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -114,7 +119,7 @@ export function WhosGoing({ friends, friendsGoing, others, othersGoing, revealed
 
   return (
     <View style={{ gap: space.lg }}>
-      <AppText variant="title2" accessibilityRole="header">
+      <AppText variant="sectionTitle" accessibilityRole="header">
         {ended ? 'Who went' : 'Who\u2019s going'}
       </AppText>
 

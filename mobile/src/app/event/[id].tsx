@@ -19,7 +19,11 @@ import {
   EventArt,
   Facepile,
   GlassButton,
+  HotBadge,
   Icon,
+  categoryColors,
+  isCategory,
+  isPopping,
   scrim,
   tintedCanvas,
   useImageHidden,
@@ -48,7 +52,7 @@ import { hasEnded } from '@/features/feed/agenda';
 import { WhosGoing } from '@/features/event/WhosGoing';
 import { UNKNOWN_PRICE_LABEL } from '@/lib/api';
 import { WEEKDAYS_LONG, countdownLabel, formatEventTime, formatShortDate, formatTime, isSameDay } from '@/lib/dates';
-import { light } from '@/lib/haptics';
+import { light, selection } from '@/lib/haptics';
 import { useHydrated } from '@/lib/useHydrated';
 import { useNow } from '@/lib/useNow';
 import { linearGradient } from '@/design/components/meshFallback';
@@ -193,6 +197,10 @@ export default function EventScreen() {
           : `${WEEKDAYS_LONG[event.endsAt.getDay()].slice(0, 3)} ${formatTime(event.endsAt)}`
         : null,
     });
+  const tagInterest = event.tags[0]?.interest;
+  const categoryColor = isCategory(tagInterest) ? categoryColors[tagInterest].solid : colors.accent;
+  // Everyone going, from whichever count the data has (the server's, or the demo's friends + others).
+  const popping = isPopping(event.goingCount ?? event.friendsGoing + event.othersGoing);
   const countdown = countdownLabel(event.startsAt, event.endsAt, now);
   const timeText = formatEventTime(event.startsAt, event.endsAt, true);
   // A multi-day event reads "Fri 7:00 PM – Sun 5:00 PM", which already says the days.
@@ -254,20 +262,21 @@ export default function EventScreen() {
           }}
         >
           <View style={{ gap: space.sm }}>
-            {countdown ? (
-              <View style={{ flexDirection: 'row' }}>
-                <Chip label={countdown} symbol="clock" tone="accent" selected size="small" />
+            {countdown || popping ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm }}>
+                {countdown ? <Chip label={countdown} symbol="clock" tone="accent" selected size="small" /> : null}
+                {popping ? <HotBadge label="Popping" /> : null}
               </View>
             ) : null}
-            <AppText variant="title" accessibilityRole="header" selectable style={{ letterSpacing: -0.6 }}>
+            <AppText variant="largeTitle" accessibilityRole="header" selectable style={{ letterSpacing: -0.9, fontWeight: '800' }}>
               {event.title}
             </AppText>
-            <AppText variant="headline" rounded>
+            <AppText variant="headline" rounded style={{ fontWeight: '700' }}>
               {dateLine}
             </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
               <View style={{ paddingTop: 2 }}>
-                <Icon name="mappin" size={17} color="accent" />
+                <Icon name="mappin" size={17} tintColor={categoryColor} />
               </View>
               <View style={{ flexShrink: 1 }}>
                 <AppText variant="body">
@@ -310,6 +319,39 @@ export default function EventScreen() {
             ) : null}
           </View>
 
+          {/* Social proof up front: friends' faces and a bold line, right under the title block. */}
+          {event.friendsGoing > 0 ? (
+            <Pressable
+              onPress={() => {
+                selection();
+                scrollRef.current?.scrollTo({ y: whosGoingY.current - space.lg, animated: true });
+              }}
+              accessibilityRole="button"
+              accessibilityHint="Scrolls to who's going"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: space.md,
+                padding: space.md,
+                borderRadius: radius.card,
+                borderCurve: 'continuous',
+                backgroundColor: colors.accentSoft,
+              }}
+            >
+              <View style={{ flexShrink: 1 }}>
+                <Facepile
+                  people={event.friends}
+                  total={event.friendsGoing}
+                  avatarSize={36}
+                  labelColor="accent"
+                  emphasis
+                />
+              </View>
+              <Icon name="chevron.right" size={13} color="accent" weight="semibold" />
+            </Pressable>
+          ) : null}
+
           {/* For a venue this row would only repeat the location line above; it earns its place for a real host. */}
           {event.host.kind !== 'venue' ? (
             <>
@@ -330,20 +372,18 @@ export default function EventScreen() {
             </>
           ) : null}
 
-          {event.friendsGoing > 0 ? (
-            <>
-              <Divider />
-              <Pressable
-                onPress={() => scrollRef.current?.scrollTo({ y: whosGoingY.current - space.lg, animated: true })}
-                accessibilityRole="button"
-                accessibilityHint="Scrolls to who's going"
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}
-              >
-                <Facepile people={event.friends} total={event.friendsGoing} avatarSize={32} labelColor="ink" />
-                <Icon name="chevron.right" size={13} color="inkSecondary" weight="semibold" />
-              </Pressable>
-            </>
-          ) : null}
+          <Divider />
+
+          <View onLayout={(e) => (whosGoingY.current = e.nativeEvent.layout.y + heroHeight - radius.hero)}>
+            <WhosGoing
+              friends={event.friends}
+              friendsGoing={event.friendsGoing}
+              others={revealed ? event.otherAttendees : []}
+              othersGoing={othersGoing}
+              revealed={revealed}
+              ended={hasEnded(event, now)}
+            />
+          </View>
 
           <Divider />
 
@@ -367,19 +407,6 @@ export default function EventScreen() {
                 </AppText>
               </Pressable>
             ) : null}
-          </View>
-
-          <Divider />
-
-          <View onLayout={(e) => (whosGoingY.current = e.nativeEvent.layout.y + heroHeight - radius.hero)}>
-            <WhosGoing
-              friends={event.friends}
-              friendsGoing={event.friendsGoing}
-              others={revealed ? event.otherAttendees : []}
-              othersGoing={othersGoing}
-              revealed={revealed}
-              ended={hasEnded(event, now)}
-            />
           </View>
         </View>
       </Animated.ScrollView>

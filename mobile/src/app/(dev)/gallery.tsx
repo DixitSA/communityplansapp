@@ -18,6 +18,7 @@ import {
   GlassButton,
   GlassPill,
   GlassSurface,
+  HotBadge,
   UndoToast,
   Icon,
   InterestTile,
@@ -53,11 +54,11 @@ const SAMPLE_IMAGE: number = require('../../../assets/images/icon.png');
 const GALLERY_LIVE_UNTIL = new Date(2026, 9, 31, 23, 0);
 
 const VARIANTS: TypeVariant[] = [
-  'display', 'largeTitle', 'title', 'title2', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
+  'display', 'largeTitle', 'title', 'sectionTitle', 'title2', 'rowTitle', 'headline', 'body', 'subheadline', 'footnote', 'caption', 'overline',
 ];
 const COLOR_TOKENS = [
   'canvas', 'surface', 'surfaceMuted', 'ink', 'inkSecondary', 'line', 'accent', 'accentSoft', 'danger',
-  'peach', 'peachSoft', 'mint', 'mintSoft', 'deep',
+  'peach', 'peachSoft', 'mint', 'mintSoft', 'deep', 'hot', 'hotSoft',
 ] as const;
 const PEOPLE = [
   { id: '1', name: 'Maya Chen' },
@@ -259,6 +260,22 @@ export default function Gallery() {
           <Facepile people={PEOPLE} total={12} compact />
           <Facepile people={PEOPLE.slice(0, 1)} total={1} compact />
           <Facepile people={[]} total={7} compact />
+        </View>
+        <AppText variant="caption" color="inkSecondary">
+          Emphasis (social proof up front): bold label, and an accent capsule around friends on compact piles
+        </AppText>
+        <Facepile people={PEOPLE.slice(0, 2)} total={5} emphasis />
+        <View style={row}>
+          <Facepile people={PEOPLE} total={12} compact emphasis />
+          <Facepile people={[]} total={7} compact emphasis />
+        </View>
+      </Section>
+
+      <Section title="HotBadge (popping: 5+ going, or a hot spotlight pick)">
+        <View style={row}>
+          <HotBadge label="Popping" />
+          <HotBadge label="12 going" />
+          <HotBadge label="yard pick" symbol="sparkles" tone="soft" />
         </View>
       </Section>
 

@@ -18,8 +18,8 @@ export function SpotlightRail({ events }: SpotlightRailProps) {
   return (
     <View style={{ gap: space.sm, paddingTop: space.md, paddingBottom: space.xs }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg }}>
-        <Icon name="flame.fill" size={20} color="accent" />
-        <AppText variant="title2" accessibilityRole="header" style={{ fontWeight: '700' }}>
+        <Icon name="flame.fill" size={24} color="hot" />
+        <AppText variant="sectionTitle" accessibilityRole="header">
           popping this week
         </AppText>
       </View>

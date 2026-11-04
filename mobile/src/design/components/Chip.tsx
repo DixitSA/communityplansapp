@@ -1,8 +1,10 @@
 import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { selection } from '@/lib/haptics';
 
 import { useTheme } from '../theme';
+import { usePressScale } from '../usePressScale';
 import { categoryColors, isCategory, type ColorToken } from '../tokens';
 import { AppText } from './AppText';
 import { Icon, type SymbolName } from './Icon';
@@ -55,6 +57,7 @@ export function Chip({
   onPress,
 }: ChipProps) {
   const { colors, space, radius, scheme } = useTheme();
+  const press = usePressScale(0.94);
   const t = TONES[tone];
   const small = size === 'small';
   const isFilled = selected && filled;
@@ -120,9 +123,11 @@ export function Chip({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
+      onPressIn={press.handlers.onPressIn}
+      onPressOut={press.handlers.onPressOut}
       hitSlop={space.xs}
     >
-      {content}
+      <Animated.View style={press.style}>{content}</Animated.View>
     </Pressable>
   );
 }
