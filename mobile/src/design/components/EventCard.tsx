@@ -95,11 +95,12 @@ export type EventCardProps = {
   href?: Href;
   /** `Link.MenuAction` items for the long-press menu (with a live preview). iOS only, and only with `href`. */
   menuActions?: ReactNode;
-  /** `compact` is the short card for the spotlight rail (about 120 pt, one meta line). */
+  /** `compact` is the short card for the spotlight rail (140 pt, one meta line). */
   size?: 'regular' | 'compact';
 };
 
-const MIN_HEIGHT = { regular: 170, compact: 120 } as const;
+// Compact fits a two-line title, so every spotlight tile is the same height at the default text size.
+const MIN_HEIGHT = { regular: 170, compact: 140 } as const;
 
 export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuActions, size = 'regular' }: EventCardProps) {
   const compact = size === 'compact';
