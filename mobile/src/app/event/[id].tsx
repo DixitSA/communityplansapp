@@ -169,7 +169,7 @@ export default function EventScreen() {
   // Curated and ended events keep the quiet footnote link; everything else gets a real button.
   const showListingButton = Boolean(listingUrl) && !event.source.curated && !ended;
   const knownPrice = event.priceLabel !== UNKNOWN_PRICE_LABEL ? event.priceLabel : null;
-  const listingLabel = listingButtonLabel(event.source.name);
+  const listingLabel = listingButtonLabel(event.source.name, listingUrl);
   const description =
     event.description.trim() ||
     eventSummary({

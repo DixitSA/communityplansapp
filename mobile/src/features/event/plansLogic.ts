@@ -44,10 +44,17 @@ export function isTicketSource(name: string): boolean {
   return /ticketmaster|seatgeek/i.test(name);
 }
 
-/** The label of the listing button: "Get tickets on Ticketmaster", "View listing on Google". */
-export function listingButtonLabel(rawSourceName: string): string {
+/**
+ * The label of the listing button: "Get tickets on Ticketmaster", "View on Instagram", "View listing on Google".
+ * Agent listings name an Instagram account ("@vintagemarketclt"); a handle makes a long, odd label, so those
+ * say where the link goes instead (Instagram when the URL is one, else just "View listing").
+ */
+export function listingButtonLabel(rawSourceName: string, url?: string): string {
   const name = sourceName(rawSourceName);
-  return isTicketSource(rawSourceName) ? `Get tickets on ${name}` : `View listing on ${name}`;
+  if (isTicketSource(rawSourceName)) return `Get tickets on ${name}`;
+  if (url && /^https?:\/\/([a-z0-9-]+\.)*instagram\.com\//i.test(url)) return 'View on Instagram';
+  if (name.startsWith('@')) return 'View listing';
+  return `View listing on ${name}`;
 }
 
 /**
