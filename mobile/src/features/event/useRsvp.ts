@@ -5,8 +5,9 @@ import { Alert } from 'react-native';
 import { api, type EventPage, type FeedEvent, type RsvpStatus } from '@/lib/api';
 import { isBackendConfigured } from '@/lib/env';
 
-import { toggleInterestedChoice } from './plansLogic';
+import { toggleInterestedChoice, undoMessage } from './plansLogic';
 import { usePlanStatus, usePlansStore, type PlanChoice } from './plansStore';
+import { showUndo } from './undoStore';
 
 export type RsvpVars = { eventId: string; status: RsvpStatus | null };
 
@@ -100,10 +101,26 @@ export function useSetRsvp() {
   const toggleInterested = useCallback(
     (eventId: string, current: PlanChoice) => {
       const next = toggleInterestedChoice(current);
-      if (next !== current) setStatus(eventId, next);
+      if (next === current) return;
+      setStatus(eventId, next);
+      const message = undoMessage(current, next, '');
+      if (message) showUndo({ message, onUndo: () => setStatus(eventId, current) });
     },
     [setStatus],
   );
 
-  return { setStatus, toggleInterested };
+  /**
+   * Change a plan from `prev` to `next`, and offer a toast with Undo when that removes the plan or
+   * leaves Going. Undo puts `prev` back through the same setter (Going re-joins the chat).
+   */
+  const changePlan = useCallback(
+    (eventId: string, prev: PlanChoice, next: PlanChoice, title: string) => {
+      setStatus(eventId, next);
+      const message = undoMessage(prev, next, title);
+      if (message) showUndo({ message, onUndo: () => setStatus(eventId, prev) });
+    },
+    [setStatus],
+  );
+
+  return { setStatus, toggleInterested, changePlan };
 }

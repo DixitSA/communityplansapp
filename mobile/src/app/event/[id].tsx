@@ -79,7 +79,7 @@ export default function EventScreen() {
   const status = usePlan(id, event?.myStatus);
   const imageHidden = useImageHidden(id, event?.imageSensitive);
   const revealImage = useRevealedImages((s) => s.reveal);
-  const { setStatus } = useSetRsvp();
+  const { setStatus, changePlan } = useSetRsvp();
   const showDownHint = useFirstTimeHint('down_if_friends');
 
   const heroHeight = Math.round(Math.min(height * 0.42, width * 1.05));
@@ -142,7 +142,7 @@ export default function EventScreen() {
   const choose = (choice: Exclude<PlanStatus, 'going'>) => {
     light();
     const next = nextStatus(status, choice);
-    setStatus(event.id, next);
+    changePlan(event.id, status, next, event.title);
     if (next === 'down_if_friends') void showDownHint();
   };
   const onGoing = () => {

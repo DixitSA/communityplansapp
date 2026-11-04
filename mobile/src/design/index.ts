@@ -43,6 +43,7 @@ export { Icon, asSymbol, type IconProps, type SymbolName } from './components/Ic
 export { MeshBackground, type MeshBackgroundProps } from './components/MeshBackground';
 export { MeshArt, buildMesh, seededRandom, type MeshArtProps } from './components/MeshArt';
 export { SegmentedControl, type SegmentedControlProps } from './components/SegmentedControl';
+export { UndoToast, type UndoToastProps } from './components/UndoToast';
 export { Skeleton, type SkeletonProps } from './components/Skeleton';
 export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { Screen } from './components/Screen';

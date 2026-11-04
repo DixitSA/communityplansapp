@@ -18,6 +18,7 @@ import {
   GlassButton,
   GlassPill,
   GlassSurface,
+  UndoToast,
   Icon,
   InterestTile,
   LiveDot,
@@ -80,6 +81,7 @@ export default function Gallery() {
   const { colors, space, scheme, radius } = useTheme();
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
   const [seg, setSeg] = useState('a');
+  const [toastOn, setToastOn] = useState(false);
   const [chipOn, setChipOn] = useState<Record<string, boolean>>({ accent: true });
   const [plan, setPlan] = useState<CardPlan>(null);
   const [rowPlan, setRowPlan] = useState<CardPlan>(null);
@@ -142,6 +144,18 @@ export default function Gallery() {
           {/* Deliberately unmapped: shows the dot fallback. */}
           <Icon name={"unmapped.symbol" as SymbolName} size={28} />
         </View>
+      </Section>
+
+      <Section title="UndoToast">
+        <Button label="Show undo toast" onPress={() => setToastOn(true)} />
+        {toastOn ? (
+          <UndoToast
+            message="Removed from your plans"
+            onUndo={() => setToastOn(false)}
+            onDismiss={() => setToastOn(false)}
+            bottomOffset={space.xxxl}
+          />
+        ) : null}
       </Section>
 
       <Section title="Chip">

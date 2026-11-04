@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { Button, EmptyState, useTheme } from '@/design';
+import { Button, EmptyState, UndoToast, useTheme } from '@/design';
+import { useUndoStore } from '@/features/event/undoStore';
 import { AuthProvider, useSession } from '@/features/auth/AuthProvider';
 import { gateAllows } from '@/features/auth/gate';
 import { LoadingScreen } from '@/features/auth/LoadingScreen';
@@ -92,6 +93,24 @@ function GatedStack() {
   );
 }
 
+/** Shows the shared undo toast above every screen, so it survives navigation. */
+function UndoHost() {
+  const toast = useUndoStore((s) => s.toast);
+  const dismiss = useUndoStore((s) => s.dismiss);
+  if (!toast) return null;
+  return (
+    <UndoToast
+      key={toast.id}
+      message={toast.message}
+      onDismiss={dismiss}
+      onUndo={() => {
+        dismiss();
+        toast.onUndo();
+      }}
+    />
+  );
+}
+
 export default function RootLayout() {
   const { scheme } = useTheme();
   // The server can't know the color scheme, so a hydrating web page waits one render (always true on native).
@@ -106,6 +125,7 @@ export default function RootLayout() {
       <AuthProvider>
         <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
         <GatedStack />
+        <UndoHost />
       </AuthProvider>
     </QueryClientProvider>
   );

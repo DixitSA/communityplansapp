@@ -29,6 +29,26 @@ export function nextStatus(current: PlanChoice, tapped: Exclude<PlanChoice, null
   return current === tapped ? null : tapped;
 }
 
+/** A title short enough for a toast: cut at ~24 characters on a word edge, with an ellipsis. */
+export function shortTitle(title: string, max = 24): string {
+  const t = title.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const edge = cut.lastIndexOf(' ');
+  return `${(edge > max / 2 ? cut.slice(0, edge) : cut).trimEnd()}…`;
+}
+
+/**
+ * Should changing a plan from `prev` to `next` offer an undo, and with what message?
+ * Removing a plan or leaving Going does; adding or upgrading a plan does not.
+ */
+export function undoMessage(prev: PlanChoice, next: PlanChoice, title: string): string | null {
+  if (prev === next || prev === null) return null;
+  if (prev === 'going') return `You left ${shortTitle(title)}. Chat access removed.`;
+  if (next === null) return 'Removed from your plans';
+  return null;
+}
+
 /** The source's name without the lead-in some sources store with it ("via Eventbrite", "Source: camp.nc", "Tickets on Ticketmaster"). */
 export function sourceName(name: string): string {
   return name.replace(/^\s*(listed via|via|source:|tickets on)\s+/i, '').trim() || name;
