@@ -1,5 +1,5 @@
 import { Link, type Href } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { formatShortDate, formatTime, WEEKDAYS_LONG } from '@/lib/dates';
@@ -105,6 +105,8 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
   const compact = size === 'compact';
   const minHeight = MIN_HEIGHT[size];
   const { space, radius, colors, scheme } = useTheme();
+  // The zoom source is a native view that sizes to its child, so the art gets the card's measured height.
+  const [cardHeight, setCardHeight] = useState<number>(minHeight);
   const [dateLine, venueLine] = eventMetaLines(event);
   const pill = {
     flexDirection: 'row',
@@ -119,11 +121,23 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
   const cardContent = (
     // The art clips here rather than on the outer card, so the plan menu's web popover can hang below the card.
     <View
+      onLayout={(e) => setCardHeight(e.nativeEvent.layout.height)}
       style={{ minHeight, justifyContent: 'flex-end', borderRadius: radius.card, borderCurve: 'continuous', overflow: 'hidden' }}
     >
-      <View style={StyleSheet.absoluteFill}>
-        <EventArt event={event} />
-      </View>
+      {/* Only the art is the zoom source (as in EventRow): a native zoom view around the text can hide it. */}
+      {href && process.env.EXPO_OS === 'ios' ? (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { bottom: undefined }]}>
+          <Link.AppleZoom>
+            <View style={{ height: cardHeight }}>
+              <EventArt event={event} />
+            </View>
+          </Link.AppleZoom>
+        </View>
+      ) : (
+        <View style={StyleSheet.absoluteFill}>
+          <EventArt event={event} />
+        </View>
+      )}
       {/* Bottom scrim so white text stays readable on any image. */}
       <View
         pointerEvents="none"
@@ -210,7 +224,7 @@ export function EventCard({ event, plan = null, onPress, onSetPlan, href, menuAc
       onPress={onPress}
       style={({ pressed }) => [{ minHeight }, pressed && { opacity: 0.92 }]}
     >
-      {href ? <Link.AppleZoom>{cardContent}</Link.AppleZoom> : cardContent}
+      {cardContent}
     </Pressable>
   );
 

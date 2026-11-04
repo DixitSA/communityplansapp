@@ -24,6 +24,7 @@ import { FilterMenuChip } from '@/features/feed/FilterMenuChip';
 import { DISTANCES, TIME_OPTIONS, chipStates, isDefaultFilters, type DistanceMi } from '@/features/feed/filters';
 import { useFiltersStore } from '@/features/feed/filtersStore';
 import { NEIGHBORHOODS } from '@/features/feed/neighborhoods';
+import { filterSpotlight } from '@/features/feed/spotlight';
 import { SpotlightRail } from '@/features/feed/SpotlightRail';
 import { useFeedEvents } from '@/features/feed/useFeedEvents';
 import { useSpotlight } from '@/features/feed/useSpotlight';
@@ -64,9 +65,15 @@ export default function FeedScreen() {
   const { sections, dayEvents, total, dayMeta, isLoading, isError, refetch } = useFeedEvents();
   const neighborhood = useFiltersStore((s) => s.neighborhood);
   const spotlight = useSpotlight();
-  // The spotlight is the city's pulse, so it shows in Nearby only, and only with enough to swipe through.
-  const spotlightEvents = scope === 'nearby' && (spotlight.data?.length ?? 0) >= 2 ? spotlight.data : undefined;
-  const criteria = { timeOfDay, interests, distanceMi, price, scope };
+  const criteria = useMemo(
+    () => ({ timeOfDay, interests, distanceMi, price, scope }),
+    [timeOfDay, interests, distanceMi, price, scope],
+  );
+  // The spotlight follows every feed filter (scope included), and shows only with enough to swipe through.
+  const spotlightEvents = useMemo(() => {
+    const list = filterSpotlight(spotlight.data ?? [], criteria, neighborhood);
+    return list.length >= 2 ? list : undefined;
+  }, [spotlight.data, criteria, neighborhood]);
   const chips = chipStates(criteria);
   const isMap = view === 'map';
 
