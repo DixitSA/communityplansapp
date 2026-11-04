@@ -1,5 +1,5 @@
 import { Stack, router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 
 import {
@@ -11,10 +11,14 @@ import {
   PersonRow,
   PersonRowSkeleton,
   SearchField,
+  SegmentedControl,
   useLargeTitleHeader,
   useTheme,
 } from '@/design';
-import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type PersonSearchResult } from '@/lib/api';
+import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH, type FeedEvent, type PersonSearchResult } from '@/lib/api';
+import { EventRowLink } from '@/features/event/EventCardLink';
+import { useFeedEvents } from '@/features/feed/useFeedEvents';
+import { isPeopleQuery, matchEvents, type SearchMode } from '@/features/search/matchEvents';
 import { useFriendButton } from '@/features/friends/useFriendButton';
 import { useFriendRequests } from '@/features/friends/useFriends';
 import { useFriendSearch } from '@/features/friends/useFriendSearch';
@@ -60,18 +64,36 @@ export default function SearchScreen() {
   const { colors, space } = useTheme();
   const navHeader = useLargeTitleHeader('Search');
   const [text, setText] = useState('');
-  const { status, results, typed, refetch } = useFriendSearch(text);
+  const [mode, setMode] = useState<SearchMode>('events');
+  const people = mode === 'people';
+  const { status, results, typed, refetch } = useFriendSearch(people ? text : '');
+  const { upcoming } = useFeedEvents();
+  const eventQuery = text.trim();
+  const eventResults = useMemo(() => (people ? [] : matchEvents(upcoming, eventQuery)), [people, upcoming, eventQuery]);
+
+  const onChangeText = (next: string) => {
+    setText(next);
+    if (isPeopleQuery(next)) setMode('people');
+  };
 
   const header = (
     <View style={{ gap: space.md, paddingBottom: space.sm }}>
       <SearchField
         value={text}
-        onChangeText={setText}
-        placeholder="Search people"
+        onChangeText={onChangeText}
+        placeholder={people ? 'Search people' : 'Search events'}
         maxLength={SEARCH_MAX_LENGTH + 1}
-        accessibilityHint="Search by name or username"
+        accessibilityHint={people ? 'Search by name or username' : 'Search by title, venue, neighborhood or category'}
       />
-      {status === 'short' ? (
+      <SegmentedControl
+        options={[
+          { value: 'events', label: 'Events' },
+          { value: 'people', label: 'People' },
+        ]}
+        value={mode}
+        onChange={setMode}
+      />
+      {people && status === 'short' ? (
         <AppText variant="footnote" color="inkSecondary" accessibilityLiveRegion="polite" style={{ paddingLeft: space.xs }}>
           Type at least {SEARCH_MIN_LENGTH} characters to search.
         </AppText>
@@ -79,8 +101,23 @@ export default function SearchScreen() {
     </View>
   );
 
+  const eventsBody =
+    eventQuery.length === 0 ? (
+      <EmptyState
+        symbol="magnifyingglass"
+        title="Find an event"
+        message="Search the next 2 weeks by title, venue, neighborhood or category."
+      />
+    ) : eventResults.length === 0 ? (
+      <EmptyState
+        symbol="calendar.badge.exclamationmark"
+        title="No events found"
+        message={`No events match “${eventQuery}” in the next 2 weeks.`}
+      />
+    ) : undefined;
+
   const body =
-    status === 'idle' || status === 'short' ? (
+    !people ? null : status === 'idle' || status === 'short' ? (
       <View style={{ gap: space.lg }}>
         {status === 'idle' ? <FriendsShortcut /> : null}
         <EmptyState
@@ -119,18 +156,26 @@ export default function SearchScreen() {
     <>
       <Stack.Screen options={navHeader} />
       {/* The list is the screen's root scroll view, so the native large title collapses as it scrolls. */}
-      <FlatList<PersonSearchResult>
+      <FlatList<PersonSearchResult | FeedEvent>
         style={{ flex: 1, backgroundColor: colors.canvas }}
-        data={status === 'results' ? results : []}
+        data={people ? (status === 'results' ? results : []) : eventResults}
         keyExtractor={(p) => p.id}
-        renderItem={({ item }) => <ResultRow person={item} />}
+        renderItem={({ item }) => ('displayName' in item ? <ResultRow person={item} /> : <EventRowLink event={item} />)}
         ListHeaderComponent={header}
-        ListEmptyComponent={body ?? undefined}
+        ListEmptyComponent={(people ? body : eventsBody) ?? undefined}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
-        accessibilityLabel={status === 'results' ? `${results.length} people found` : undefined}
+        accessibilityLabel={
+          people
+            ? status === 'results'
+              ? `${results.length} people found`
+              : undefined
+            : eventResults.length > 0
+              ? `${eventResults.length} events found`
+              : undefined
+        }
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl * 3, paddingTop: space.sm }}
       />
     </>
