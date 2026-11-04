@@ -8,7 +8,17 @@ import { selection } from '@/lib/haptics';
 import { ChatRow, CHAT_ROW_THUMB } from './ChatRow';
 import { sectionChats } from './messages';
 
-function Card({ chats, now, onOpen }: { chats: ChatSummary[]; now: Date; onOpen: (eventId: string) => void }) {
+function Card({
+  chats,
+  now,
+  onOpen,
+  onLeave,
+}: {
+  chats: ChatSummary[];
+  now: Date;
+  onOpen: (eventId: string) => void;
+  onLeave?: (chat: ChatSummary) => void;
+}) {
   const { colors, space, radius, scheme } = useTheme();
   return (
     <View
@@ -32,7 +42,12 @@ function Card({ chats, now, onOpen }: { chats: ChatSummary[]; now: Date; onOpen:
               }}
             />
           ) : null}
-          <ChatRow chat={chat} now={now} onPress={() => onOpen(chat.eventId)} />
+          <ChatRow
+            chat={chat}
+            now={now}
+            onPress={() => onOpen(chat.eventId)}
+            onLongPress={onLeave && chat.isOpen ? () => onLeave(chat) : undefined}
+          />
         </Fragment>
       ))}
     </View>
@@ -43,10 +58,11 @@ export type ChatListProps = {
   chats: ChatSummary[];
   now: Date;
   onOpen: (eventId: string) => void;
+  onLeave?: (chat: ChatSummary) => void;
 };
 
 /** Active chats (open ones), then a collapsed Archived section (chats closed 48 hours after their event). */
-export function ChatList({ chats, now, onOpen }: ChatListProps) {
+export function ChatList({ chats, now, onOpen, onLeave }: ChatListProps) {
   const { space } = useTheme();
   const [showArchived, setShowArchived] = useState(false);
   const { active, archived } = sectionChats(chats);
@@ -58,7 +74,7 @@ export function ChatList({ chats, now, onOpen }: ChatListProps) {
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingHorizontal: space.xs }}>
             Active
           </AppText>
-          <Card chats={active} now={now} onOpen={onOpen} />
+          <Card chats={active} now={now} onOpen={onOpen} onLeave={onLeave} />
         </View>
       ) : null}
 

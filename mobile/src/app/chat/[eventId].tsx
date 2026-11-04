@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, Button, EmptyState, Icon, Skeleton, useTheme } from '@/design';
 import { ChatHeader } from '@/features/chat/ChatHeader';
+import { canLeaveChat, openChatMenu } from '@/features/chat/leaveChat';
 import { Composer } from '@/features/chat/Composer';
 import { MessageRow } from '@/features/chat/MessageRow';
 import { openMessageMenu } from '@/features/chat/messageActions';
@@ -69,7 +70,7 @@ export default function ChatScreen() {
 
   const { data: event, isPending: eventPending } = useEvent(eventId);
   const plan = usePlan(eventId, event?.myStatus);
-  const { setStatus } = useSetRsvp();
+  const { setStatus, changePlan } = useSetRsvp();
   const going = plan === 'going';
 
   const chat = useChat(eventId, going);
@@ -84,6 +85,11 @@ export default function ChatScreen() {
     : null;
 
   if (!hydrated) return <View style={{ flex: 1, backgroundColor: colors.canvas }} />;
+
+  const leaveChat = () => {
+    changePlan(eventId, 'going', 'interested', event?.title ?? 'this event');
+    goBack();
+  };
 
   const joinChat = () => {
     success();
@@ -211,7 +217,13 @@ export default function ChatScreen() {
         interest={event?.interest}
         symbol={event?.symbol}
         onBack={goBack}
-        onOpenEvent={() => router.push({ pathname: '/event/[id]', params: { id: eventId } })}
+        onMenu={() =>
+          openChatMenu({
+            canLeave: canLeaveChat(plan, open),
+            onViewEvent: () => router.push({ pathname: '/event/[id]', params: { id: eventId } }),
+            onLeave: leaveChat,
+          })
+        }
         onDirections={() => event && openDirections(event)}
         onLayoutHeight={setHeaderHeight}
       />

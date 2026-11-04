@@ -15,7 +15,7 @@ export type ChatHeaderProps = {
   interest?: string;
   symbol?: SymbolName;
   onBack: () => void;
-  onOpenEvent: () => void;
+  onMenu: () => void;
   onDirections: () => void;
   onLayoutHeight?: (height: number) => void;
 };
@@ -48,7 +48,7 @@ export function ChatHeader({
   interest = 'community',
   symbol = 'bubble.left.fill',
   onBack,
-  onOpenEvent,
+  onMenu,
   onDirections,
   onLayoutHeight,
 }: ChatHeaderProps) {
@@ -102,7 +102,7 @@ export function ChatHeader({
             {subtitle}
           </AppText>
         </View>
-        <HeaderButton symbol="info.circle" label="Event details" onPress={onOpenEvent} />
+        <HeaderButton symbol="ellipsis.circle" label="Chat options" onPress={onMenu} />
         <HeaderButton symbol="location.fill" label="Directions" onPress={onDirections} />
       </GlassSurface>
     </View>
