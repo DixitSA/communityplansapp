@@ -73,7 +73,7 @@ export function eventA11yLabel(e: EventCardData, plan: CardPlan = null): string 
   return [
     e.liveUntil ? 'Happening now.' : '',
     e.spotlightReason ? `${e.spotlightReason}.` : '',
-    `${e.title}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
+    `${e.title}, ${e.categoryLabel}, ${day} ${formatTime(e.startsAt, true)}, ${e.venue}, ${miles}.`,
     friends ? `${friends}.` : '',
     plan ? PLAN_A11Y[plan] : '',
   ]

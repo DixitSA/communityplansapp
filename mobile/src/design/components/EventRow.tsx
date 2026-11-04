@@ -97,12 +97,10 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
             >
               {event.liveUntil ? (
                 // Only the dot is accent, so a busy night doesn't turn into a wall of green.
-                <>
-                  <AppText variant="footnote" color="ink" style={{ fontWeight: '600', lineHeight: 16 }}>
-                    {`Live · until ${formatTime(event.liveUntil, true)}`}
-                  </AppText>
-                  {` · ${event.categoryLabel}`}
-                </>
+                // The category stays in the thumbnail art and the accessibility label, so it isn't repeated (it truncated).
+                <AppText variant="footnote" color="ink" style={{ fontWeight: '600', lineHeight: 16 }}>
+                  {`Live · until ${formatTime(event.liveUntil, true)}`}
+                </AppText>
               ) : (
                 `${event.categoryLabel} · ${eventRowTime(event)}`
               )}
