@@ -9,6 +9,7 @@ const me: MyProfile = {
   displayName: 'Maya',
   homeCityId: 1,
   bio: null,
+  avatarUrl: null,
   interests: [interest(1), interest(2), interest(3)],
 };
 

@@ -83,7 +83,7 @@ export default function GoingSheet() {
                   <View style={{ flexDirection: 'row' }}>
                     {event.friends.slice(0, 3).map((f, i) => (
                       <View key={f.id} style={{ marginLeft: i === 0 ? 0 : -space.sm }}>
-                        <Avatar name={f.name} size={28} ring ringColor="canvas" />
+                        <Avatar name={f.name} uri={f.avatarUrl} size={28} ring ringColor="canvas" />
                       </View>
                     ))}
                   </View>

@@ -17,6 +17,8 @@ export type MyProfile = {
   displayName: string;
   homeCityId: number | null;
   bio: string | null;
+  /** Public URL of the profile photo, or null (initials show instead). */
+  avatarUrl: string | null;
   interests: Interest[];
 };
 
@@ -173,6 +175,12 @@ export type Api = {
   completeOnboarding(input: OnboardingInput): Promise<void>;
   /** Saves name, username, bio and interests in one go. Rejects with the server's error code (`username_taken`, ...). */
   updateMyProfile(input: EditProfileInput): Promise<void>;
+  /** Uploads a picked image (a local file URI) as the viewer's profile photo and replaces the old one. */
+  setMyAvatar(fileUri: string): Promise<void>;
+  /** Deletes the viewer's profile photo. */
+  removeMyAvatar(): Promise<void>;
+  /** Public URL for an `avatar_path` (chat messages carry paths), or null. */
+  avatarUrl(path: string | null | undefined): string | null;
   listInterests(): Promise<Interest[]>;
   /** Events for one day, ranked. Demo mode ignores `day` and returns the whole sample week. */
   getFeed(params: FeedParams): Promise<FeedEvent[]>;

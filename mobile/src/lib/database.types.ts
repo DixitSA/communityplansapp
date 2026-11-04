@@ -1465,6 +1465,7 @@ export type Database = {
         }[]
       }
       send_friend_request: { Args: { p_user: string }; Returns: string }
+      set_my_avatar: { Args: { p_path: string }; Returns: undefined }
       set_rsvp: {
         Args: {
           p_event_id: string

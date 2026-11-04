@@ -16,7 +16,7 @@ export type EventDetail = EventCardData & {
   /** The flyer's most prominent vivid color ("#rrggbb"), for the page's tint. Missing until the server has read it. */
   imageColor?: string;
   /** Other people going (not friends). Only shown once the viewer is Going. */
-  otherAttendees: { id: string; name: string }[];
+  otherAttendees: { id: string; name: string; avatarUrl?: string | null }[];
   /** All other people going (>= otherAttendees.length). */
   othersGoing: number;
 };

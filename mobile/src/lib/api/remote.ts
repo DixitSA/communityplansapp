@@ -43,6 +43,14 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
   const avatarUrl: AvatarUrl = (path) =>
     path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : null;
 
+  /** Deletes the user's files in their avatar folder except `keep`. Best effort: a leftover file is harmless. */
+  const removeOldAvatars = async (uid: string, keep: string | null) => {
+    const folder = supabase.storage.from('avatars');
+    const { data } = await folder.list(uid);
+    const stale = (data ?? []).map((f) => `${uid}/${f.name}`).filter((p) => p !== keep);
+    if (stale.length > 0) await folder.remove(stale);
+  };
+
   // Chat helpers. Names and avatars of people who write while the chat is open are looked up once each.
   const authors = new Map<string, { displayName: string; avatarPath: string | null }>();
   const myUserId = async (): Promise<string> => {
@@ -134,7 +142,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (!uid) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, display_name, bio, home_city_id, profile_interests(interests(id, slug, label, symbol))')
+        .select('id, username, display_name, bio, avatar_path, home_city_id, profile_interests(interests(id, slug, label, symbol))')
         .eq('id', uid)
         .maybeSingle();
       if (error) fail(error);
@@ -145,6 +153,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         displayName: data.display_name,
         homeCityId: data.home_city_id,
         bio: data.bio,
+        avatarUrl: avatarUrl(data.avatar_path),
         interests: data.profile_interests.flatMap((row) => (row.interests ? [row.interests] : [])),
       };
     },
@@ -176,6 +185,33 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error) fail(error);
     },
 
+    async setMyAvatar(fileUri) {
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user.id;
+      if (!uid) throw new ApiError('not_authenticated');
+      const folder = supabase.storage.from('avatars');
+      // A new file name each time, so image caches show the new photo straight away.
+      const path = `${uid}/avatar-${Date.now()}.jpg`;
+      const bytes = await (await fetch(fileUri)).arrayBuffer();
+      const { error: uploadError } = await folder.upload(path, bytes, { contentType: 'image/jpeg' });
+      if (uploadError) fail(uploadError);
+      const { error } = await supabase.rpc('set_my_avatar', { p_path: path });
+      if (error) fail(error);
+      await removeOldAvatars(uid, path);
+    },
+
+    async removeMyAvatar() {
+      const { data: auth } = await supabase.auth.getSession();
+      const uid = auth.session?.user.id;
+      if (!uid) throw new ApiError('not_authenticated');
+      // The generated type says string, but the function accepts null (that clears the photo).
+      const { error } = await supabase.rpc('set_my_avatar', { p_path: null as unknown as string });
+      if (error) fail(error);
+      await removeOldAvatars(uid, null);
+    },
+
+    avatarUrl,
+
     async listInterests() {
       return cachedInterests();
     },
@@ -195,7 +231,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => mapFeedRow(row, interests));
+      return (data ?? []).map((row) => mapFeedRow(row, interests, avatarUrl));
     },
 
     async getFeedRange(params) {
@@ -214,7 +250,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
         cachedInterests(),
       ]);
       if (error) fail(error);
-      return (data ?? []).map((row) => mapFeedRow(row, interests));
+      return (data ?? []).map((row) => mapFeedRow(row, interests, avatarUrl));
     },
 
     async getSpotlight(params) {
@@ -230,7 +266,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       ]);
       if (error) fail(error);
       return (data ?? []).map((row) => {
-        const e = mapFeedRow(row, interests);
+        const e = mapFeedRow(row, interests, avatarUrl);
         return { ...e, picked: row.picked === true, spotlightReason: spotlightReason(row.picked === true, e.goingCount) };
       });
     },
@@ -254,7 +290,7 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       const e = eventRes.data;
       if (!e) return null;
       const social = socialRes.data?.[0];
-      const friends = parseFriends(social?.friends_going);
+      const friends = parseFriends(social?.friends_going, avatarUrl);
       const interestIds = e.event_interests.map((r) => r.interest_id);
       const primary = primaryInterest(interestIds, interests);
       const page: EventPage = {

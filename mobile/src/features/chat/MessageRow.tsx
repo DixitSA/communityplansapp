@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppText, Avatar, useTheme } from '@/design';
-import type { ChatMessage } from '@/lib/api';
+import { api, type ChatMessage } from '@/lib/api';
 import { light } from '@/lib/haptics';
 
 import { messageA11yLabel, type MessageItem } from './messages';
@@ -78,7 +78,7 @@ function MessageRowBase({ item, onOpenMenu }: MessageRowProps) {
       }}
     >
       {mine ? null : (
-        <View style={{ width: AVATAR }}>{endsGroup ? <Avatar name={message.displayName} size={AVATAR} /> : null}</View>
+        <View style={{ width: AVATAR }}>{endsGroup ? <Avatar name={message.displayName} uri={api.avatarUrl(message.avatarPath)} size={AVATAR} /> : null}</View>
       )}
       <View style={{ maxWidth: '78%', alignItems: mine ? 'flex-end' : 'flex-start', flexShrink: 1 }}>
         {!mine && startsGroup ? (

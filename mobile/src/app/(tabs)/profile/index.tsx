@@ -178,7 +178,7 @@ export default function ProfileScreen() {
           accessibilityLabel={`${me.displayName}, @${me.username}`}
           style={{ flexDirection: 'row', alignItems: 'center', gap: space.lg }}
         >
-          <Avatar name={me.displayName} size={72} />
+          <Avatar name={me.displayName} uri={me.avatarUrl} size={72} />
           <View style={{ flex: 1, gap: space.xs }}>
             <AppText variant="title2" numberOfLines={2}>
               {me.displayName}

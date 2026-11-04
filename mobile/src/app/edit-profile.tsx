@@ -3,13 +3,14 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
 
-import { AppText, Button, EmptyState, InterestTile, Skeleton, TextField, asSymbol, useTheme, type FieldStatus } from '@/design';
+import { AppText, Avatar, Button, EmptyState, InterestTile, Skeleton, TextField, asSymbol, useTheme, type FieldStatus } from '@/design';
 import { useUsernameAvailability } from '@/features/onboarding/useUsernameAvailability';
 import { BIO_MAX, draftFromProfile, isChanged, isDraftValid, toInput, type EditProfileDraft } from '@/features/profile/editProfile';
+import { pickProfilePhoto, useMyAvatar } from '@/features/profile/useMyAvatar';
 import { useMyProfile } from '@/features/profile/useMyProfile';
 import { useUpdateMyProfile } from '@/features/profile/useUpdateMyProfile';
 import { api, errorCode, mapEditProfileError, type Interest, type MyProfile } from '@/lib/api';
-import { selection, success, warning } from '@/lib/haptics';
+import { light, selection, success, warning } from '@/lib/haptics';
 import { MIN_INTERESTS, normalizeUsername } from '@/lib/validation';
 
 /** Rows of two. */
@@ -21,6 +22,8 @@ function pairs<T>(items: T[]): T[][] {
 
 /** Show the bio counter once the text gets this close to the limit. */
 const COUNTER_FROM = 0.8;
+
+const AVATAR_SIZE = 96;
 
 /** "Edit profile" sheet: name, username, bio and interests. Cancel / Save sit in the header. */
 export default function EditProfileSheet() {
@@ -107,6 +110,7 @@ function EditForm({ me }: { me: MyProfile }) {
   const router = useRouter();
   const [draft, setDraft] = useState<EditProfileDraft>(() => draftFromProfile(me));
   const update = useUpdateMyProfile();
+  const avatar = useMyAvatar();
   const interests = useQuery({ queryKey: ['interests'], queryFn: () => api.listInterests(), staleTime: Infinity });
 
   const set = (patch: Partial<EditProfileDraft>) => {
@@ -160,6 +164,27 @@ function EditForm({ me }: { me: MyProfile }) {
     }
   };
 
+  // Photo changes save straight away (they don't wait for the Save button).
+  const choosePhoto = async () => {
+    avatar.reset();
+    try {
+      const uri = await pickProfilePhoto();
+      if (!uri) return;
+      await avatar.change(uri);
+      success();
+    } catch {
+      warning();
+    }
+  };
+  const removePhoto = async () => {
+    light();
+    try {
+      await avatar.remove();
+    } catch {
+      warning();
+    }
+  };
+
   const toggleInterest = (id: number) => {
     selection();
     set({ interestIds: draft.interestIds.includes(id) ? draft.interestIds.filter((x) => x !== id) : [...draft.interestIds, id] });
@@ -174,6 +199,48 @@ function EditForm({ me }: { me: MyProfile }) {
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.xl }}
       >
+        <View style={{ alignItems: 'center', gap: space.sm }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            disabled={avatar.isPending}
+            onPress={choosePhoto}
+            style={{ opacity: avatar.isPending ? 0.5 : 1 }}
+          >
+            <Avatar name={me.displayName} uri={me.avatarUrl} size={AVATAR_SIZE} />
+          </Pressable>
+          <View style={{ flexDirection: 'row', gap: space.xl }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={me.avatarUrl ? 'Change profile photo' : 'Add a profile photo'}
+              disabled={avatar.isPending}
+              hitSlop={space.md}
+              onPress={choosePhoto}
+            >
+              <AppText variant="body" color="accent">
+                {avatar.isPending ? 'Saving…' : me.avatarUrl ? 'Choose photo' : 'Add a pic'}
+              </AppText>
+            </Pressable>
+            {me.avatarUrl ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Remove profile photo"
+                disabled={avatar.isPending}
+                hitSlop={space.md}
+                onPress={removePhoto}
+              >
+                <AppText variant="body" color="danger">
+                  Remove photo
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+          {avatar.isError ? (
+            <AppText variant="footnote" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
+              Couldn’t update your photo. Try again.
+            </AppText>
+          ) : null}
+        </View>
         <TextField
           label="Name"
           value={draft.displayName}

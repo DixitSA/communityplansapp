@@ -54,6 +54,7 @@ export const DEMO_PROFILE: MyProfile = {
   displayName: 'Taylor Morgan',
   homeCityId: CHARLOTTE_CITY_ID,
   bio: 'Coffee, live music and finding the next thing to do.',
+  avatarUrl: null,
   interests: [DEMO_INTERESTS[1], DEMO_INTERESTS[2], DEMO_INTERESTS[0]],
 };
 
@@ -225,6 +226,7 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
         displayName: input.displayName.trim(),
         homeCityId: input.homeCityId,
         bio: null,
+        avatarUrl: null,
         interests,
       };
     },
@@ -241,6 +243,15 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       if (interests.length < MIN_INTERESTS) throw new ApiError('too_few_interests');
       profile = { ...current, username, displayName: input.displayName.trim(), bio: bio || null, interests };
     },
+    async setMyAvatar(fileUri) {
+      await wait();
+      profile = { ...(profile ?? DEMO_PROFILE), avatarUrl: fileUri };
+    },
+    async removeMyAvatar() {
+      await wait();
+      profile = { ...(profile ?? DEMO_PROFILE), avatarUrl: null };
+    },
+    avatarUrl: () => null,
     async listInterests() {
       await wait();
       return DEMO_INTERESTS;

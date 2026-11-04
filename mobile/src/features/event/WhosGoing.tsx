@@ -7,7 +7,7 @@ import { AppText, Avatar, Icon, PressScaleView, usePressScale, useTheme } from '
 import { userHref } from '../friends/routes';
 import { othersLabel } from './plansLogic';
 
-type Person = { id: string; name: string };
+type Person = { id: string; name: string; avatarUrl?: string | null };
 
 export type WhosGoingProps = {
   friends: Person[];
@@ -44,7 +44,7 @@ function PersonTile({ person }: { person: Person }) {
       style={{ width: FACE + space.md }}
     >
       <PressScaleView style={[{ alignItems: 'center', gap: space.xs }, press.style]}>
-        <Avatar name={person.name} size={FACE} />
+        <Avatar name={person.name} uri={person.avatarUrl} size={FACE} />
         <AppText variant="footnote" numberOfLines={1} maxFontSizeMultiplier={2} style={{ fontWeight: '600' }}>
           {firstName(person.name)}
         </AppText>

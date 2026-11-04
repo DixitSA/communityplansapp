@@ -10,12 +10,17 @@ export type SpotlightRow = Database['public']['Functions']['get_spotlight']['Ret
 export const METERS_PER_MILE = 1609.344;
 
 /** A friend as `get_feed` / `get_event_social` return them inside `friends_going`. */
-export function parseFriends(json: unknown): { id: string; name: string }[] {
+export function parseFriends(
+  json: unknown,
+  toUrl?: (path: string | null | undefined) => string | null,
+): { id: string; name: string; avatarUrl?: string | null }[] {
   if (!Array.isArray(json)) return [];
   return json.flatMap((p) => {
     if (typeof p !== 'object' || p === null) return [];
-    const { id, display_name } = p as { id?: unknown; display_name?: unknown };
-    return typeof id === 'string' && typeof display_name === 'string' ? [{ id, name: display_name }] : [];
+    const { id, display_name, avatar_path } = p as { id?: unknown; display_name?: unknown; avatar_path?: unknown };
+    if (typeof id !== 'string' || typeof display_name !== 'string') return [];
+    const avatarUrl = toUrl && typeof avatar_path === 'string' ? toUrl(avatar_path) : null;
+    return [{ id, name: display_name, avatarUrl }];
   });
 }
 
@@ -30,9 +35,13 @@ export function spotlightReason(picked: boolean, goingCount: number | null | und
   return goingCount ? `${goingCount} going` : undefined;
 }
 
-export function mapFeedRow(row: FeedRow | FeedRangeRow | SpotlightRow, interests: Interest[]): FeedEvent {
+export function mapFeedRow(
+  row: FeedRow | FeedRangeRow | SpotlightRow,
+  interests: Interest[],
+  toUrl?: (path: string | null | undefined) => string | null,
+): FeedEvent {
   const primary = primaryInterest(row.interest_ids ?? [], interests);
-  const friends = parseFriends(row.friends_going);
+  const friends = parseFriends(row.friends_going, toUrl);
   return {
     id: row.id,
     title: row.title,

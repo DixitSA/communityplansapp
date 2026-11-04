@@ -3,7 +3,7 @@ import type { AuthSession, MyProfile } from '@/lib/api';
 import { gateAllows, resolveGate } from '../gate';
 
 const session: AuthSession = { userId: 'u1', email: 'a@b.co' };
-const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, bio: null, interests: [] };
+const profile: MyProfile = { id: 'u1', username: 'maya', displayName: 'Maya', homeCityId: 1, bio: null, avatarUrl: null, interests: [] };
 
 describe('resolveGate', () => {
   it('is demo mode when the backend is not configured in a development build, whatever the session', () => {

@@ -21,7 +21,7 @@ export function formatFriendsLabel(names: string[], total: number): string {
 }
 
 export type FacepileProps = {
-  people: { id: string; name: string }[];
+  people: { id: string; name: string; avatarUrl?: string | null }[];
   total: number;
   avatarSize?: number;
   /** Use 'onImage' when the pile sits on photo/art. */
@@ -105,6 +105,7 @@ export function Facepile({
             <View key={p.id} style={{ marginLeft: i === 0 ? 0 : capsule ? -6 : compact ? -8 : -avatarSize * 0.3 }}>
               <Avatar
                 name={p.name}
+                uri={p.avatarUrl}
                 size={avatarSize}
                 ring
                 ringColor={compact && !capsule ? 'canvas' : 'surface'}

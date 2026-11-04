@@ -40,7 +40,7 @@ export type EventCardData = {
   /** SF Symbol for the placeholder art. */
   symbol: SymbolName;
   /** Friends we can show by name. Only people who are Going, never "interested" (private). */
-  friends: { id: string; name: string }[];
+  friends: { id: string; name: string; avatarUrl?: string | null }[];
   /** All friends going (>= friends.length). */
   friendsGoing: number;
   /** Why a spotlight card is featured: "yard pick" or "{n} going". Never names. Unset elsewhere. */
