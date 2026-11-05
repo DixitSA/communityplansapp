@@ -5,6 +5,10 @@ RESULTS_DIR=".maestro/results"
 mkdir -p "$RESULTS_DIR"
 SIMULATOR_ID=""
 
+log_phase() {
+  printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
+}
+
 collect_artifacts() {
   mkdir -p "$RESULTS_DIR"
   if [ -f /tmp/yard-metro.log ]; then cp /tmp/yard-metro.log "$RESULTS_DIR/metro.log"; fi
@@ -20,6 +24,7 @@ collect_artifacts() {
 trap collect_artifacts EXIT
 
 {
+  log_phase "Listing installed simulator runtimes and devices."
   echo "Installed iOS simulator runtimes and devices:"
   xcrun simctl list runtimes
   xcrun simctl list devices available
@@ -58,12 +63,15 @@ SIMULATOR_INFO="$(xcrun simctl list devices available -j | node -e '
   });
 ')"
 IFS=$'\t' read -r SIMULATOR_ID SIMULATOR_RUNTIME SIMULATOR_NAME <<< "$SIMULATOR_INFO"
-echo "Selected simulator: $SIMULATOR_NAME ($SIMULATOR_ID), runtime $SIMULATOR_RUNTIME"
+log_phase "Selected simulator: $SIMULATOR_NAME ($SIMULATOR_ID), runtime $SIMULATOR_RUNTIME"
+log_phase "Booting simulator if needed."
 if ! xcrun simctl list devices booted | grep -q "$SIMULATOR_ID"; then
   xcrun simctl boot "$SIMULATOR_ID"
 fi
 xcrun simctl bootstatus "$SIMULATOR_ID" -b
+log_phase "Simulator boot complete."
 
+log_phase "Downloading Expo Go SDK 58."
 EXPO_GO_ARCHIVE="$(npx --yes expo-go download ios 58 --json | node -e '
   let input = "";
   process.stdin.on("data", (chunk) => input += chunk);
@@ -83,9 +91,11 @@ else
 fi
 test -n "$EXPO_GO_APP"
 xcrun simctl install "$SIMULATOR_ID" "$EXPO_GO_APP"
+log_phase "Expo Go installed."
 
 command -v maestro
 maestro --version
+log_phase "Maestro CLI ready."
 
 EXPO_HOME_DIR="$(mktemp -d)"
 mkdir -p "$EXPO_HOME_DIR/codesigning/00f881a0-b80c-47d5-8170-a549f87d7ca0"
@@ -93,6 +103,7 @@ cat > "$EXPO_HOME_DIR/codesigning/00f881a0-b80c-47d5-8170-a549f87d7ca0/developme
 {"easProjectId":null,"scopeKey":null,"privateKey":null,"certificateChain":null}
 JSON
 
+log_phase "Starting Metro on localhost:8093."
 env -u EXPO_TOKEN __UNSAFE_EXPO_HOME_DIRECTORY="$EXPO_HOME_DIR" EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 EXPO_NO_DEV_MENU=1 CI=1 EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_ANON_KEY= \
   npx expo start --localhost --port 8093 --clear > /tmp/yard-metro.log 2>&1 &
 METRO_PID=$!
@@ -122,17 +133,27 @@ if [ "$MANIFEST_STATUS" != "200" ] || ! grep -qi '^content-type: multipart/mixed
   cat /tmp/yard-metro.log
   exit 1
 fi
-echo 'Expo Go signed-manifest request returned HTTP 200 multipart/mixed.'
-echo 'Metro is ready; each Maestro suite will open Expo Go once.'
-echo 'Running native UI assertions.'
-FLOW_FAILURE=0
-for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery ios-onboarding ios-map-permission ios-profile-settings ios-chat-actions ios-event-actions ios-activity-suggest}; do
-  if maestro test ".maestro/$flow.yml"; then
-    echo "$flow: PASS" | tee -a "$RESULTS_DIR/flow-summary.txt"
-  else
-    echo "$flow: FAIL" | tee -a "$RESULTS_DIR/flow-summary.txt"
-    xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/$flow-failure.png" >/dev/null 2>&1 || true
-    FLOW_FAILURE=1
+log_phase 'Expo Go signed-manifest request returned HTTP 200 multipart/mixed.'
+log_phase 'Metro is ready; each Maestro suite will open Expo Go once.'
+
+FLOW_FILES=()
+for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery ios-onboarding ios-map-permission ios-profile-settings ios-chat-actions ios-event-actions ios-activity-suggest ios-privacy-resume}; do
+  flow_file=".maestro/$flow.yml"
+  if [ ! -f "$flow_file" ]; then
+    log_phase "Configured Maestro flow is missing: $flow_file"
+    exit 1
   fi
+  FLOW_FILES+=("$flow_file")
 done
+log_phase "Running Maestro flows in one CLI session: ${QA_FLOWS:-default flow set}."
+FLOW_FAILURE=0
+if maestro test --format JUNIT --output "$RESULTS_DIR/junit.xml" --test-output-dir "$RESULTS_DIR" "${FLOW_FILES[@]}" 2>&1 | tee "$RESULTS_DIR/maestro-output.log"; then
+  printf 'Maestro CLI: PASS\n' > "$RESULTS_DIR/flow-summary.txt"
+  log_phase "Maestro finished successfully; per-flow results are in junit.xml."
+else
+  printf 'Maestro CLI: FAIL\n' > "$RESULTS_DIR/flow-summary.txt"
+  xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/maestro-failure.png" >/dev/null 2>&1 || true
+  FLOW_FAILURE=1
+  log_phase "Maestro failed; per-flow results and diagnostics were collected."
+fi
 exit "$FLOW_FAILURE"

@@ -1,0 +1,76 @@
+appId: host.exp.Exponent
+---
+# Demo privacy is in-memory. This checks navigation and app resume, not process-death persistence.
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/settings'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Settings
+    timeout: 30000
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- assertVisible: Settings
+- scrollUntilVisible:
+    element: Let people find me by phone number
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    text: Let people find me by phone number
+    checked: true
+- takeScreenshot: privacy-default-on
+- tapOn:
+    text: Let people find me by phone number
+    checked: true
+- assertVisible:
+    text: Let people find me by phone number
+    checked: false
+- takeScreenshot: privacy-toggled-off
+
+# Return to Settings through Profile to verify the saved value after route changes.
+- tapOn: Done
+- assertVisible: Any time
+- tapOn: Profile
+- extendedWaitUntil:
+    visible: Settings
+    timeout: 30000
+- tapOn: Settings
+- assertVisible: Settings
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- assertVisible: Settings
+- scrollUntilVisible:
+    element: Let people find me by phone number
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    text: Let people find me by phone number
+    checked: false
+
+# Background and foreground Expo Go without stopping its process.
+- pressKey: Home
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: Settings
+    timeout: 30000
+- assertVisible:
+    text: Let people find me by phone number
+    checked: false
+- takeScreenshot: privacy-after-resume
+
+# Restore the demo default for a clean follow-up flow.
+- tapOn:
+    text: Let people find me by phone number
+    checked: false
+- assertVisible:
+    text: Let people find me by phone number
+    checked: true
+- takeScreenshot: privacy-restored
+- tapOn: Done
+- assertVisible: Profile

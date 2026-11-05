@@ -1,7 +1,7 @@
 import { renderRouter, screen } from 'expo-router/testing-library';
 
-// renderRouter imports the full route graph; cold render measured 16.3s on Windows.
-jest.setTimeout(30_000);
+// renderRouter imports the full route graph; cold root renders measured 16.3–37.1s on Windows.
+jest.setTimeout(60_000);
 
 // expo-router's test harness swaps in its own Reanimated mock, which has no hooks, so skip the
 // animated components these routes render (the profile tab's loading skeleton and the welcome blob).

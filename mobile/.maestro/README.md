@@ -1,8 +1,12 @@
 # Native QA
 
-These Maestro flows run the app in Expo Go SDK 58 on an iOS simulator through the existing EAS macOS workflow. They use local demo data; they do not send real messages or email. A YAML parse is not a device pass.
+These Maestro flows run the app in Expo Go SDK 58 on an iOS simulator through the EAS macOS workflow or `.github/workflows/ios-qa.yml`. They use local demo data; they do not send real messages or email. A YAML parse is not a device pass.
 
 Coverage and observed results are tracked in [QA_SWEEP.md](../../docs/QA_SWEEP.md).
+
+`ios-privacy-resume.yml` checks the phone-discovery switch across in-app navigation and Expo Go background/resume. Demo mode stores that setting in memory, so this flow does not claim persistence after process death. Maestro 2.6.1 flow commands do not change iOS appearance, text size, or VoiceOver settings; those checks remain untested.
+
+The GitHub workflow uses three standard macOS jobs in this public repository: layout (`ios-smoke`, `ios-profile-settings`, `ios-discovery`, `ios-privacy-resume`), menus (`ios-core-flows`, `ios-native-menus`, `ios-chat-actions`, `ios-event-actions`), and onboarding (`ios-onboarding`, `ios-activity-suggest`, `ios-map-permission`). It runs on matching changes to `qa/ios-sweep-*` branches or manual dispatch and uploads one `ios-demo-qa-*` artifact per group with one-day retention. GitHub gives each job a 50-minute cap and the simulator step a 45-minute watchdog. Earlier GitHub fallback attempts did not reach app assertions because simulator and Maestro startup consumed the 15-minute step budget. EAS free simulator usage was exhausted during this sweep; do not launch more EAS runs until quota or an authorized plan is available.
 
 From the repository root in PowerShell, upload an isolated demo run:
 
@@ -17,7 +21,7 @@ try {
 } finally { Remove-Item -LiteralPath .easignore }
 ```
 
-Use the returned workflow URL to inspect the job and download artifacts. The job records each suite's result separately and takes a screenshot after each failure. It has a 15-minute watchdog. EAS workflow usage applies; no paid plan is required by this configuration and no automatic upgrade is performed.
+Use the returned workflow URL to inspect the job and download artifacts. Each group runs its selected flow files in one Maestro invocation and writes per-flow outcomes to `junit.xml`, alongside Maestro output and simulator diagnostics. The GitHub simulator step has a 45-minute watchdog. The separate EAS workflow retains its 15-minute watchdog; EAS usage quotas apply.
 
 Run local checks from `mobile`:
 
@@ -35,4 +39,4 @@ node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop
 node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run
 ```
 
-Apple sign-in, real email delivery, push notifications, VoiceOver and a release build require separate evidence. Demo mode omits Sign out; Delete account explains that no account exists. The script defaults to all ten suites; `QA_FLOWS` can select a space-separated subset for a focused recheck. Split long runs into subsets to stay within the 15-minute watchdog.
+Apple sign-in, real email delivery, push notifications, VoiceOver and a release build require separate evidence. Demo mode omits Sign out; Delete account explains that no account exists. The script defaults to all eleven suites; `QA_FLOWS` can select a space-separated subset for a focused recheck. Keep EAS selections small enough for its 15-minute watchdog.

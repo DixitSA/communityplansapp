@@ -17,7 +17,19 @@ jobs:
   simulator:
     # Standard runner: free for this public repository. Do not use -large/-xlarge.
     runs-on: macos-26-intel
-    timeout-minutes: 25
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - group: layout
+            flows: ios-smoke ios-profile-settings ios-discovery ios-privacy-resume
+          - group: menus
+            flows: ios-core-flows ios-native-menus ios-chat-actions ios-event-actions
+          - group: onboarding
+            flows: ios-onboarding ios-activity-suggest ios-map-permission
+    name: iOS demo QA (${{ matrix.group }})
     defaults:
       run:
         working-directory: mobile
@@ -27,7 +39,7 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
       # The first ARM runner exceeded the iOS driver's 120-second startup window.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
-      QA_FLOWS: 'ios-smoke ios-profile-settings'
+      QA_FLOWS: ${{ matrix.flows }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,16 +61,19 @@ jobs:
       - name: Run Expo Go on iOS Simulator
         run: |
           perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
-            900 bash .eas/scripts/ios-expo-go-smoke.sh
+            2700 bash .eas/scripts/ios-expo-go-smoke.sh
       - name: Collect diagnostics
         if: always()
         run: |
           mkdir -p .maestro/results
           if [ -d "$HOME/.maestro/tests" ]; then cp -R "$HOME/.maestro/tests/." .maestro/results/; fi
           if [ -f /tmp/yard-metro.log ]; then cp /tmp/yard-metro.log .maestro/results/metro.log; fi
+          if xcrun simctl list devices booted | grep -q '(Booted)'; then
+            xcrun simctl io booted screenshot .maestro/results/diagnostics-last-screen.png || true
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ios-demo-qa
+          name: ios-demo-qa-${{ matrix.group }}
           path: mobile/.maestro/results
           retention-days: 1
