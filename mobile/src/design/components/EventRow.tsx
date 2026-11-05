@@ -68,6 +68,7 @@ export function EventRow({ event, plan = null, onSetPlan, onPress, href, menuAct
 
   const pressable = (
     <Pressable
+      testID={`event-row-${event.id}`}
       accessible
       accessibilityRole={href ? 'link' : 'button'}
       accessibilityLabel={`${popping ? 'Popping. ' : ''}${eventA11yLabel(event, plan)}`}

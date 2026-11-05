@@ -50,8 +50,9 @@ appId: host.exp.Exponent
     element: Add to Calendar
     direction: UP
 - tapOn: Add to Calendar
-- assertVisible: New Event
-- assertVisible: Cancel
-- tapOn: Cancel
+# SDK58 excludes Calendar from Expo Go. The direct native probe tests the real editor.
+- assertVisible: Calendar unavailable in Expo Go
+- assertVisible: Open this event in an installed yard build to add it to your calendar.
+- tapOn: OK
 - assertVisible: You're going
 - takeScreenshot: native-event-actions-cancelled

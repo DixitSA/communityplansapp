@@ -1,0 +1,101 @@
+name: iOS native simulator QA
+
+on:
+  push:
+    branches: ['qa/ios-sweep-*']
+    paths: ['.github/workflows/ios-native-qa.yml']
+  workflow_dispatch:
+    inputs:
+      appearance:
+        description: 'iOS simulator appearance for the visual probe'
+        type: choice
+        default: dark
+        options: [light, dark]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-native-qa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-simulator:
+    # Standard public macOS runner; simulator-only signing is disabled.
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_SUPABASE_URL: ''
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
+      EXPO_OFFLINE: '1'
+      EXPO_TOKEN: ''
+      SIMULATOR_APPEARANCE: ${{ inputs.appearance || 'dark' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Quarantine checkout dotenv files
+        run: |
+          expected="$GITHUB_WORKSPACE/mobile"
+          actual="$(pwd -P)"
+          expected_real="$(cd "$expected" && pwd -P)"
+          test "$actual" = "$expected_real"
+          quarantine="$RUNNER_TEMP/yard-native-qa-dotenv"
+          mkdir -p "$quarantine"
+          chmod 700 "$quarantine"
+          moved=0
+          for file in .env .env.*; do
+            if [[ -L "$file" ]]; then
+              printf 'Refusing dotenv symlink before dependency installation: %s\n' "${file##*/}" >&2
+              exit 1
+            elif [[ -f "$file" ]]; then
+              name="${file##*/}"
+              mv "$file" "$quarantine/$name"
+              printf 'Quarantined %s\n' "$name"
+              moved=1
+            elif [[ -e "$file" ]]; then
+              printf 'Refusing non-regular dotenv path before dependency installation: %s\n' "${file##*/}" >&2
+              exit 1
+            fi
+          done
+          if [[ "$moved" -eq 0 ]]; then
+            echo 'No regular dotenv files found in the QA checkout.'
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install app dependencies
+        run: npm ci
+      - name: Install idb 1.7.8 from the pinned Meta tap revision
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: |
+          mkdir -p .maestro/native-results
+          brew tap meta/fb
+          tap_dir="$(brew --repo meta/fb)"
+          git -C "$tap_dir" fetch --depth 1 origin f2c725e984cfaa8e2c648be069f3d63925776c83
+          git -C "$tap_dir" checkout --detach f2c725e984cfaa8e2c648be069f3d63925776c83
+          brew trust meta/fb
+          brew install meta/fb/idb
+          idb_version="$(idb --version)"
+          companion_version="$(idb_companion --version)"
+          printf 'idb: %s\nidb_companion: %s\n' "$idb_version" "$companion_version" | tee .maestro/native-results/idb-version.txt
+          [[ "$idb_version" == *'1.7.8'* ]]
+          [[ "$companion_version" == *'1.7.8'* ]]
+      - name: Build and exercise the release simulator app
+        run: |
+          perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
+            2700 bash .eas/scripts/ios-native-qa.sh
+      - name: Collect simulator diagnostics
+        if: always()
+        run: |
+          mkdir -p .maestro/native-results
+          xcrun simctl list devices available > .maestro/native-results/simulator-devices.txt 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-native-simulator-qa
+          path: mobile/.maestro/native-results
+          retention-days: 1

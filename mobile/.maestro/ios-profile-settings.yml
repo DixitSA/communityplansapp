@@ -24,7 +24,8 @@ appId: host.exp.Exponent
 - extendedWaitUntil:
     visible: Profile
     timeout: 30000
-- assertVisible: 'QA Native Profile'
+# iOS groups display name and username into one accessibility label.
+- assertVisible: '.*QA Native Profile.*'
 - takeScreenshot: native-profile-name-saved
 - tapOn: Edit profile
 - assertVisible:

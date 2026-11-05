@@ -1,6 +1,6 @@
 # Focused iOS QA without Maestro
 
-`qa-idb.py` drives the already booted iOS Simulator through Meta's `idb` accessibility CLI. It starts Expo Go at the fixed local URL `exp://localhost:8093`, verifies the visible demo-mode disclosure before profile mutation, saves and reopens a QA-marked name, and checks that Nightlife changes the Filters event count and Clear restores it. It does not use an XCTest bundle or Maestro.
+`qa-idb.py` drives the already booted iOS Simulator through Meta's `idb` CLI. By default it launches Expo Go at the fixed local URL `exp://localhost:8093`; `--app-id com.dixitsa.yard` targets an already-installed native demo app and uses its configured `yard` scheme (`yard://` for the root route, `yard://filters` for Filters), without Expo Go's consent prompt. Both modes verify the visible demo-mode disclosure before profile mutation, save and reopen a QA-marked name, and check that Nightlife changes the Filters event count and Clear restores it. It does not use an XCTest bundle or Maestro.
 
 ## Runner setup
 
@@ -20,6 +20,14 @@ Run from `mobile/`:
 ```sh
 python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$RESULTS_DIR"
 ```
+
+To target the preinstalled native demo app instead of Expo Go:
+
+```sh
+python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$RESULTS_DIR" --app-id com.dixitsa.yard
+```
+
+The native-app path also opens the demo Rooftop Happy Hour event, starts the Going flow, and verifies that Add to Calendar opens the iOS `New Event` editor. It captures the editor and cancels it without saving. This check is skipped in Expo Go, which does not include the native calendar module.
 
 Results contain a `checklist.json`, screenshots for the feed/profile/filter states, and `failure-ax.json` plus `failure.png` on failure. No app build, Expo server bootstrap, package install, or simulator creation is performed by this script.
 

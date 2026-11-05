@@ -1,14 +1,43 @@
 #!/usr/bin/env python3
 """Focused no-XCTest iOS smoke probe: demo profile save/reopen and feed filters."""
 import argparse, json, os, re, shutil, subprocess, sys, time
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = "exp://localhost:8093/--/?__expo_disable_fab=1&__expo_disable_auto_launch=1&__expo_disable_onboarding=1"
+FILTERS_URLS = {
+    "host.exp.Exponent": "exp://localhost:8093/--/filters",
+    "com.dixitsa.yard": "yard://filters",
+}
+COMMAND_LOG = None
+
+def record_command(args, started, elapsed, error):
+    if COMMAND_LOG is None: return
+    entry = {
+        "timestamp": started,
+        "argv": [str(x) for x in args],
+        "duration_ms": round(elapsed * 1000),
+        "exit_error": error,
+    }
+    with COMMAND_LOG.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, separators=(",", ":")) + "\n")
 
 def run(args, timeout=25, allow=False):
-    p = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    started = datetime.now(timezone.utc).isoformat()
+    before = time.monotonic()
+    try:
+        p = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        elapsed = time.monotonic() - before
+        record_command(args, started, elapsed, f"timeout after {timeout}s")
+        raise RuntimeError(f"command timed out after {timeout}s: {args!r}") from exc
+    except Exception as exc:
+        record_command(args, started, time.monotonic() - before, f"{type(exc).__name__}: {exc}")
+        raise RuntimeError(f"command failed: {args!r}: {type(exc).__name__}: {exc}") from exc
+    error = f"exit {p.returncode}" if p.returncode else None
+    record_command(args, started, time.monotonic() - before, error)
     if p.returncode and not allow:
-        raise RuntimeError(f"{args[0]} exited {p.returncode}: {p.stderr[-500:]}")
+        raise RuntimeError(f"command {args!r} exited {p.returncode}: {p.stderr[-500:]}")
     return p.stdout.strip()
 
 def walk(x):
@@ -52,7 +81,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--udid", required=True)
     ap.add_argument("--results-dir", required=True, type=Path)
+    ap.add_argument("--app-id", choices=("host.exp.Exponent", "com.dixitsa.yard"), default="host.exp.Exponent")
     a = ap.parse_args(); a.results_dir.mkdir(parents=True, exist_ok=True)
+    global COMMAND_LOG
+    COMMAND_LOG = a.results_dir / "commands.jsonl"
     if not shutil.which("idb") or not shutil.which("xcrun"):
         ap.error("idb and xcrun must already be installed")
     if any(os.environ.get(k, "").strip() for k in ("EXPO_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_ANON_KEY")):
@@ -68,22 +100,25 @@ def main():
         )
 
     def startup_command(name, command, timeout):
+        started = datetime.now(timezone.utc).isoformat(); before = time.monotonic()
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
         except subprocess.TimeoutExpired as exc:
+            record_command(command, started, time.monotonic() - before, f"timeout after {timeout}s")
             startup_output(name, exc.stdout, exc.stderr)
             raise
+        except Exception as exc:
+            record_command(command, started, time.monotonic() - before, f"{type(exc).__name__}: {exc}")
+            raise RuntimeError(f"command failed: {command!r}: {type(exc).__name__}: {exc}") from exc
+        record_command(command, started, time.monotonic() - before, f"exit {result.returncode}" if result.returncode else None)
         startup_output(name, result.stdout, result.stderr)
         if result.returncode:
-            raise RuntimeError(f"{name} exited {result.returncode}; see {name}.log")
+            raise RuntimeError(f"command {command!r} exited {result.returncode}; see {name}.log")
         return result.stdout.strip()
 
     def startup_failure(error):
         try:
-            subprocess.run(
-                ["xcrun", "simctl", "io", a.udid, "screenshot", str(a.results_dir / "preflight-screen.png")],
-                capture_output=True, text=True, timeout=30,
-            )
+            run(["xcrun", "simctl", "io", a.udid, "screenshot", str(a.results_dir / "preflight-screen.png")], timeout=30)
         except Exception:
             pass
         (a.results_dir / "checklist.json").write_text(json.dumps({
@@ -113,8 +148,15 @@ def main():
         checks.append({"check": name, "passed": bool(ok), "detail": detail})
         if not ok: raise AssertionError(name + (": " + detail if detail else ""))
     def ax():
-        raw = run(["idb", "ui", "describe-all", "--api", "axbridge", "--format", "complete", "--json", "--udid", a.udid])
-        return json.loads(raw)
+        command = ["idb", "ui", "describe-all", "--api", "axbridge", "--format", "complete", "--json", "--udid", a.udid]
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                return json.loads(run(command, timeout=max(0.1, deadline - time.monotonic())))
+            except RuntimeError as exc:
+                if "window-server frontmost returned no application object" not in str(exc) or time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.25)
     def tap(text):
         ns = nodes_for(ax(), size); matches = [n for n in ns if label(n) == text]
         if len(matches) != 1: raise AssertionError(f"expected one visible {text!r}, found {len(matches)}")
@@ -127,7 +169,7 @@ def main():
         sw, sh = size
         if not (0 <= x < sw and 0 <= y < sh):
             raise AssertionError(f"visible {text!r} center is outside {sw:g}x{sh:g} point screen")
-        run(["idb", "ui", "tap", str(x), str(y), "--udid", a.udid])
+        run(["idb", "ui", "tap", str(x), str(y), "--udid", a.udid, "--api", "hid"])
     def wait(pred, what, timeout=45):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
@@ -146,14 +188,18 @@ def main():
         except Exception: pass
         (a.results_dir / "checklist.json").write_text(json.dumps({"passed": False, "error": str(exc), "checks": checks}, indent=2), encoding="utf-8")
     try:
-        run(["xcrun", "simctl", "terminate", a.udid, "host.exp.Exponent"], allow=True)
-        run(["xcrun", "simctl", "launch", a.udid, "host.exp.Exponent"], timeout=30)
-        run(["xcrun", "simctl", "openurl", a.udid, ROOT], timeout=30)
-        for _ in range(3):
-            _, ns = wait(lambda x: any(t in [label(n) for n in x] for t in ("Open", "Continue", "Nearby")), "Expo Go / feed")
-            if exact(ns, "Open"): tap("Open")
-            elif exact(ns, "Continue"): tap("Continue")
-            elif exact(ns, "Nearby"): break
+        run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
+        run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=30)
+        if a.app_id == "host.exp.Exponent":
+            run(["xcrun", "simctl", "openurl", a.udid, ROOT], timeout=30)
+            for _ in range(3):
+                _, ns = wait(lambda x: any(t in [label(n) for n in x] for t in ("Open", "Continue", "Nearby")), "Expo Go / feed")
+                if exact(ns, "Open"): tap("Open")
+                elif exact(ns, "Continue"): tap("Continue")
+                elif exact(ns, "Nearby"): break
+        else:
+            # app.config.ts declares scheme `yard`; SDK 58 Linking.createURL uses yard://path.
+            run(["xcrun", "simctl", "openurl", a.udid, "yard://"], timeout=30)
         data, ns = wait(lambda x: exact(x, "Nearby"), "demo feed")
         record("feed opened", exact(ns, "Feed") and exact(ns, "Nearby")); save_shot("feed.png")
         tap("Settings")
@@ -183,7 +229,7 @@ def main():
         save_shot("profile-reopened.png"); tap("Cancel")
         _, ns = wait(lambda x: exact(x, "Edit profile") and exact(x, "Feed") and not any(label(n) in ("Save", "Cancel") for n in x), "profile after editor cancel")
         tap("Feed"); _, ns = wait(lambda x: exact(x, "Nearby"), "Feed screen")
-        run(["xcrun", "simctl", "openurl", a.udid, "exp://localhost:8093/--/filters"], timeout=30)
+        run(["xcrun", "simctl", "openurl", a.udid, FILTERS_URLS[a.app_id]], timeout=30)
         data, ns = wait(lambda x: exact(x, "Filters") and any(re.match(r"Show \d+ events?", label(n)) for n in x), "Filters screen")
         count = lambda xs: next((int(m.group(1)) for n in xs if (m := re.match(r"Show (\d+) events?", label(n)))), None)
         baseline = count(ns); record("default filter count exposed", baseline is not None, str(baseline))
@@ -207,6 +253,33 @@ def main():
             data = ax(); save_ax("help-ax.json", data); save_shot("help.png"); raise
         save_ax("help-ax.json", data); save_shot("help.png")
         record("Help-only body visible", has(ns, "Saves the event for later. Only you can see it."))
+        if a.app_id == "com.dixitsa.yard":
+            # Expo Go does not include expo-calendar. Exercise the native iOS editor only,
+            # then cancel before any calendar write.
+            run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
+            run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=30)
+            _, ns = wait(lambda x: exact(x, "Nearby"), "feed after native relaunch")
+            run(["xcrun", "simctl", "openurl", a.udid, "yard://event/ev-007"], timeout=30)
+            data, ns = wait(lambda x: exact(x, "Rooftop Happy Hour"), "calendar probe event")
+            record("calendar probe event opened", True)
+            tap("Going")
+            _, ns = wait(lambda x: exact(x, "You're going"), "Going confirmation")
+            record("Going confirmation opened", True)
+            for _ in range(4):
+                data = ax(); ns = nodes_for(data, size)
+                if exact(ns, "Add to Calendar"):
+                    break
+                run(["idb", "ui", "scroll", "up", "--udid", a.udid])
+            _, ns = wait(lambda x: exact(x, "Add to Calendar"), "Add to Calendar action")
+            tap("Add to Calendar")
+            data, ns = wait(lambda x: exact(x, "New Event") and exact(x, "Cancel"), "native calendar editor")
+            record("native calendar editor opened", True)
+            record("calendar editor contains the event title", has(ns, "Rooftop Happy Hour"))
+            save_ax("calendar-editor-ax.json", data); save_shot("calendar-editor-open.png")
+            tap("Cancel")
+            _, ns = wait(lambda x: exact(x, "You're going") and not exact(x, "New Event"), "Going sheet after calendar cancel")
+            record("calendar editor cancelled without saving", True)
+            save_shot("calendar-editor-cancelled.png")
         (a.results_dir / "checklist.json").write_text(json.dumps({"passed": True, "checks": checks}, indent=2), encoding="utf-8")
         print(f"PASS {len(checks)} focused IDB checks; artifacts: {a.results_dir}")
     except Exception as e:

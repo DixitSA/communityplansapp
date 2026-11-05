@@ -5,9 +5,11 @@ appId: host.exp.Exponent
 - runFlow: reset-demo.yml
 - assertVisible: Nearby
 - scrollUntilVisible:
-    element: '.*Clay Night: Date Night Edition.*'
+    element:
+      id: event-row-ev-006
     direction: DOWN
-- longPressOn: '.*Clay Night: Date Night Edition.*'
+- longPressOn:
+    id: event-row-ev-006
 - assertVisible: Going
 - assertVisible: Share
 - assertVisible: Directions
@@ -16,5 +18,6 @@ appId: host.exp.Exponent
 - tapOn: yard.
 - assertNotVisible: Directions
 - assertVisible: Nearby
-- assertVisible: 'Clay Night: Date Night Edition'
+- assertVisible:
+    id: event-row-ev-006
 - takeScreenshot: native-event-card-menu-dismissed

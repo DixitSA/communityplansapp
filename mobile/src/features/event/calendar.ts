@@ -1,4 +1,5 @@
 import { Alert } from 'react-native';
+import { isRunningInExpoGo } from 'expo';
 
 import type { EventDetail } from './types';
 
@@ -18,17 +19,18 @@ export function calendarEventDetails(event: EventDetail) {
   };
 }
 
-export type CalendarResult = 'saved' | 'canceled' | 'unavailable' | 'error';
+export type CalendarResult = 'saved' | 'canceled' | 'unavailable' | 'expoGoUnsupported' | 'error';
 
-/**
- * Opens the system "new event" screen, pre-filled. It runs in its own process, so we never read
- * the calendar and iOS needs no permission prompt. On web or if it fails we say so.
- */
+/** Opens the system "new event" screen, pre-filled, without reading the user's calendar. */
 export async function addToCalendar(event: EventDetail): Promise<CalendarResult> {
   if (process.env.EXPO_OS === 'web') return 'unavailable';
+  // expo-calendar 58 is not included in Expo Go; avoid calling its unavailable native module.
+  if (isRunningInExpoGo()) return 'expoGoUnsupported';
   try {
-    // Loaded on demand so web and tests never touch the native module.
-    const Calendar = await import('expo-calendar');
+    // Load on demand so the web path never touches the native module.
+    // SDK 58's package-root legacy export intentionally throws; use the explicit legacy path.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep the native module lazy behind the web guard.
+    const Calendar = require('expo-calendar/legacy') as typeof import('expo-calendar/legacy');
     const result = await Calendar.createEventInCalendarAsync(calendarEventDetails(event));
     return result.action === 'canceled' ? 'canceled' : 'saved';
   } catch {
@@ -41,10 +43,9 @@ export async function addToCalendarWithAlert(event: EventDetail): Promise<void> 
   const result = await addToCalendar(event);
   if (result === 'unavailable') {
     Alert.alert('Calendar not available here', 'Open yard on your iPhone to add this event to your calendar.');
+  } else if (result === 'expoGoUnsupported') {
+    Alert.alert('Calendar unavailable in Expo Go', 'Open this event in an installed yard build to add it to your calendar.');
   } else if (result === 'error') {
-    Alert.alert(
-      "Couldn't open your calendar",
-      'If you turned off calendar access for yard, you can allow it in Settings. Then try again.',
-    );
+    Alert.alert("Couldn't open your calendar", 'Please try again.');
   }
 }

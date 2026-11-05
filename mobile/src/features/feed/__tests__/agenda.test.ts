@@ -29,6 +29,13 @@ describe('groupByDay', () => {
     expect(sections.map((s) => s.isToday)).toEqual([true, false, false]);
   });
 
+  it('uses a neutral today heading when today includes events later in the day', () => {
+    const now = new Date(2026, 9, 31, 10, 21);
+    const eveningEvent = ev('evening', 2026, 10, 31, 18);
+
+    expect(groupByDay([eveningEvent], '2026-10-31', now)[0].headline).toBe('today');
+  });
+
   it('prefers the server-supplied day over the device-derived one', () => {
     // 11 PM local that the city's clock already calls the next day.
     const late = ev('x', 2026, 10, 29, 23, { day: '2026-10-30' });
@@ -124,10 +131,10 @@ describe('day headers', () => {
   const today = '2026-10-31';
   const at = (h: number) => new Date(2026, 9, 31, h, 0);
 
-  it('gives today a mood for the time of day', () => {
-    expect(agendaHeadline(today, today, at(9))).toBe('this morning');
-    expect(agendaHeadline(today, today, at(14))).toBe('this afternoon');
-    expect(agendaHeadline(today, today, at(20))).toBe('tonight');
+  it('uses a neutral heading for today at any time', () => {
+    expect(agendaHeadline(today, today, at(9))).toBe('today');
+    expect(agendaHeadline(today, today, at(14))).toBe('today');
+    expect(agendaHeadline(today, today, at(20))).toBe('today');
   });
 
   it('names tomorrow and the rest of the week, then falls back to the date', () => {
@@ -139,7 +146,7 @@ describe('day headers', () => {
   it('keeps the date in the detail line unless the headline is the date', () => {
     expect(agendaDetail('2026-11-05', 'Thursday', 9)).toBe('Thu, Nov 5 · 9 events');
     expect(agendaDetail('2026-11-07', 'Sat, Nov 7', 1)).toBe('1 event');
-    expect(agendaDetail('2026-10-31', 'tonight', 8, 3)).toBe('Sat, Oct 31 · 8 events · 3 live');
+    expect(agendaDetail('2026-10-31', 'today', 8, 3)).toBe('Sat, Oct 31 · 8 events · 3 live');
   });
 });
 
