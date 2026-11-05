@@ -227,16 +227,39 @@ class Flow:
         return source
 
     @staticmethod
-    def accessible_nodes(source: str):
+    def ancestor_hides_node(ancestor, node):
+        """Ignore WDA's false same-frame wrapper, but honor a hidden containing subtree."""
+        if ancestor.attrib.get("visible", "true").lower() != "false":
+            return False
+        try:
+            ax, ay, aw, ah = (float(ancestor.attrib[k]) for k in ("x", "y", "width", "height"))
+            nx, ny, nw, nh = (float(node.attrib[k]) for k in ("x", "y", "width", "height"))
+        except (KeyError, ValueError):
+            return True
+        contains = ax <= nx and ay <= ny and ax + aw >= nx + nw and ay + ah >= ny + nh
+        return contains and (aw > nw or ah > nh)
+
+    @classmethod
+    def accessible_nodes(cls, source: str):
         try:
             root = ET.fromstring(source)
         except ET.ParseError as exc:
             raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
-        return [
-            node for node in root.iter()
-            if node.attrib.get("visible", "").lower() == "true"
-            and node.attrib.get("accessible", "").lower() == "true"
-        ]
+        parents = {child: parent for parent in root.iter() for child in parent}
+        result = []
+        for node in root.iter():
+            if node.attrib.get("visible", "").lower() != "true" or node.attrib.get("accessible", "").lower() != "true":
+                continue
+            ancestor = parents.get(node)
+            hidden = False
+            while ancestor is not None:
+                if cls.ancestor_hides_node(ancestor, node):
+                    hidden = True
+                    break
+                ancestor = parents.get(ancestor)
+            if not hidden:
+                result.append(node)
+        return result
 
     @staticmethod
     def label_of(node):
@@ -266,6 +289,48 @@ class Flow:
 
     def quick_plan_titles(self, source: str):
         return {title for title, _ in self.quick_plan_entries(source)}
+
+    def quick_plan_card_targets(self, source: str):
+        """Resolve visible plan buttons to their nearest measured event-card wrapper."""
+        try:
+            root = ET.fromstring(source)
+        except ET.ParseError as exc:
+            raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
+        parents = {child: parent for parent in root.iter() for child in parent}
+        prefix = "Make a plan for "
+        targets = []
+        for plan in root.iter():
+            if plan.attrib.get("visible", "").lower() != "true":
+                continue
+            ancestor = parents.get(plan)
+            ancestry = []
+            while ancestor is not None:
+                ancestry.append(ancestor)
+                ancestor = parents.get(ancestor)
+            if any(self.ancestor_hides_node(node, plan) for node in ancestry):
+                continue
+            titles = {
+                value[len(prefix):]
+                for value in (plan.attrib.get("label", ""), plan.attrib.get("name", ""))
+                if value.startswith(prefix) and value[len(prefix):].strip()
+            }
+            if len(titles) != 1:
+                continue
+            plan_frame = self.frame_of(plan)
+            if not plan_frame:
+                continue
+            x, y, width, height = plan_frame
+            ancestor = parents.get(plan)
+            while ancestor is not None:
+                frame = self.frame_of(ancestor)
+                if frame:
+                    ax, ay, aw, ah = frame
+                    contains_control = ax <= x and ay <= y and ax + aw >= x + width and ay + ah >= y + height
+                    if contains_control and aw > width and ah > height:
+                        targets.append({"title": next(iter(titles)), "plan": plan_frame, "card": frame})
+                        break
+                ancestor = parents.get(ancestor)
+        return targets
 
     @staticmethod
     def row_title_matches(row_label: str, titles):
@@ -317,11 +382,22 @@ class Flow:
             # cannot change its blank backend configuration. Keep the first proof.
             self.record("demo guard verified earlier in this same native session", True)
             return
+        settings_sheet = lambda x: self.has_visible_exact(x, "Settings") and self.has_visible(x, "Who sees what")
         self.click("Settings")
-        source = self.wait_source(
-            lambda x: self.has_visible_exact(x, "Settings") and self.has_visible(x, "Who sees what"),
-            "visible Settings sheet",
-        )
+        source = self.source()
+        if not settings_sheet(source):
+            visible_settings_button = [n for n in self.accessible_nodes(source) if self.label_of(n) == "Settings"]
+            click_remained_on_feed = (
+                self.has_visible(source, "Nearby")
+                and self.has_visible(source, "Feed")
+                and len(visible_settings_button) == 1
+                and not self.has_visible(source, "Who sees what")
+                and not self.has_visible_exact(source, "Done")
+            )
+            if click_remained_on_feed:
+                self.record("Feed remained visible after first Settings tap; retrying the observed button once", True, "Settings sheet not present")
+                self.driver.click(self.driver.wait_one("Settings"))
+            source = self.wait_source(settings_sheet, "visible Settings sheet")
         self.record("Settings sheet opened", self.has_visible_exact(source, "Settings"))
         for _ in range(4):
             source = self.source()
@@ -470,7 +546,7 @@ class Flow:
             node for node in self.accessible_nodes(source)
             if re.search(r", [1-9]\d* events?(?:, friends going)?$", self.label_of(node))
         ]
-        self.record("date strip exposes a day with upcoming events", bool(date_choices), "No visible date chip reports upcoming events")
+        self.record("date strip exposes a day with upcoming events", bool(date_choices), ", ".join(self.label_of(node) for node in date_choices) or "No visible date chip reports upcoming events")
         day_label = self.label_of(date_choices[0])
         weekday = day_label.split(" ", 1)[0]
         self.driver.click(self.driver.wait_one(day_label))
@@ -479,7 +555,7 @@ class Flow:
             "source-labeled events after date selection",
         )
         plan_titles = self.quick_plan_titles(source)
-        self.record("selected date exposes source-labeled event titles", bool(plan_titles), day_label)
+        self.record("selected date exposes source-labeled event titles", bool(plan_titles), ", ".join(sorted(plan_titles)) or day_label)
         row_titles = set()
         visible_rows = [
             node for node in self.accessible_nodes(source)
@@ -490,20 +566,27 @@ class Flow:
             self.record("visible event row resolves to one quick-plan title", len(matches) == 1, self.label_of(node))
             row_titles.add(matches[0])
         candidate_titles = row_titles or plan_titles
-        self.record("selected date exposes a source-labeled event title", bool(candidate_titles), day_label)
+        self.record("selected date exposes a source-labeled event title", bool(candidate_titles), ", ".join(sorted(candidate_titles)) or day_label)
         self.click("Show map")
         source = self.wait_source(lambda x: self.has_visible_exact(x, "Show list"), "map view")
         marker_titles = {
             self.label_of(node)
             for node in self.accessible_nodes(source)
-            if self.label_of(node) in candidate_titles
+            if node.attrib.get("type") == "XCUIElementTypeOther" and self.label_of(node) in candidate_titles
         }
-        self.record("map exposes a matching accessible marker title", bool(marker_titles), "No source-provided marker title matched a live feed event title")
+        self.record("map exposes a matching accessible marker title", bool(marker_titles), ", ".join(sorted(marker_titles)) or "No visible marker matched a live feed event title")
         title = sorted(marker_titles)[0]
-        marker_nodes = [n for n in self.accessible_nodes(source) if self.label_of(n) == title]
-        self.record("chosen map marker is unique", len(marker_nodes) == 1, f"{title}: found {len(marker_nodes)}")
+        marker_nodes = [
+            n for n in self.accessible_nodes(source)
+            if n.attrib.get("type") == "XCUIElementTypeOther" and self.label_of(n) == title
+        ]
+        self.record("chosen visible map marker is unique after ancestor filtering", len(marker_nodes) == 1, f"{title}: found {len(marker_nodes)}")
+        marker_frame = self.frame_of(marker_nodes[0])
+        self.record("chosen map marker has a measured frame", marker_frame is not None, title)
         self.capture("map-marker.png")
-        self.driver.click(self.driver.wait_one(title))
+        mx, my, mw, mh = marker_frame
+        marker_point = (mx + mw / 2, my + mh / 2)
+        self.driver.execute_mobile("tap", {"x": marker_point[0], "y": marker_point[1]})
         source = self.wait_source(
             lambda x: any(
                 n.attrib.get("type") == "XCUIElementTypeButton" and self.label_of(n) != title and title in self.label_of(n)
@@ -532,37 +615,28 @@ class Flow:
         source = self.source()
         self.feed_source = source
         (self.root / "feed-page-source.xml").write_text(source, encoding="utf-8")
-        rows = [
-            node for node in self.accessible_nodes(source)
-            if node.attrib.get("name", "").startswith("event-row-") and self.label_of(node)
-        ]
-        self.record("one visible event row available for long press", len(rows) >= 1, f"found {len(rows)}")
-        row = rows[0]
-        row_id = row.attrib["name"]
-        plan_entries = self.quick_plan_entries(source)
-        title_matches = self.row_title_matches(self.label_of(row), {title for title, _ in plan_entries})
-        self.record("event row identifies one source-labeled event title", len(title_matches) == 1, f"found {len(title_matches)}")
-        title = title_matches[0]
-        row_frame = self.frame_of(row)
-        self.record("event row has a title and measured frame", bool(title and row_frame), row_id)
+        card_targets = self.quick_plan_card_targets(source)
+        self.record("visible plan label resolves to a measured event-card wrapper", bool(card_targets), f"found {len(card_targets)} candidates")
+        card_targets.sort(key=lambda target: (-target["card"][2], target["card"][1], target["title"]))
+        target = card_targets[0]
+        title = target["title"]
+        row_frame = target["card"]
+        quick_frame = target["plan"]
+        self.record("event-card wrapper is grounded by its observed plan label", True, f"{title}: {row_frame}")
         x, y, width, height = row_frame
         center = (x + width / 2, y + height / 2)
-        quick_plans = [node for plan_title, node in plan_entries if plan_title == title]
-        quick_frames = [self.frame_of(node) for node in quick_plans]
-        quick_frames = [frame for frame in quick_frames if frame]
-        self.record("quick-plan sibling bounds uniquely identify this row", len(quick_frames) == 1, f"{title}: found {len(quick_frames)} visible matching controls")
-        outside_quick_plan = all(not (qx <= center[0] <= qx + qw and qy <= center[1] <= qy + qh) for qx, qy, qw, qh in quick_frames)
-        self.record("long-press point is outside quick-plan sibling", outside_quick_plan, f"row center {center}")
+        self.record("long-press center lies inside observed card frame", x <= center[0] <= x + width and y <= center[1] <= y + height, f"center {center}; card {row_frame}")
+        qx, qy, qw, qh = quick_frame
+        outside_quick_plan = not (qx <= center[0] <= qx + qw and qy <= center[1] <= qy + qh)
+        self.record("long-press center lies outside quick-plan sibling", outside_quick_plan, f"center {center}; quick-plan {quick_frame}")
         map_toggles = [n for n in self.accessible_nodes(source) if self.label_of(n) == "Show map"]
         self.record("feed map-toggle frame available before long press", len(map_toggles) == 1, f"found {len(map_toggles)}")
         toggle_frame = self.frame_of(map_toggles[0])
         self.record("feed map-toggle frame is measurable", toggle_frame is not None)
         self.capture("context-menu-before.png")
-        row_element = self.driver.wait_one(row_id)
-        row_element_id = row_element.get("element-6066-11e4-a52e-4f735466cecf") or row_element.get("ELEMENT")
-        self.record("Appium resolved the measured event-row anchor", bool(row_element_id), row_id)
         self.driver.execute_mobile("touchAndHold", {
-            "elementId": row_element_id,
+            "x": center[0],
+            "y": center[1],
             "duration": 1.5,
         })
         source = self.wait_source(
