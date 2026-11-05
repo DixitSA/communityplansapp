@@ -22,6 +22,7 @@ case "$PROBE_FLOW_GROUP" in
   filters) PROBE_FLOWS=(filters) ;;
   calendar) PROBE_FLOWS=(calendar) ;;
   filters-calendar) PROBE_FLOWS=(filters calendar) ;;
+  extended) PROBE_FLOWS=(profile-interests map context-menu) ;;
   *) echo "Unsupported native flow group: $PROBE_FLOW_GROUP" >&2; exit 2 ;;
 esac
 mkdir -p "$RESULTS_DIR"
@@ -77,6 +78,10 @@ case "$DRIVER_ENGINE" in
   appium|idb) ;;
   *) echo "Unsupported native automation engine: $DRIVER_ENGINE" >&2; exit 2 ;;
 esac
+if [[ "$PROBE_FLOW_GROUP" == 'extended' && "$DRIVER_ENGINE" != 'appium' ]]; then
+  echo 'The extended native flows require the Appium engine.' >&2
+  exit 2
+fi
 
 case "$ARTIFACT_ZIP" in
   "$RUNNER_TEMP"/*) ;;

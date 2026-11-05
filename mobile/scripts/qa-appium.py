@@ -195,6 +195,8 @@ class Flow:
         self.root = root / name
         self.name = name
         self.checks = []
+        self.last_source = ""
+        self.feed_source = ""
         self.root.mkdir(parents=True, exist_ok=True)
 
     def record(self, check: str, passed: bool, detail=""):
@@ -220,8 +222,54 @@ class Flow:
 
     def source(self):
         source = self.driver.source()
+        self.last_source = source
         (self.root / "last-page-source.xml").write_text(source, encoding="utf-8")
         return source
+
+    @staticmethod
+    def accessible_nodes(source: str):
+        try:
+            root = ET.fromstring(source)
+        except ET.ParseError as exc:
+            raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
+        return [
+            node for node in root.iter()
+            if node.attrib.get("visible", "").lower() == "true"
+            and node.attrib.get("accessible", "").lower() == "true"
+        ]
+
+    @staticmethod
+    def label_of(node):
+        return node.attrib.get("label") or node.attrib.get("name") or ""
+
+    @staticmethod
+    def frame_of(node):
+        try:
+            return tuple(float(node.attrib[key]) for key in ("x", "y", "width", "height"))
+        except (KeyError, ValueError):
+            return None
+
+    def quick_plan_entries(self, source: str):
+        try:
+            nodes = ET.fromstring(source).iter()
+        except ET.ParseError as exc:
+            raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
+        prefix = "Make a plan for "
+        entries = []
+        for node in nodes:
+            if node.attrib.get("visible", "").lower() != "true":
+                continue
+            for value in set((node.attrib.get("label", ""), node.attrib.get("name", ""))):
+                if value.startswith(prefix) and value[len(prefix):].strip():
+                    entries.append((value[len(prefix):], node))
+        return entries
+
+    def quick_plan_titles(self, source: str):
+        return {title for title, _ in self.quick_plan_entries(source)}
+
+    @staticmethod
+    def row_title_matches(row_label: str, titles):
+        return [title for title in titles if f"{title}, " in row_label]
 
     @staticmethod
     def has_visible(source: str, text: str):
@@ -259,7 +307,8 @@ class Flow:
 
     def restart_to_feed(self):
         self.driver.restart_app()
-        self.wait_source(lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed"), "feed after app restart")
+        self.feed_source = self.wait_source(lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed"), "feed after app restart")
+        (self.root / "feed-page-source.xml").write_text(self.feed_source, encoding="utf-8")
         self.capture("feed.png")
 
     def settings_demo_preflight(self):
@@ -349,6 +398,37 @@ class Flow:
         self.record("saved name persists after reopen", persisted == new_name, f"expected {new_name!r}; got {persisted!r}")
         self.capture("profile-reopened.png")
 
+    def run_profile_interests(self):
+        self.restart_to_feed()
+        self.settings_demo_preflight()
+        self.click("Profile")
+        self.wait_source(lambda x: self.has_visible(x, "Edit profile"), "profile screen")
+        self.click("Edit profile")
+        source = self.wait_source(lambda x: self.has_visible_exact(x, "Fitness") and self.has_visible_exact(x, "Save"), "profile interests editor")
+        fitness = [n for n in self.accessible_nodes(source) if self.label_of(n) == "Fitness"]
+        self.record("Fitness checkbox is exposed exactly once", len(fitness) == 1, f"found {len(fitness)}")
+        before = fitness[0].attrib.get("value", "").lower()
+        self.record("Fitness starts unchecked", before in ("checkbox, unchecked", "0", "false"), before)
+        self.capture("profile-interests-before.png")
+        self.driver.click(self.driver.wait_one("Fitness"))
+        source = self.wait_source(
+            lambda x: any(self.label_of(n) == "Fitness" and n.attrib.get("value", "").lower() in ("checkbox, checked", "1", "true") for n in self.accessible_nodes(x)),
+            "Fitness checkbox selected",
+        )
+        self.record("Fitness checkbox selected", True)
+        save = self.driver.wait_one("Save")
+        self.record("Save enabled after interest change", self.driver.attribute(save, "enabled").lower() == "true")
+        self.capture("profile-interests-selected.png")
+        self.driver.click(save)
+        self.wait_source(lambda x: self.has_visible(x, "Edit profile") and not self.has_visible_exact(x, "Save"), "profile after saving interest")
+        self.click("Edit profile")
+        source = self.wait_source(
+            lambda x: any(self.label_of(n) == "Fitness" and n.attrib.get("value", "").lower() in ("checkbox, checked", "1", "true") for n in self.accessible_nodes(x)),
+            "reopened profile with Fitness selected",
+        )
+        self.record("Fitness selection persists after reopen", True)
+        self.capture("profile-interests-reopened.png")
+
     def result_count(self, source: str):
         for value in visible_xml_strings(source):
             match = re.fullmatch(r"Show (\d+) events?", value)
@@ -381,6 +461,134 @@ class Flow:
         )
         self.record("Apply returns to feed", self.has_visible(source, "Nearby") and not self.has_visible_exact(source, "Filters"))
         self.capture("feed-after-filters.png")
+
+    def run_map(self):
+        self.restart_to_feed()
+        self.settings_demo_preflight()
+        source = self.source()
+        date_choices = [
+            node for node in self.accessible_nodes(source)
+            if re.search(r", [1-9]\d* events?(?:, friends going)?$", self.label_of(node))
+        ]
+        self.record("date strip exposes a day with upcoming events", bool(date_choices), "No visible date chip reports upcoming events")
+        day_label = self.label_of(date_choices[0])
+        weekday = day_label.split(" ", 1)[0]
+        self.driver.click(self.driver.wait_one(day_label))
+        source = self.wait_source(
+            lambda x: bool(self.quick_plan_titles(x)),
+            "source-labeled events after date selection",
+        )
+        plan_titles = self.quick_plan_titles(source)
+        self.record("selected date exposes source-labeled event titles", bool(plan_titles), day_label)
+        row_titles = set()
+        visible_rows = [
+            node for node in self.accessible_nodes(source)
+            if node.attrib.get("name", "").startswith("event-row-") and f", {weekday} " in self.label_of(node)
+        ]
+        for node in visible_rows:
+            matches = self.row_title_matches(self.label_of(node), plan_titles)
+            self.record("visible event row resolves to one quick-plan title", len(matches) == 1, self.label_of(node))
+            row_titles.add(matches[0])
+        candidate_titles = row_titles or plan_titles
+        self.record("selected date exposes a source-labeled event title", bool(candidate_titles), day_label)
+        self.click("Show map")
+        source = self.wait_source(lambda x: self.has_visible_exact(x, "Show list"), "map view")
+        marker_titles = {
+            self.label_of(node)
+            for node in self.accessible_nodes(source)
+            if self.label_of(node) in candidate_titles
+        }
+        self.record("map exposes a matching accessible marker title", bool(marker_titles), "No source-provided marker title matched a live feed event title")
+        title = sorted(marker_titles)[0]
+        marker_nodes = [n for n in self.accessible_nodes(source) if self.label_of(n) == title]
+        self.record("chosen map marker is unique", len(marker_nodes) == 1, f"{title}: found {len(marker_nodes)}")
+        self.capture("map-marker.png")
+        self.driver.click(self.driver.wait_one(title))
+        source = self.wait_source(
+            lambda x: any(
+                n.attrib.get("type") == "XCUIElementTypeButton" and self.label_of(n) != title and title in self.label_of(n)
+                for n in self.accessible_nodes(x)
+            ),
+            "selected map event card",
+        )
+        cards = [
+            n for n in self.accessible_nodes(source)
+            if n.attrib.get("type") == "XCUIElementTypeButton" and self.label_of(n) != title and title in self.label_of(n)
+        ]
+        self.record("selected marker produced one event card", len(cards) == 1, f"found {len(cards)}")
+        card_label = self.label_of(cards[0])
+        self.driver.click(self.driver.wait_one(card_label))
+        source = self.wait_source(
+            lambda x: self.has_visible(x, title) and not self.has_visible_exact(x, "Show list")
+            and self.has_visible_exact(x, "Going") and self.has_visible_exact(x, "Interested"),
+            "event details with RSVP controls opened from map card",
+        )
+        self.record("map card opened event details with RSVP controls", self.has_visible(source, title), title)
+        self.capture("map-event-details.png")
+
+    def run_context_menu(self):
+        self.restart_to_feed()
+        self.settings_demo_preflight()
+        source = self.source()
+        self.feed_source = source
+        (self.root / "feed-page-source.xml").write_text(source, encoding="utf-8")
+        rows = [
+            node for node in self.accessible_nodes(source)
+            if node.attrib.get("name", "").startswith("event-row-") and self.label_of(node)
+        ]
+        self.record("one visible event row available for long press", len(rows) >= 1, f"found {len(rows)}")
+        row = rows[0]
+        row_id = row.attrib["name"]
+        plan_entries = self.quick_plan_entries(source)
+        title_matches = self.row_title_matches(self.label_of(row), {title for title, _ in plan_entries})
+        self.record("event row identifies one source-labeled event title", len(title_matches) == 1, f"found {len(title_matches)}")
+        title = title_matches[0]
+        row_frame = self.frame_of(row)
+        self.record("event row has a title and measured frame", bool(title and row_frame), row_id)
+        x, y, width, height = row_frame
+        center = (x + width / 2, y + height / 2)
+        quick_plans = [node for plan_title, node in plan_entries if plan_title == title]
+        quick_frames = [self.frame_of(node) for node in quick_plans]
+        quick_frames = [frame for frame in quick_frames if frame]
+        self.record("quick-plan sibling bounds uniquely identify this row", len(quick_frames) == 1, f"{title}: found {len(quick_frames)} visible matching controls")
+        outside_quick_plan = all(not (qx <= center[0] <= qx + qw and qy <= center[1] <= qy + qh) for qx, qy, qw, qh in quick_frames)
+        self.record("long-press point is outside quick-plan sibling", outside_quick_plan, f"row center {center}")
+        map_toggles = [n for n in self.accessible_nodes(source) if self.label_of(n) == "Show map"]
+        self.record("feed map-toggle frame available before long press", len(map_toggles) == 1, f"found {len(map_toggles)}")
+        toggle_frame = self.frame_of(map_toggles[0])
+        self.record("feed map-toggle frame is measurable", toggle_frame is not None)
+        self.capture("context-menu-before.png")
+        row_element = self.driver.wait_one(row_id)
+        row_element_id = row_element.get("element-6066-11e4-a52e-4f735466cecf") or row_element.get("ELEMENT")
+        self.record("Appium resolved the measured event-row anchor", bool(row_element_id), row_id)
+        self.driver.execute_mobile("touchAndHold", {
+            "elementId": row_element_id,
+            "duration": 1.5,
+        })
+        source = self.wait_source(
+            lambda x: all(self.has_visible_exact(x, label) for label in ("Going", "Interested", "Share", "Directions")),
+            "event card context menu actions",
+        )
+        self.record("card menu exposes Going, Interested, Share, and Directions", True)
+        self.capture("context-menu-open.png")
+        menu_labels = ("Going", "Interested", "Share", "Directions")
+        menu_frames = [
+            self.frame_of(node) for node in self.accessible_nodes(source)
+            if self.label_of(node) in menu_labels
+        ]
+        menu_frames = [frame for frame in menu_frames if frame]
+        self.record("context-menu action frames available for safe dismissal", len(menu_frames) == len(menu_labels), f"found {len(menu_frames)} of {len(menu_labels)}")
+        tx, ty, tw, th = toggle_frame
+        tap_point = (tx + tw / 2, ty + th / 2)
+        outside_menu = all(not (mx <= tap_point[0] <= mx + mw and my <= tap_point[1] <= my + mh) for mx, my, mw, mh in menu_frames)
+        self.record("observed map-toggle point is outside menu action bounds", outside_menu, f"tap point {tap_point}")
+        self.driver.execute_mobile("tap", {"x": tap_point[0], "y": tap_point[1]})
+        source = self.wait_source(
+            lambda x: self.has_visible(x, "Nearby") and not any(self.has_visible_exact(x, label) for label in ("Going", "Interested", "Share", "Directions")),
+            "context menu dismissed back to feed",
+        )
+        self.record("context menu dismissed without choosing an action", self.has_visible(source, "Nearby"))
+        self.capture("context-menu-dismissed.png")
 
     def run_calendar(self):
         self.restart_to_feed()
@@ -426,7 +634,7 @@ def main():
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--appearance", choices=("light", "dark"), required=True)
     parser.add_argument("--results-dir", required=True, type=Path)
-    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar"), default=("profile", "filters", "calendar"))
+    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "profile-interests", "map", "context-menu"), default=("profile", "filters", "calendar"))
     args = parser.parse_args()
     parsed_url = urllib.parse.urlparse(args.server_url)
     if parsed_url.scheme != "http" or parsed_url.hostname != "127.0.0.1" or parsed_url.port != 4723:
@@ -453,7 +661,7 @@ def main():
         for flow in flows:
             try:
                 (flow.root / "flow-start.txt").write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
-                getattr(flow, f"run_{flow.name}")()
+                getattr(flow, f"run_{flow.name.replace('-', '_')}")()
                 flow.write_checklist("completed")
                 print(f"PASS {flow.name}: {len(flow.checks)} checks")
             except Exception as exc:
