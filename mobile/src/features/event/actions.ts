@@ -40,6 +40,15 @@ export function openDirections(event: Pick<EventDetail, 'venue' | 'address'>): v
   });
 }
 
+/** Opens the event's ticket or source listing and explains if the system cannot open it. */
+export async function openEventListing(url: string): Promise<void> {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Couldn't open this listing", 'Try again in a moment.');
+  }
+}
+
 const REPORT_REASONS: { reason: EventReportReason; label: string }[] = [
   { reason: 'wrong_details', label: 'Wrong details' },
   { reason: 'spam_or_scam', label: 'Spam or scam' },

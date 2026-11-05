@@ -1,7 +1,9 @@
+import { Alert, Linking } from 'react-native';
+
 import { getFixtureEvent, getFixtureEvents } from '@/features/feed/fixtures';
 
 import { calendarEventDetails } from '../calendar';
-import { directionsUrl, shareMessage } from '../actions';
+import { directionsUrl, openEventListing, shareMessage } from '../actions';
 
 const NOW = new Date(2026, 9, 28, 12, 0); // Wed, Oct 28 2026
 
@@ -68,5 +70,30 @@ describe('event helpers', () => {
       expect(c.endDate.getTime() - c.startDate.getTime()).toBe(2 * 60 * 60 * 1000);
       expect(c.location).toContain('Haberdish');
     }
+  });
+});
+
+describe('openEventListing', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('opens the original listing without showing an error', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    await openEventListing('https://tickets.example/event');
+
+    expect(openURL).toHaveBeenCalledWith('https://tickets.example/event');
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  it('shows a native message when the system cannot open the listing', async () => {
+    jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('unsupported URL'));
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    await openEventListing('https://tickets.example/event');
+
+    expect(alert).toHaveBeenCalledWith("Couldn't open this listing", 'Try again in a moment.');
   });
 });

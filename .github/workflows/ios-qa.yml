@@ -5,35 +5,30 @@ on:
     branches: ['qa/ios-sweep-*']
     paths: ['mobile/**', '.github/workflows/ios-qa.yml']
   workflow_dispatch:
+    inputs:
+      group:
+        description: 'Run all groups or one focused native check'
+        type: choice
+        default: all
+        options: [all, layout, menus, social, onboarding, idb, navigation]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ios-qa-${{ github.ref }}
+  group: ios-qa-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.group || 'all' }}
   cancel-in-progress: false
 
 jobs:
   simulator:
     # Standard runner: free for this public repository. Do not use -large/-xlarge.
-    runs-on: ${{ matrix.runner || 'macos-26-intel' }}
+    runs-on: ${{ matrix.group == 'idb' && 'macos-26' || 'macos-26-intel' }}
     timeout-minutes: 50
     strategy:
       fail-fast: false
       max-parallel: 5
       matrix:
-        include:
-          - group: layout
-            flows: ios-profile-settings ios-discovery ios-smoke
-          - group: menus
-            flows: ios-core-flows ios-chat-actions ios-event-actions
-          - group: social
-            flows: ios-native-menus ios-friend-actions ios-privacy-resume
-          - group: onboarding
-            flows: ios-onboarding ios-activity-suggest ios-map-permission
-          - group: idb
-            runner: macos-26
-            engine: idb
+        group: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.group != 'all' && format('["{0}"]', inputs.group) || '["layout","menus","social","onboarding","idb","navigation"]') }}
     name: iOS demo QA (${{ matrix.group }})
     defaults:
       run:
@@ -44,8 +39,8 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
       # The first ARM runner exceeded the iOS driver's 120-second startup window.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
-      QA_FLOWS: ${{ matrix.flows }}
-      QA_ENGINE: ${{ matrix.engine || 'maestro' }}
+      QA_FLOWS: ${{ matrix.group == 'layout' && 'ios-profile-settings ios-discovery ios-smoke' || matrix.group == 'menus' && 'ios-core-flows ios-chat-actions ios-event-actions' || matrix.group == 'social' && 'ios-native-menus ios-friend-actions ios-privacy-resume' || matrix.group == 'onboarding' && 'ios-onboarding ios-activity-suggest ios-map-permission' || matrix.group == 'navigation' && 'ios-navigation-menus' || '' }}
+      QA_ENGINE: ${{ matrix.group == 'idb' && 'idb' || 'maestro' }}
     steps:
       - uses: actions/checkout@v4
       - name: Quarantine checkout dotenv files
@@ -75,7 +70,7 @@ jobs:
       - name: Install app dependencies
         run: npm ci
       - name: Install pinned Maestro CLI
-        if: matrix.engine != 'idb'
+        if: matrix.group != 'idb'
         run: |
           archive="$RUNNER_TEMP/yard-maestro.zip"
           curl --fail --location --retry 3 https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.12.1/maestro.zip --output "$archive"
@@ -87,7 +82,7 @@ jobs:
           dirname "$maestro_bin" >> "$GITHUB_PATH"
           echo "JAVA_HOME=$(/usr/libexec/java_home -v 17)" >> "$GITHUB_ENV"
       - name: Install pinned idb toolset
-        if: matrix.engine == 'idb'
+        if: matrix.group == 'idb'
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: |

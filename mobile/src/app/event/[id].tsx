@@ -1,6 +1,6 @@
 import { Link, Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
@@ -30,7 +30,7 @@ import {
   useRevealedImages,
   useTheme,
 } from '@/design';
-import { openDirections, openEventMenu, shareEvent } from '@/features/event/actions';
+import { openDirections, openEventListing, openEventMenu, shareEvent } from '@/features/event/actions';
 import {
   attributionLine,
   eventSummary,
@@ -307,7 +307,7 @@ export default function EventScreen() {
                 <Button
                   label={listingLabel}
                   symbol={isTicketSource(event.source.name) ? 'ticket.fill' : 'arrow.up.right'}
-                  onPress={() => Linking.openURL(listingUrl as string).catch(() => {})}
+                  onPress={() => void openEventListing(listingUrl as string)}
                   accessibilityLabel={`${listingLabel}${knownPrice ? `, ${knownPrice}` : ''}. Opens ${sourceName(event.source.name)}`}
                 />
                 {knownPrice ? (
@@ -397,7 +397,7 @@ export default function EventScreen() {
             </AppText>
             {listingUrl && !showListingButton ? (
               <Pressable
-                onPress={() => Linking.openURL(listingUrl).catch(() => {})}
+                onPress={() => void openEventListing(listingUrl)}
                 accessibilityRole="link"
                 accessibilityLabel={`View original listing on ${sourceName(event.source.name)}`}
                 hitSlop={{ top: space.lg, bottom: space.lg, left: space.sm, right: space.sm }}

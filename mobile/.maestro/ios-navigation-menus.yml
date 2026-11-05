@@ -1,0 +1,20 @@
+appId: host.exp.Exponent
+---
+# City picker selection/dismissal is already covered by ios-map-permission.yml.
+# Exercise the uncovered feed-card Link.Menu without selecting an action.
+- runFlow: reset-demo.yml
+- assertVisible: Nearby
+- scrollUntilVisible:
+    element: '.*Clay Night: Date Night Edition.*'
+    direction: DOWN
+- longPressOn: '.*Clay Night: Date Night Edition.*'
+- assertVisible: Going
+- assertVisible: Share
+- assertVisible: Directions
+- takeScreenshot: native-event-card-menu-open
+# The static wordmark is outside the preview and has no action; tapping it dismisses the menu.
+- tapOn: yard.
+- assertNotVisible: Directions
+- assertVisible: Nearby
+- assertVisible: 'Clay Night: Date Night Edition'
+- takeScreenshot: native-event-card-menu-dismissed

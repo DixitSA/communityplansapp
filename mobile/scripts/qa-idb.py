@@ -58,11 +58,57 @@ def main():
     if any(os.environ.get(k, "").strip() for k in ("EXPO_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_ANON_KEY")):
         ap.error("demo preflight failed: Supabase URL/key must be blank")
     checks = []
-    desc = json.loads(run(["idb", "describe", "--json", "--udid", a.udid]))
+    stage = "idb-companion-connect"
+
+    def startup_output(name, stdout, stderr):
+        def clean(value):
+            return value.decode("utf-8", "replace") if isinstance(value, bytes) else (value or "")
+        (a.results_dir / f"{name}.log").write_text(
+            f"STDOUT\n{clean(stdout)}\nSTDERR\n{clean(stderr)}", encoding="utf-8"
+        )
+
+    def startup_command(name, command, timeout):
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            startup_output(name, exc.stdout, exc.stderr)
+            raise
+        startup_output(name, result.stdout, result.stderr)
+        if result.returncode:
+            raise RuntimeError(f"{name} exited {result.returncode}; see {name}.log")
+        return result.stdout.strip()
+
+    def startup_failure(error):
+        try:
+            subprocess.run(
+                ["xcrun", "simctl", "io", a.udid, "screenshot", str(a.results_dir / "preflight-screen.png")],
+                capture_output=True, text=True, timeout=30,
+            )
+        except Exception:
+            pass
+        (a.results_dir / "checklist.json").write_text(json.dumps({
+            "passed": False, "failed_at": stage, "error": str(error), "checks": checks,
+        }, indent=2), encoding="utf-8")
+
+    try:
+        # Explicitly separate companion cold start from the first metadata request.
+        startup_command("companion-start", ["idb", "--log", "DEBUG", "connect", a.udid], 120)
+        stage = "idb-initial-describe"
+        desc = json.loads(startup_command(
+            "initial-describe", ["idb", "describe", "--json", "--udid", a.udid], 45,
+        ))
+    except Exception as exc:
+        startup_failure(exc)
+        print(f"FAIL during {stage}; startup logs and preflight screenshot saved: {a.results_dir}", file=sys.stderr)
+        return 1
     size = next(((float(fields(n).get("width_points", fields(n).get("widthpoints"))),
                   float(fields(n).get("height_points", fields(n).get("heightpoints"))))
                  for n in walk(desc) if fields(n).get("width_points", fields(n).get("widthpoints")) and fields(n).get("height_points", fields(n).get("heightpoints"))), None)
-    if not size: ap.error("idb describe JSON did not report screen point dimensions")
+    if not size:
+        stage = "idb-screen-dimensions"
+        startup_failure("idb describe JSON did not report screen point dimensions")
+        print(f"FAIL during {stage}; preflight screenshot saved: {a.results_dir}", file=sys.stderr)
+        return 1
     def record(name, ok, detail=""):
         checks.append({"check": name, "passed": bool(ok), "detail": detail})
         if not ok: raise AssertionError(name + (": " + detail if detail else ""))
