@@ -24,13 +24,22 @@ const card = (id: string, over: Partial<FeedEvent> = {}): FeedEvent => ({
 });
 
 const FEED_KEY = ['feed', 1, '2026-10-29'];
+const clients = new Set<QueryClient>();
 
 function setup() {
-  const qc = new QueryClient();
+  const qc = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity }, mutations: { gcTime: Infinity } },
+  });
+  clients.add(qc);
   qc.setQueryData(FEED_KEY, [card('a'), card('b')]);
   qc.setQueryData(['event', 'a'], { ...card('a'), goingCount: 4, myStatus: null } as unknown as EventPage);
   return qc;
 }
+
+afterEach(() => {
+  for (const client of clients) client.clear();
+  clients.clear();
+});
 
 describe('optimistic RSVP', () => {
   it('updates feed and event caches before the server answers, then settles', async () => {
