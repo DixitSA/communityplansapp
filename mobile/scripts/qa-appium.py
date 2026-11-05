@@ -690,18 +690,26 @@ class Flow:
         }
         self.record("native application frame is unique in captured source", len(app_frames) == 1, str(sorted(app_frames)))
         app_frame = next(iter(app_frames)) if len(app_frames) == 1 else None
-        title_nodes = [
-            node for node in self.accessible_nodes(xml_root)
-            if self.label_of(node) == title and self.frame_of(node)
+        preview_nodes = [
+            node for node in xml_root.iter()
+            if node.attrib.get("type") == "XCUIElementTypeOther"
+            and (node.attrib.get("name") == "Preview" or node.attrib.get("label") == "Preview")
+            and node.attrib.get("visible", "").lower() == "true"
         ]
-        preview_candidates = {
-            frame for node in title_nodes
-            if (frame := self.measured_inset_ancestor_frame(xml_root, [node], app_frame)) is not None
-        }
-        largest_preview_area = max((frame[2] * frame[3] for frame in preview_candidates), default=0)
-        preview_frames = {frame for frame in preview_candidates if frame[2] * frame[3] == largest_preview_area}
-        self.record("event preview has a unique largest measured inset ancestor frame", len(preview_frames) == 1, str(sorted(preview_frames)))
-        preview_frame = next(iter(preview_frames)) if len(preview_frames) == 1 else None
+        self.record("native context preview container is unique and visible", len(preview_nodes) == 1, f"found {len(preview_nodes)}")
+        preview_frame = self.frame_of(preview_nodes[0]) if len(preview_nodes) == 1 else None
+        preview_titles = [
+            node for node in preview_nodes[0].iter()
+            if self.label_of(node) == title and node.attrib.get("visible", "").lower() == "true" and self.frame_of(node)
+        ] if len(preview_nodes) == 1 else []
+        self.record("native preview contains the visible event title", len(preview_titles) == 1, f"found {len(preview_titles)}")
+        if len(preview_titles) == 1 and preview_frame:
+            px, py, pw, ph = preview_frame
+            tx, ty, tw, th = self.frame_of(preview_titles[0])
+            preview_contains_title = px <= tx and py <= ty and px + pw >= tx + tw and py + ph >= ty + th
+        else:
+            preview_contains_title = False
+        self.record("measured preview container contains the event title", preview_contains_title, f"preview {preview_frame}; title {self.frame_of(preview_titles[0]) if len(preview_titles) == 1 else None}")
         menu_labels = ("Going", "Interested", "Share", "Directions")
         menu_nodes = {
             label: [node for node in self.accessible_nodes(xml_root) if self.label_of(node) == label and self.frame_of(node)]
