@@ -106,7 +106,14 @@ export function useChat(eventId: string, enabled = true) {
   // Realtime can miss messages: before the connection is up, after it drops, and while the app sleeps.
   // So refetch whenever it (re)connects and whenever the app comes back to the foreground.
   const catchUp = useCallback(() => {
-    void qc.invalidateQueries({ queryKey: chatKey(eventId) }, { cancelRefetch: false });
+    const queryKey = chatKey(eventId);
+    const wasFetching = qc.getQueryState(queryKey)?.fetchStatus === 'fetching';
+    const refresh = qc.invalidateQueries({ queryKey }, { cancelRefetch: false });
+    if (wasFetching) {
+      // An initial fetch with no cached data is reused even when cancelRefetch is true.
+      // Queue one more invalidation after it settles so reconnect cannot miss newer messages.
+      void refresh.then(() => qc.invalidateQueries({ queryKey }, { cancelRefetch: false }));
+    }
     if (focused.current) markRead();
   }, [eventId, qc, markRead]);
 

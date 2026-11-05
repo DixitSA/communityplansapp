@@ -21,7 +21,12 @@ const mock = api as unknown as Record<'sendFriendRequest' | 'respondFriendReques
 const clients = new Set<QueryClient>();
 
 function setup() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
+  });
   clients.add(client);
   client.setQueryData<PersonSearchResult[]>(friendKeys.search('may'), [{ ...person, friendship: 'incoming' }]);
   client.setQueryData<FriendRequest[]>(friendKeys.requests, [{ ...person, direction: 'incoming', createdAt: new Date() }]);

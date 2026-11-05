@@ -157,10 +157,13 @@ LAUNCH_ASSET_URL="$(node -e '
       const url = manifest.launchAsset?.url;
       if (typeof url !== "string") continue;
       const parsed = new URL(url);
-      if (parsed.protocol !== "http:" || parsed.hostname !== "localhost" || parsed.port !== "8093") {
-        throw new Error("launchAsset.url must use localhost:8093");
+      // Expo CLI intentionally advertises localhost as 127.0.0.1.
+      if (parsed.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname) || parsed.port !== "8093") {
+        throw new Error(`launchAsset.url must use loopback port 8093 (received ${parsed.origin})`);
       }
-      process.stdout.write(url);
+      // Keep the bundle path and query, using the same host as the successful Metro probe.
+      parsed.hostname = "localhost";
+      process.stdout.write(parsed.href);
       process.exit(0);
     } catch (error) {
       if (error instanceof SyntaxError) continue;

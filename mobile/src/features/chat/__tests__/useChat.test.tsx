@@ -35,7 +35,12 @@ const msg = (id: string, over: Partial<ChatMessage> = {}): ChatMessage => ({
 
 let handlers: ChatSubscription;
 const wrapper = ({ children }: { children: ReactNode }) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
+  });
   clients.add(client);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
@@ -128,6 +133,26 @@ describe('useChat', () => {
     await act(async () => handlers.onSubscribed?.());
     await waitFor(() => expect(ids(result.current.messages)).toEqual(['3', '2', '1']));
     expect(svc.getChatMessages).toHaveBeenCalledTimes(2);
+  });
+
+  it('catches up when the connection becomes ready before initial history resolves', async () => {
+    let resolveInitial!: (messages: ChatMessage[]) => void;
+    svc.getChatMessages.mockImplementationOnce(() => new Promise((resolve) => (resolveInitial = resolve)));
+    const { result } = await renderHook(() => useChat('e1'), { wrapper });
+    await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(1));
+
+    svc.getChatMessages.mockResolvedValueOnce([msg('3'), msg('2'), msg('1')]);
+    await act(async () => {
+      handlers.onSubscribed?.();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      resolveInitial([msg('2'), msg('1')]);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(ids(result.current.messages)).toEqual(['3', '2', '1']));
   });
 
   it('does not send empty text', async () => {
