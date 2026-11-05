@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 APP_ID = "com.dixitsa.yard"
-DEMO_NOTICE = "Demo mode: there is no account to sign out of."
+DEMO_ALERT = "No account to delete"
 
 
 class AppiumError(RuntimeError):
@@ -29,6 +29,7 @@ class WebDriver:
         self.app_id = app_id
         self.log_path = log_path
         self.session_id = ""
+        self.demo_verified = False
 
     def request(self, method: str, path: str, payload=None, timeout=30):
         url = self.base_url + path
@@ -240,6 +241,11 @@ class Flow:
         self.capture("feed.png")
 
     def settings_demo_preflight(self):
+        if self.driver.demo_verified:
+            # Same immutable bundle/config and Appium session; restarting the app
+            # cannot change its blank backend configuration. Keep the first proof.
+            self.record("demo guard verified earlier in this same native session", True)
+            return
         self.click("Settings")
         source = self.wait_source(
             lambda x: self.has_visible_exact(x, "Settings") and self.has_visible(x, "Who sees what"),
@@ -248,14 +254,22 @@ class Flow:
         self.record("Settings sheet opened", self.has_visible_exact(source, "Settings"))
         for _ in range(4):
             source = self.source()
-            if self.has_visible(source, DEMO_NOTICE):
+            if self.has_visible_exact(source, "Delete account"):
                 break
             self.driver.swipe("up")
-        source = self.wait_source(lambda x: self.has_visible(x, DEMO_NOTICE), "visible demo settings disclosure")
-        self.record("demo settings disclosure visible before mutation", self.has_visible(source, DEMO_NOTICE))
-        self.capture("demo-settings.png")
+        # The first tap never deletes anything: demo shows this alert; configured
+        # builds show a first confirmation. Never tap Continue or Delete my account.
+        self.click("Delete account")
+        source = self.wait_source(
+            lambda x: self.has_visible_exact(x, DEMO_ALERT) and self.has_visible(x, "demo mode"),
+            "native no-account demo alert",
+        )
+        self.record("native alert confirms demo mode before mutation", self.has_visible_exact(source, DEMO_ALERT))
+        self.capture("demo-guard-alert.png")
+        self.click("OK")
         self.click("Done")
-        self.wait_source(lambda x: self.has_visible(x, "Nearby") and not self.has_visible(x, DEMO_NOTICE), "feed after Settings")
+        self.wait_source(lambda x: self.has_visible(x, "Nearby") and not self.has_visible_exact(x, DEMO_ALERT), "feed after Settings")
+        self.driver.demo_verified = True
 
     def profile_name_field(self, timeout=30):
         deadline = time.monotonic() + timeout
