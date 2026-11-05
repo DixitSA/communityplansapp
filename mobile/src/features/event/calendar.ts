@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { isRunningInExpoGo } from 'expo';
 
 import type { EventDetail } from './types';
@@ -19,7 +19,13 @@ export function calendarEventDetails(event: EventDetail) {
   };
 }
 
-export type CalendarResult = 'saved' | 'canceled' | 'unavailable' | 'expoGoUnsupported' | 'error';
+export type CalendarResult =
+  | 'saved'
+  | 'canceled'
+  | 'unavailable'
+  | 'expoGoUnsupported'
+  | 'permissionDenied'
+  | 'error';
 
 /** Opens the system "new event" screen, pre-filled, without reading the user's calendar. */
 export async function addToCalendar(event: EventDetail): Promise<CalendarResult> {
@@ -31,6 +37,10 @@ export async function addToCalendar(event: EventDetail): Promise<CalendarResult>
     // SDK 58's package-root legacy export intentionally throws; use the explicit legacy path.
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep the native module lazy behind the web guard.
     const Calendar = require('expo-calendar/legacy') as typeof import('expo-calendar/legacy');
+    if (Platform.OS === 'ios' && Number.parseInt(String(Platform.Version), 10) < 17) {
+      const permission = await Calendar.requestCalendarPermissionsAsync();
+      if (!permission.granted) return 'permissionDenied';
+    }
     const result = await Calendar.createEventInCalendarAsync(calendarEventDetails(event));
     return result.action === 'canceled' ? 'canceled' : 'saved';
   } catch {
@@ -45,6 +55,8 @@ export async function addToCalendarWithAlert(event: EventDetail): Promise<void> 
     Alert.alert('Calendar not available here', 'Open yard on your iPhone to add this event to your calendar.');
   } else if (result === 'expoGoUnsupported') {
     Alert.alert('Calendar unavailable in Expo Go', 'Open this event in an installed yard build to add it to your calendar.');
+  } else if (result === 'permissionDenied') {
+    Alert.alert('Calendar access needed', 'Allow calendar access in Settings to add this event.');
   } else if (result === 'error') {
     Alert.alert("Couldn't open your calendar", 'Please try again.');
   }

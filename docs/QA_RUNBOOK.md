@@ -12,7 +12,7 @@ npm run lint
 npm test -- --runInBand
 ```
 
-Latest consolidated result: 64 suites / 427 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
+Latest consolidated result: 65 suites / 438 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
 
 ## Native iOS without a local Mac
 
@@ -69,7 +69,7 @@ For demo interaction tests without recompiling the native app:
 gh workflow run ios-native-recheck.yml --ref qa/ios-sweep-20261105 -f build_run_id=42016734035 -f appearance=dark
 ```
 
-The recheck validates the source run, archive and unchanged native build inputs, then refreshes embedded Hermes JavaScript/assets. Only in the disposable CI checkout, it changes `useGate.ts`'s `dev: __DEV__` argument to `dev: true` to allow in-memory demo routing in Release, records that exact diff, and restores the source immediately after bundling. It leaves the committed production guard and other development-only behavior intact. Metadata distinguishes native source SHA, JavaScript/probe SHA, bundle hashes and this instrumentation: results are **instrumented demo**, not production authentication sign-off. Profile, filters and Calendar run independently, so one failure does not suppress the others. No calendar event is saved. The first recheck is pending; authored tooling is not a passed native flow.
+The recheck validates the source run, archive and unchanged native build inputs, then refreshes embedded Hermes JavaScript/assets. Only in the disposable CI checkout, it changes `useGate.ts`'s `dev: __DEV__` argument to `dev: true` to allow in-memory demo routing in Release, records that exact diff, and restores the source immediately after bundling. It leaves the committed production guard and other development-only behavior intact. Metadata distinguishes native source SHA, JavaScript/probe SHA, bundle hashes and this instrumentation: results are **instrumented demo**, not production authentication sign-off. Profile, filters and Calendar run independently, so one failure does not suppress the others. No calendar event is saved. The first recheck reached and captured a correctly dark Feed; it did not complete profile/filter/Calendar assertions. AXBridge writes failed, so follow-up probes use source-verified HID swipes and keyboard entry. Both attempts and their outcomes stay in the checklist.
 
 ## Hosted staging checks
 

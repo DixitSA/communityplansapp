@@ -158,6 +158,7 @@ def main():
                 return json.loads(run(command, timeout=max(0.1, min(15, deadline - time.monotonic()))))
             except RuntimeError as exc:
                 transient = ("window-server frontmost returned no application object" in str(exc)
+                             or "did not respond to an accessibility request before it timed out" in str(exc)
                              or isinstance(exc.__cause__, subprocess.TimeoutExpired))
                 if not transient or time.monotonic() >= deadline:
                     raise
@@ -165,7 +166,9 @@ def main():
     def tap(text):
         ns = nodes_for(ax(), size); matches = [n for n in ns if label(n) == text]
         if len(matches) != 1: raise AssertionError(f"expected one visible {text!r}, found {len(matches)}")
-        f = fields(matches[0]); box = fields(f.get("frame", f.get("axframe", {})))
+        tap_node(matches[0], text)
+    def tap_node(node, text):
+        f = fields(node); box = fields(f.get("frame", f.get("axframe", {})))
         try:
             x = int(float(box["x"]) + float(box["width"]) / 2)
             y = int(float(box["y"]) + float(box["height"]) / 2)
@@ -175,6 +178,14 @@ def main():
         if not (0 <= x < sw and 0 <= y < sh):
             raise AssertionError(f"visible {text!r} center is outside {sw:g}x{sh:g} point screen")
         run(["idb", "ui", "tap", str(x), str(y), "--udid", a.udid, "--api", "hid"])
+    def scroll(direction):
+        # AXBridge scroll writes failed with kAXErrorFailure on iOS 26. Use the
+        # pinned idb CLI's HID swipe, measured in simulator screen points.
+        sw, sh = size
+        x = str(int(sw * .5))
+        start, end = (.84, .38) if direction == "down" else (.42, .82)
+        run(["idb", "ui", "swipe", x, str(int(sh * start)), x, str(int(sh * end)),
+             "--duration", ".5", "--udid", a.udid])
     def wait(pred, what, timeout=45):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
@@ -194,7 +205,7 @@ def main():
         (a.results_dir / "checklist.json").write_text(json.dumps({"passed": False, "flow": a.flow, "error": str(exc), "checks": checks}, indent=2), encoding="utf-8")
     try:
         run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
-        run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=30)
+        run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=60)
         if a.app_id == "host.exp.Exponent":
             run(["xcrun", "simctl", "openurl", a.udid, ROOT], timeout=30)
             for _ in range(3):
@@ -204,12 +215,12 @@ def main():
                 elif exact(ns, "Nearby"): break
         # Native launch already selects the anchored Feed. Avoid a redundant scheme handoff.
         data, ns = wait(lambda x: exact(x, "Nearby"), "demo feed")
-        record("feed opened", exact(ns, "Feed") and exact(ns, "Nearby")); save_shot("feed.png")
+        record("feed opened", exact(ns, "Feed") and exact(ns, "Nearby")); save_shot("feed.png"); save_ax("feed-ax.json", data)
         tap("Settings")
         for _ in range(4):
             data = ax(); ns = nodes_for(data, size)
             if has(ns, "Demo mode: there is no account to sign out of."): break
-            run(["idb", "ui", "scroll", "down", "--udid", a.udid])
+            scroll("down")
         data, ns = wait(lambda x: has(x, "Demo mode: there is no account to sign out of."), "demo preflight")
         record("demo preflight visible", True); tap("Done")
         _, ns = wait(lambda x: exact(x, "Nearby") and not has(x, "Demo mode: there is no account to sign out of."), "feed after Settings")
@@ -221,8 +232,13 @@ def main():
             record("profile name field/value available", bool(field and old), "field unavailable" if not old else "")
             new = old + " QA"
             record("ASCII name fits", len(new) <= 50 and new.isascii())
-            ident, key = (node_id(field), "AXUniqueId") if node_id(field) else ("Name", "AXLabel")
-            run(["idb", "ui", "set-value", ident, "--match-key", key, "--value", new, "--udid", a.udid])
+            # Use physical key events rather than the rejected AXBridge write path.
+            # Pinned idb 1.7.8 supports Command+A (USB HID key 4), then text replacement.
+            tap_node(field, "profile Name")
+            run(["idb", "ui", "key", "4", "--command", "--udid", a.udid])
+            run(["idb", "ui", "text", new, "--udid", a.udid])
+            _, ns = wait(lambda x: any(("edit-profile-name-input" in node_id(n) or label(n) == "Name")
+                                      and value(n) == new for n in x), "replaced profile name")
             _, ns = wait(lambda x: any(label(n) == "Save" and str(fields(n).get("enabled", "true")).lower() != "false" for n in x), "enabled Save")
             tap("Save")
             _, ns = wait(lambda x: has(x, new) and exact(x, "Edit profile") and not any(label(n) in ("Save", "Cancel") for n in x), "saved profile screen")
@@ -250,7 +266,7 @@ def main():
             for _ in range(4):
                 data = ax(); ns = nodes_for(data, size)
                 if exact(ns, "How yard works"): break
-                run(["idb", "ui", "scroll", "down", "--udid", a.udid])
+                scroll("down")
             _, ns = wait(lambda x: exact(x, "How yard works"), "Settings Help row")
             tap("How yard works")
             try:
@@ -263,7 +279,7 @@ def main():
             # Expo Go does not include expo-calendar. Exercise the native iOS editor only,
             # then cancel before any calendar write.
             run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
-            run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=30)
+            run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=60)
             _, ns = wait(lambda x: exact(x, "Nearby"), "feed after native relaunch")
             run(["xcrun", "simctl", "openurl", a.udid, "yard://event/ev-007"], timeout=30)
             data, ns = wait(lambda x: exact(x, "Rooftop Happy Hour"), "calendar probe event")
@@ -275,7 +291,7 @@ def main():
                 data = ax(); ns = nodes_for(data, size)
                 if exact(ns, "Add to Calendar"):
                     break
-                run(["idb", "ui", "scroll", "up", "--udid", a.udid])
+                scroll("up")
             _, ns = wait(lambda x: exact(x, "Add to Calendar"), "Add to Calendar action")
             tap("Add to Calendar")
             data, ns = wait(lambda x: exact(x, "New Event") and exact(x, "Cancel"), "native calendar editor")
