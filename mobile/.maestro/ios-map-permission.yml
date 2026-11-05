@@ -16,9 +16,8 @@ appId: host.exp.Exponent
 - assertVisible: '(Show map|Map)'
 
 - openLink: 'exp://localhost:8093/--/onboarding/location'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Use my location
     timeout: 30000

@@ -3,9 +3,8 @@ appId: host.exp.Exponent
 # Demo-only native menus. Reports and block actions affect in-memory fixtures.
 - runFlow: reset-demo.yml
 - openLink: 'exp://localhost:8093/--/event/ev-007'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Rooftop Happy Hour
     timeout: 30000
@@ -22,9 +21,8 @@ appId: host.exp.Exponent
 - takeScreenshot: event-report-menu-dismissed
 
 - openLink: 'exp://localhost:8093/--/user/u-maya'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: More options
     timeout: 30000
@@ -44,9 +42,8 @@ appId: host.exp.Exponent
 - tapOn: Block
 
 - openLink: 'exp://localhost:8093/--/blocked'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Unblock Maya Chen
     timeout: 30000
@@ -61,9 +58,8 @@ appId: host.exp.Exponent
 - tapOn: Done
 
 - openLink: 'exp://localhost:8093/--/settings'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: Settings
 - assertVisible: Let people find me by phone number
 - swipe:
@@ -74,6 +70,8 @@ appId: host.exp.Exponent
     element: How yard works
     direction: DOWN
 - tapOn: How yard works
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: How yard works
 - takeScreenshot: native-settings-help
 - tapOn: Done

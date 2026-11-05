@@ -3,9 +3,8 @@ appId: host.exp.Exponent
 # Independent iOS demo discovery checks; authored and YAML-validated, not executed.
 - runFlow: reset-demo.yml
 - openLink: 'exp://localhost:8093/--/search'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible:
       id: discovery-search-input
@@ -28,9 +27,8 @@ appId: host.exp.Exponent
 - takeScreenshot: discovery-search-people
 
 - openLink: 'exp://localhost:8093/--/friends'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - scrollUntilVisible:
     element: "Accept Noah Kim's friend request"
     direction: DOWN
@@ -44,9 +42,8 @@ appId: host.exp.Exponent
 - takeScreenshot: discovery-friend-accepted
 
 - openLink: 'exp://localhost:8093/--/profile'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Edit profile
     timeout: 30000
@@ -59,9 +56,8 @@ appId: host.exp.Exponent
 - tapOn: Done
 
 - openLink: 'exp://localhost:8093/--/filters'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: Filters
 - assertVisible: Nightlife
 - tapOn: Nightlife

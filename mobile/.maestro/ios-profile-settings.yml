@@ -56,6 +56,8 @@ appId: host.exp.Exponent
     direction: DOWN
 - takeScreenshot: native-settings-help-link
 - tapOn: How yard works
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: How yard works
 - scrollUntilVisible:
     element: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'

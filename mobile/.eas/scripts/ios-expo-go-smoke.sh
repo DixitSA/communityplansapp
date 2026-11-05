@@ -202,13 +202,37 @@ for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery 
 done
 log_phase "Running Maestro flows in one CLI session: ${QA_FLOWS:-default flow set}."
 FLOW_FAILURE=0
-if maestro test --format JUNIT --output "$RESULTS_DIR/junit.xml" --test-output-dir "$RESULTS_DIR" "${FLOW_FILES[@]}" 2>&1 | tee "$RESULTS_DIR/maestro-output.log"; then
+run_maestro() {
+  maestro test --format JUNIT --output "$RESULTS_DIR/junit.xml" --test-output-dir "$RESULTS_DIR" "${FLOW_FILES[@]}" 2>&1 | tee "$RESULTS_DIR/maestro-output.log"
+}
+if ! run_maestro; then
+  # Retry only a failed driver bootstrap, before any suite produced a result.
+  # Assertion failures remain failures, and the outer watchdog still bounds both attempts.
+  FLOW_STARTED=0
+  DRIVER_LOGS=0
+  while IFS= read -r -d '' driver_log; do
+    DRIVER_LOGS=$((DRIVER_LOGS + 1))
+    if grep -Fq 'TestSuiteInteractor.runFlow:  Running flow ' "$driver_log"; then
+      FLOW_STARTED=1
+    elif [[ "$?" -ne 1 ]]; then
+      # An unreadable log cannot establish that no flow started.
+      FLOW_STARTED=1
+    fi
+  done < <(find "$HOME/.maestro/tests" "$RESULTS_DIR" -type f -name maestro.log -print0 2>/dev/null)
+  if [[ ! -f "$RESULTS_DIR/junit.xml" && "$DRIVER_LOGS" -gt 0 && "$FLOW_STARTED" -eq 0 ]] && grep -Eq 'IOSDriverTimeoutException|iOS driver not ready in time' "$RESULTS_DIR/maestro-output.log"; then
+    mv "$RESULTS_DIR/maestro-output.log" "$RESULTS_DIR/maestro-bootstrap-attempt1.log"
+    log_phase 'Maestro driver bootstrap failed before flow results; retrying once with diagnostics preserved.'
+    if ! run_maestro; then FLOW_FAILURE=1; fi
+  else
+    FLOW_FAILURE=1
+  fi
+fi
+if [[ "$FLOW_FAILURE" -eq 0 ]]; then
   printf 'Maestro CLI: PASS\n' > "$RESULTS_DIR/flow-summary.txt"
   log_phase "Maestro finished successfully; per-flow results are in junit.xml."
 else
   printf 'Maestro CLI: FAIL\n' > "$RESULTS_DIR/flow-summary.txt"
   xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/maestro-failure.png" >/dev/null 2>&1 || true
-  FLOW_FAILURE=1
   log_phase "Maestro failed; per-flow results and diagnostics were collected."
 fi
 exit "$FLOW_FAILURE"

@@ -4,9 +4,8 @@ appId: host.exp.Exponent
 - runFlow: reset-demo.yml
 
 - openLink: 'exp://localhost:8093/--/event/ev-007'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Rooftop Happy Hour
     timeout: 30000
@@ -29,9 +28,8 @@ appId: host.exp.Exponent
 - assertVisible: '.*QA-MAESTRO-ROOFTOP-CORE-20261104-01.*'
 
 - openLink: 'exp://localhost:8093/--/settings'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: Settings
 - assertVisible: 'Interested and Down if friends go: Only you. Your friends never see these.'
 - assertVisible: 'Going: Your friends, and other people going to the same event.'
@@ -44,6 +42,8 @@ appId: host.exp.Exponent
     element: How yard works
     direction: DOWN
 - tapOn: How yard works
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: How yard works
 - scrollUntilVisible:
     element: 'Interested: Saves the event for later. Only you can see it.'
@@ -62,9 +62,8 @@ appId: host.exp.Exponent
 - tapOn: Done
 
 - openLink: 'exp://localhost:8093/--/profile'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Edit profile
     timeout: 30000

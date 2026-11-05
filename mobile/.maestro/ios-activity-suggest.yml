@@ -14,9 +14,8 @@ appId: host.exp.Exponent
 
 # Use a direct link only after leaving Activity, so no native modal is on top of Suggest.
 - openLink: 'exp://localhost:8093/--/suggest'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: Suggest an event
 - tapOn:
     id: suggest-title-input
@@ -60,9 +59,8 @@ appId: host.exp.Exponent
 - tapOn: Done
 
 - openLink: 'exp://localhost:8093/--/profile'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Settings
     timeout: 30000

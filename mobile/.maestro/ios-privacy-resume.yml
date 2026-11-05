@@ -3,9 +3,8 @@ appId: host.exp.Exponent
 # Demo privacy is in-memory. This checks navigation and app resume, not process-death persistence.
 - runFlow: reset-demo.yml
 - openLink: 'exp://localhost:8093/--/settings'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Settings
     timeout: 30000
@@ -15,18 +14,19 @@ appId: host.exp.Exponent
     duration: 500
 - assertVisible: Settings
 - scrollUntilVisible:
-    element: Let people find me by phone number
+    element:
+      id: settings-discoverable-by-phone-switch
     direction: DOWN
     centerElement: true
 - assertVisible:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: true
 - takeScreenshot: privacy-default-on
 - tapOn:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: true
 - assertVisible:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: false
 - takeScreenshot: privacy-toggled-off
 
@@ -45,11 +45,12 @@ appId: host.exp.Exponent
     duration: 500
 - assertVisible: Settings
 - scrollUntilVisible:
-    element: Let people find me by phone number
+    element:
+      id: settings-discoverable-by-phone-switch
     direction: DOWN
     centerElement: true
 - assertVisible:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: false
 
 # Background and foreground Expo Go without stopping its process.
@@ -60,16 +61,16 @@ appId: host.exp.Exponent
     visible: Settings
     timeout: 30000
 - assertVisible:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: false
 - takeScreenshot: privacy-after-resume
 
 # Restore the demo default for a clean follow-up flow.
 - tapOn:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: false
 - assertVisible:
-    text: Let people find me by phone number
+    id: settings-discoverable-by-phone-switch
     checked: true
 - takeScreenshot: privacy-restored
 - tapOn: Done

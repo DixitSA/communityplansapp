@@ -3,9 +3,8 @@ appId: host.exp.Exponent
 # Demo-only onboarding. Uses the local fake OTP (123456) and sends no email.
 - runFlow: reset-demo.yml
 - openLink: 'exp://localhost:8093/--/email'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: 'what’s your email\?'
     timeout: 30000

@@ -20,6 +20,11 @@ describe('app routing', () => {
     expect(result.getByLabelText('Nearby')).toBeTruthy();
   });
 
+  it('recovers from an unknown route to the Feed in demo mode', async () => {
+    const result = await renderRouter('./src/app', { initialUrl: '/qa-route-that-does-not-exist' });
+    expect(result.getByLabelText('Nearby')).toBeTruthy();
+  });
+
   // Demo mode (no Supabase keys in tests): every onboarding screen is open for screenshots.
   it.each([
     ['/welcome', 'Continue with email'],

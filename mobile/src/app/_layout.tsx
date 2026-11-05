@@ -87,7 +87,9 @@ function GatedStack() {
         <Stack.Screen name="settings" options={sheet([0.5, 1])} />
         <Stack.Screen name="blocked" options={sheet([0.6, 1])} />
         <Stack.Screen name="help" options={sheet([0.7, 1])} />
-        <Stack.Screen name="(dev)/gallery" />
+        <Stack.Protected guard={__DEV__}>
+          <Stack.Screen name="(dev)/gallery" />
+        </Stack.Protected>
       </Stack.Protected>
       <Stack.Protected guard={gateAllows(gate, 'onboarding')}>
         <Stack.Screen name="onboarding" />

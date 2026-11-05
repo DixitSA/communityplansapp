@@ -17,9 +17,8 @@ appId: host.exp.Exponent
 - assertVisible: Search
 - takeScreenshot: search
 - openLink: 'exp://localhost:8093/--/suggest'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - assertVisible: Suggest an event
 - tapOn:
     id: event-datetime-picker
@@ -31,3 +30,8 @@ appId: host.exp.Exponent
 - takeScreenshot: date-time-picker
 - tapOn: Done
 - assertVisible: Suggest an event
+- openLink: 'exp://localhost:8093/--/qa-route-that-does-not-exist'
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: Nearby
+- takeScreenshot: unknown-route-recovery

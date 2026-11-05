@@ -39,6 +39,10 @@ The separate `scripts/qa-staging.cjs` runner checks real auth and persistence. I
 node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop
 # Explicitly run the disposable-account tests:
 node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run
+# Include isolated RSVP, chat persistence, live delivery, deletion and membership checks:
+node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run --chat
 ```
+
+The chat option adds one uniquely identified event dated in 2099, outside the feed window. Assertions use the two disposable accounts; cleanup verifies that the exact event, messages, RSVPs, read markers and accounts are absent. Two consecutive runs passed all 30 checks after an initial live-delivery timeout; this is backend API evidence, not native UI evidence.
 
 Apple sign-in, real email delivery, push notifications, VoiceOver and a release build require separate evidence. Demo mode omits Sign out; Delete account explains that no account exists. The script defaults to all eleven suites; `QA_FLOWS` can select a space-separated subset for a focused recheck. Keep EAS selections small enough for its 15-minute watchdog.

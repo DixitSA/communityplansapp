@@ -3,9 +3,8 @@ appId: host.exp.Exponent
 # Deterministic friend relationship actions against reset in-memory demo fixtures.
 - runFlow: reset-demo.yml
 - openLink: 'exp://localhost:8093/--/friends'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible: Friends
     timeout: 30000
@@ -21,9 +20,8 @@ appId: host.exp.Exponent
 
 # Send Ana Reyes a request, keep it once, then cancel it.
 - openLink: 'exp://localhost:8093/--/search'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - extendedWaitUntil:
     visible:
       id: discovery-search-input
@@ -54,9 +52,8 @@ appId: host.exp.Exponent
 
 # Remove Maya Chen, verify cancellation preserves the friendship, then confirm removal.
 - openLink: 'exp://localhost:8093/--/friends'
-- tapOn:
-    text: Open
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - scrollUntilVisible:
     element: 'Maya Chen, @maya.chen'
     direction: DOWN

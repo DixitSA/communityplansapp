@@ -20,13 +20,15 @@ jobs:
     timeout-minutes: 50
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 4
       matrix:
         include:
           - group: layout
-            flows: ios-smoke ios-profile-settings ios-discovery ios-privacy-resume
+            flows: ios-profile-settings ios-discovery ios-smoke
           - group: menus
-            flows: ios-core-flows ios-native-menus ios-chat-actions ios-event-actions ios-friend-actions
+            flows: ios-core-flows ios-chat-actions ios-event-actions
+          - group: social
+            flows: ios-native-menus ios-friend-actions ios-privacy-resume
           - group: onboarding
             flows: ios-onboarding ios-activity-suggest ios-map-permission
     name: iOS demo QA (${{ matrix.group }})
@@ -71,8 +73,8 @@ jobs:
       - name: Install pinned Maestro CLI
         run: |
           archive="$RUNNER_TEMP/yard-maestro.zip"
-          curl --fail --location --retry 3 https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.6.1/maestro.zip --output "$archive"
-          printf '%s  %s\n' 3440825f514f537c6a96bcf5de995780c2a4a7f83a43208fdc95d4f1fecfad3b "$archive" | shasum -a 256 -c -
+          curl --fail --location --retry 3 https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.12.1/maestro.zip --output "$archive"
+          printf '%s  %s\n' 54dbb0716425626604973cbb374c585ca30272375d9ce15177a1152765ddd9d7 "$archive" | shasum -a 256 -c -
           unzip -q "$archive" -d "$RUNNER_TEMP/yard-maestro"
           maestro_bin="$(find "$RUNNER_TEMP/yard-maestro" -type f -path '*/bin/maestro' -print -quit)"
           test -n "$maestro_bin"

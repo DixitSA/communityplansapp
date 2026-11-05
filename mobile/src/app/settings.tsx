@@ -167,6 +167,7 @@ export default function SettingsSheet() {
               Let people find me by phone number
             </AppText>
             {discoverable.value !== undefined ? <Switch
+              testID="settings-discoverable-by-phone-switch"
               accessibilityLabel="Let people find me by phone number"
               value={discoverable.value}
               disabled={discoverable.isLoading || discoverable.isReadError || discoverable.isPending}
