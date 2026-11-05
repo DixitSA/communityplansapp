@@ -13,6 +13,8 @@ SOURCE_RUN_ID="${SOURCE_RUN_ID:?Set SOURCE_RUN_ID to the completed native build 
 SOURCE_BUILD_SHA="${SOURCE_BUILD_SHA:?Set SOURCE_BUILD_SHA from the source run metadata}"
 PROBE_SHA="${PROBE_SHA:?Set PROBE_SHA to the current checkout SHA}"
 SOURCE_RUN_CONCLUSION="${SOURCE_RUN_CONCLUSION:?Set SOURCE_RUN_CONCLUSION from the source run metadata}"
+DRIVER_ENGINE="${DRIVER_ENGINE:-appium}"
+APPIUM_SERVER_PID=""
 mkdir -p "$RESULTS_DIR"
 
 for dotenv_path in .env .env.*; do
@@ -32,6 +34,10 @@ collect_diagnostics() {
     GATE_INJECTION_APPLIED=0
   fi
   mkdir -p "$RESULTS_DIR"
+  if [[ -n "$APPIUM_SERVER_PID" ]] && kill -0 "$APPIUM_SERVER_PID" 2>/dev/null; then
+    kill -TERM "$APPIUM_SERVER_PID" 2>/dev/null || true
+    wait "$APPIUM_SERVER_PID" 2>/dev/null || true
+  fi
   if [[ -n "$SIMULATOR_ID" ]]; then
     xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/simulator-final.png" >/dev/null 2>&1 || true
     xcrun simctl terminate "$SIMULATOR_ID" "$APP_ID" >/dev/null 2>&1 || true
@@ -56,6 +62,11 @@ esac
 case "$SOURCE_RUN_CONCLUSION" in
   success|failure) ;;
   *) echo "Refusing source run conclusion: $SOURCE_RUN_CONCLUSION" >&2; exit 2 ;;
+esac
+
+case "$DRIVER_ENGINE" in
+  appium|idb) ;;
+  *) echo "Unsupported native automation engine: $DRIVER_ENGINE" >&2; exit 2 ;;
 esac
 
 case "$ARTIFACT_ZIP" in
@@ -290,20 +301,59 @@ sleep 10
 xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/native-app-first-launch.png"
 printf '%s\n' '- Launched app directly and captured first-launch screenshot: PASS' >> "$RESULTS_DIR/checklist.txt"
 
-log_phase 'Running profile, filters and calendar IDB probes separately against the reused native app.'
 FLOW_FAILURES=0
-for flow in profile filters calendar; do
-  flow_dir="$RESULTS_DIR/$flow"
-  mkdir -p "$flow_dir"
-  printf '[%s] Starting IDB flow %s.\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$flow" | tee -a "$RESULTS_DIR/run.log"
-  if python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$flow_dir" --app-id "$APP_ID" --flow "$flow"; then
-    printf '%s\n' "- IDB $flow flow: PASS" | tee -a "$RESULTS_DIR/checklist.txt"
+if [[ "$DRIVER_ENGINE" == 'appium' ]]; then
+  : "${APPIUM_BIN:?Appium engine selected but APPIUM_BIN is unset}"
+  : "${APPIUM_HOME:?Appium engine selected but APPIUM_HOME is unset}"
+  log_phase 'Starting the Appium server on loopback for native XCTest UI automation.'
+  APPIUM_HOME="$APPIUM_HOME" "$APPIUM_BIN" server \
+    --address 127.0.0.1 --port 4723 --base-path / \
+    --log "$RESULTS_DIR/appium-server.log" --log-level info --log-timestamp \
+    > "$RESULTS_DIR/appium-server-stdout.log" 2>&1 &
+  APPIUM_SERVER_PID=$!
+  appium_ready=0
+  for _ in $(seq 1 60); do
+    if ! kill -0 "$APPIUM_SERVER_PID" 2>/dev/null; then
+      echo 'Appium server exited before becoming ready.' >&2
+      cat "$RESULTS_DIR/appium-server-stdout.log" >&2 || true
+      exit 1
+    fi
+    if curl --silent --show-error --fail --max-time 2 http://127.0.0.1:4723/status \
+      > "$RESULTS_DIR/appium-status.json" 2>/dev/null; then
+      appium_ready=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$appium_ready" -ne 1 ]]; then
+    echo 'Appium server did not become ready on loopback within 60 seconds.' >&2
+    exit 1
+  fi
+  printf '%s\n' '- Appium server bound to 127.0.0.1; XCTest idling disabled for this probe, app performance not validated: PASS' >> "$RESULTS_DIR/checklist.txt"
+  if python3 scripts/qa-appium.py --udid "$SIMULATOR_ID" --app-id "$APP_ID" \
+    --server-url http://127.0.0.1:4723 --appearance "$SIMULATOR_APPEARANCE" \
+    --results-dir "$RESULTS_DIR/appium"; then
+    printf '%s\n' '- Appium profile, filters, and calendar flows: PASS' | tee -a "$RESULTS_DIR/checklist.txt"
   else
     flow_status=$?
-    printf '%s\n' "- IDB $flow flow: FAIL (exit $flow_status; see $flow/)" | tee -a "$RESULTS_DIR/checklist.txt"
+    printf '%s\n' "- Appium flow group: FAIL (exit $flow_status; see appium/)" | tee -a "$RESULTS_DIR/checklist.txt"
     FLOW_FAILURES=1
   fi
-done
+else
+  log_phase 'Running profile, filters and calendar IDB probes separately against the reused native app.'
+  for flow in profile filters calendar; do
+    flow_dir="$RESULTS_DIR/$flow"
+    mkdir -p "$flow_dir"
+    printf '[%s] Starting IDB flow %s.\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$flow" | tee -a "$RESULTS_DIR/run.log"
+    if python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$flow_dir" --app-id "$APP_ID" --flow "$flow"; then
+      printf '%s\n' "- IDB $flow flow: PASS" | tee -a "$RESULTS_DIR/checklist.txt"
+    else
+      flow_status=$?
+      printf '%s\n' "- IDB $flow flow: FAIL (exit $flow_status; see $flow/)" | tee -a "$RESULTS_DIR/checklist.txt"
+      FLOW_FAILURES=1
+    fi
+  done
+fi
 if [[ "$FLOW_FAILURES" -ne 0 ]]; then
   printf 'Native simulator recheck: FAIL\n' > "$RESULTS_DIR/summary.txt"
   exit 1

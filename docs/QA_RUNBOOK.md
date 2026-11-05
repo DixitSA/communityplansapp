@@ -29,14 +29,13 @@ gh workflow run ios-qa.yml --ref qa/ios-sweep-20261105 -f group=layout
 |---|---|
 | `layout` | Profile save/reopen, discovery/filters, tabs and appearance smoke |
 | `menus` | Core RSVP/chat, chat deletion/leave, event actions |
-| `event-actions` | Focused retry of event Undo, sharing, invitation and calendar |
 | `social` | Report/block menus, friendship actions, privacy/resume |
 | `onboarding` | Email/demo onboarding, suggestions/activity, location/map/city |
 | `navigation` | Event-card long-press menu and dismissal |
 | `event-actions` | Focused share/invite and Expo Go Calendar feedback |
 | `event-undo` | Isolated five-second Undo toast check; manual only, excluded from `all` |
 | `idb` | Independent AXBridge/HID probe: demo disclosure, profile save/reopen, filter selection/Clear/Apply, Help |
-| `all` | All groups |
+| `all` | Six main groups; excludes the isolated `event-undo` timing probe |
 
 Maestro is pinned to 2.12.1. The independent IDB toolset is pinned to Meta's 1.7.8 formula revision. IDB avoids the XCTest UI runner; its first attempt stopped during companion startup, so installation alone is not a native pass. Both tools save diagnostic artifacts.
 
@@ -66,10 +65,12 @@ The IDB probe accepts `--flow profile`, `--flow filters`, or `--flow calendar` f
 For demo interaction tests without recompiling the native app:
 
 ```sh
-gh workflow run ios-native-recheck.yml --ref qa/ios-sweep-20261105 -f build_run_id=42016734035 -f appearance=dark
+gh workflow run ios-native-recheck.yml --ref qa/ios-sweep-20261105 -f build_run_id=42016734035 -f appearance=dark -f engine=appium
 ```
 
-The recheck validates the source run, archive and unchanged native build inputs, then refreshes embedded Hermes JavaScript/assets. Only in the disposable CI checkout, it changes `useGate.ts`'s `dev: __DEV__` argument to `dev: true` to allow in-memory demo routing in Release, records that exact diff, and restores the source immediately after bundling. It leaves the committed production guard and other development-only behavior intact. Metadata distinguishes native source SHA, JavaScript/probe SHA, bundle hashes and this instrumentation: results are **instrumented demo**, not production authentication sign-off. Profile, filters and Calendar run independently, so one failure does not suppress the others. No calendar event is saved. The first recheck reached and captured a correctly dark Feed; it did not complete profile/filter/Calendar assertions. AXBridge writes failed, so follow-up probes use source-verified HID swipes and keyboard entry. Both attempts and their outcomes stay in the checklist.
+The recheck validates the source run, archive and unchanged native build inputs, then refreshes embedded Hermes JavaScript/assets. Only in the disposable CI checkout, it changes `useGate.ts`'s `dev: __DEV__` argument to `dev: true` to allow in-memory demo routing in Release, records that exact diff, and restores the source immediately after bundling. It leaves the committed production guard and other development-only behavior intact. Metadata distinguishes native source SHA, JavaScript/probe SHA, bundle hashes and this instrumentation: results are **instrumented demo**, not production authentication sign-off. Profile, filters and Calendar run independently, so one failure does not suppress the others. No calendar event is saved. The first recheck reached and captured a correctly dark Feed; it did not complete profile/filter/Calendar assertions. AXBridge writes failed, so follow-up probes use source-verified HID swipes and keyboard entry. Recheck `42023956161` executed HID swipes but again timed out on AX reads before feature assertions. Both attempts and their outcomes stay in the checklist; further IDB retries are paused.
+
+The recheck now supports `engine=appium` (default) or `engine=idb`. Appium 3.9.0 with XCUITest driver 12.22.8 uses one session on the selected simulator, a loopback-only server, and separate profile/filter/Calendar cases. It disables the driver idle wait with `waitForIdleTimeout=0`; a pass therefore does **not** validate performance or idle behavior. It preserves normal OS motion settings, records command timings/capabilities and saves per-flow checklists, screenshots and page sources. The workflow has a 25-minute job limit and a 20-minute probe watchdog. Driver setup or session startup alone is not a flow pass. [Appium capability reference](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/).
 
 ## Hosted staging checks
 
