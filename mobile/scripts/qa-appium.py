@@ -240,11 +240,14 @@ class Flow:
         return contains and (aw > nw or ah > nh)
 
     @classmethod
-    def accessible_nodes(cls, source: str):
-        try:
-            root = ET.fromstring(source)
-        except ET.ParseError as exc:
-            raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
+    def accessible_nodes(cls, source):
+        if isinstance(source, ET.Element):
+            root = source
+        else:
+            try:
+                root = ET.fromstring(source)
+            except ET.ParseError as exc:
+                raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
         parents = {child: parent for parent in root.iter() for child in parent}
         result = []
         for node in root.iter():
@@ -271,6 +274,42 @@ class Flow:
             return tuple(float(node.attrib[key]) for key in ("x", "y", "width", "height"))
         except (KeyError, ValueError):
             return None
+
+    @classmethod
+    def measured_inset_ancestor_frame(cls, root, required_nodes, app_frame):
+        """Find the largest common ancestor containing nodes inside the app's side bounds."""
+        if not required_nodes or not app_frame:
+            return None
+        required_frames = [cls.frame_of(node) for node in required_nodes]
+        if not all(required_frames):
+            return None
+        parents = {child: parent for parent in root.iter() for child in parent}
+        ax, ay, aw, ah = app_frame
+        ancestor_lists = []
+        for node in required_nodes:
+            ancestors = []
+            parent = parents.get(node)
+            while parent is not None:
+                ancestors.append(parent)
+                parent = parents.get(parent)
+            ancestor_lists.append(ancestors)
+        common = set(ancestor_lists[0]).intersection(*(set(items) for items in ancestor_lists[1:]))
+        union_x = min(frame[0] for frame in required_frames)
+        union_y = min(frame[1] for frame in required_frames)
+        union_right = max(frame[0] + frame[2] for frame in required_frames)
+        union_bottom = max(frame[1] + frame[3] for frame in required_frames)
+        union_area = (union_right - union_x) * (union_bottom - union_y)
+        candidates = set()
+        for node in common:
+            frame = cls.frame_of(node)
+            if not frame:
+                continue
+            x, y, width, height = frame
+            contains_nodes = x <= union_x and y <= union_y and x + width >= union_right and y + height >= union_bottom
+            inset = x > ax and x + width < ax + aw and y >= ay and y + height <= ay + ah
+            if contains_nodes and inset and width * height > union_area:
+                candidates.add(frame)
+        return max(candidates, key=lambda frame: frame[2] * frame[3]) if candidates else None
 
     def quick_plan_entries(self, source: str):
         try:
@@ -629,10 +668,6 @@ class Flow:
         qx, qy, qw, qh = quick_frame
         outside_quick_plan = not (qx <= center[0] <= qx + qw and qy <= center[1] <= qy + qh)
         self.record("long-press center lies outside quick-plan sibling", outside_quick_plan, f"center {center}; quick-plan {quick_frame}")
-        map_toggles = [n for n in self.accessible_nodes(source) if self.label_of(n) == "Show map"]
-        self.record("feed map-toggle frame available before long press", len(map_toggles) == 1, f"found {len(map_toggles)}")
-        toggle_frame = self.frame_of(map_toggles[0])
-        self.record("feed map-toggle frame is measurable", toggle_frame is not None)
         self.capture("context-menu-before.png")
         self.driver.execute_mobile("touchAndHold", {
             "x": center[0],
@@ -644,18 +679,56 @@ class Flow:
             "event card context menu actions",
         )
         self.record("card menu exposes Going, Interested, Share, and Directions", True)
+        (self.root / "context-menu-open-page-source.xml").write_text(source, encoding="utf-8")
         self.capture("context-menu-open.png")
-        menu_labels = ("Going", "Interested", "Share", "Directions")
-        menu_frames = [
-            self.frame_of(node) for node in self.accessible_nodes(source)
-            if self.label_of(node) in menu_labels
+        xml_root = ET.fromstring(source)
+        app_frames = {
+            self.frame_of(node) for node in xml_root.iter()
+            if node.attrib.get("type") == "XCUIElementTypeApplication"
+            and node.attrib.get("visible", "").lower() == "true"
+            and self.frame_of(node)
+        }
+        self.record("native application frame is unique in captured source", len(app_frames) == 1, str(sorted(app_frames)))
+        app_frame = next(iter(app_frames)) if len(app_frames) == 1 else None
+        title_nodes = [
+            node for node in self.accessible_nodes(xml_root)
+            if self.label_of(node) == title and self.frame_of(node)
         ]
-        menu_frames = [frame for frame in menu_frames if frame]
-        self.record("context-menu action frames available for safe dismissal", len(menu_frames) == len(menu_labels), f"found {len(menu_frames)} of {len(menu_labels)}")
-        tx, ty, tw, th = toggle_frame
-        tap_point = (tx + tw / 2, ty + th / 2)
-        outside_menu = all(not (mx <= tap_point[0] <= mx + mw and my <= tap_point[1] <= my + mh) for mx, my, mw, mh in menu_frames)
-        self.record("observed map-toggle point is outside menu action bounds", outside_menu, f"tap point {tap_point}")
+        preview_candidates = {
+            frame for node in title_nodes
+            if (frame := self.measured_inset_ancestor_frame(xml_root, [node], app_frame)) is not None
+        }
+        largest_preview_area = max((frame[2] * frame[3] for frame in preview_candidates), default=0)
+        preview_frames = {frame for frame in preview_candidates if frame[2] * frame[3] == largest_preview_area}
+        self.record("event preview has a unique largest measured inset ancestor frame", len(preview_frames) == 1, str(sorted(preview_frames)))
+        preview_frame = next(iter(preview_frames)) if len(preview_frames) == 1 else None
+        menu_labels = ("Going", "Interested", "Share", "Directions")
+        menu_nodes = {
+            label: [node for node in self.accessible_nodes(xml_root) if self.label_of(node) == label and self.frame_of(node)]
+            for label in menu_labels
+        }
+        self.record("context-menu exposes one measured control per action", all(len(menu_nodes[label]) == 1 for label in menu_labels), ", ".join(f"{label}:{len(menu_nodes[label])}" for label in menu_labels))
+        if not all(len(menu_nodes[label]) == 1 for label in menu_labels):
+            raise AssertionError("Context menu does not expose exactly one observed control for each expected action")
+        action_nodes = [menu_nodes[label][0] for label in menu_labels]
+        menu_frame = self.measured_inset_ancestor_frame(xml_root, action_nodes, app_frame)
+        self.record("context menu has a measured inset ancestor frame", menu_frame is not None, str(menu_frame))
+        wx, wy, ww, wh = app_frame if app_frame else (0, 0, 0, 0)
+        tap_point = None
+        outside_overlays = False
+        if preview_frame and menu_frame and app_frame:
+            gutter_right = min(preview_frame[0], menu_frame[0])
+            px = (wx + gutter_right) / 2
+            py = wy + wh / 2
+            tap_point = (px, py)
+            def contains(frame):
+                fx, fy, fw, fh = frame
+                return fx <= px <= fx + fw and fy <= py <= fy + fh
+            in_window = wx <= px <= wx + ww and wy <= py <= wy + wh
+            outside_overlays = in_window and not contains(preview_frame) and not contains(menu_frame)
+        self.record("measured left-gutter point is outside preview and context-menu containers", outside_overlays, f"point {tap_point}; preview {preview_frame}; menu {menu_frame}; app {app_frame}")
+        if not outside_overlays or tap_point is None:
+            raise AssertionError("Could not ground a safe blank-background dismissal point outside the preview and menu")
         self.driver.execute_mobile("tap", {"x": tap_point[0], "y": tap_point[1]})
         source = self.wait_source(
             lambda x: self.has_visible(x, "Nearby") and not any(self.has_visible_exact(x, label) for label in ("Going", "Interested", "Share", "Directions")),
