@@ -2,6 +2,10 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 
 import type { AuthSession, MyProfile } from '@/lib/api';
 
+// The first renderRouter in a file loads every route module, which takes ~2.5s on an idle machine
+// and over 5s (Jest's default test timeout) when the machine is busy. Later renders take ~0.1s.
+jest.setTimeout(30_000);
+
 // This file pretends Supabase is configured, so the root layout's guards are live.
 jest.mock('@/lib/env', () => ({ isBackendConfigured: true, backendHost: () => 'test.supabase.co', supabaseUrl: '', supabaseAnonKey: '' }));
 jest.mock('@/design/components/Skeleton', () => ({ Skeleton: () => null }));

@@ -24,7 +24,8 @@ const listInterests = api.listInterests as jest.Mock;
 const getFeed = api.getFeedRange as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // gcTime Infinity: no 5-minute cache-cleanup timers left running after the test (they kept Jest workers alive).
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
@@ -67,7 +68,8 @@ describe('useFeedEvents scope', () => {
     await waitFor(() => expect(getFeed).toHaveBeenCalled());
     expect(getFeed.mock.calls[0][0]).toMatchObject({ mode: 'nearby' });
 
-    act(() => useFiltersStore.getState().setScope('friends'));
+    // Awaited: Testing Library's act is async, and an un-awaited one left the hook subscribed after the test.
+    await act(async () => useFiltersStore.getState().setScope('friends'));
     await waitFor(() => expect(getFeed.mock.calls.some(([p]) => p.mode === 'friends')).toBe(true));
     expect(result.current.isError).toBe(false);
   });
