@@ -78,7 +78,8 @@ class WebDriver:
             "appium:isHeadless": True,
             # This disables XCTest idling checks only; app performance/idle behavior is not measured.
             "appium:waitForIdleTimeout": 0,
-            "appium:wdaLaunchTimeout": 120000,
+            "appium:wdaLaunchTimeout": 360000,
+            "appium:showXcodeLog": True,
             "appium:wdaStartupRetries": 1,
             "appium:wdaStartupRetryInterval": 5000,
             "appium:newCommandTimeout": 120,
