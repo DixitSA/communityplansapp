@@ -17,6 +17,11 @@ on:
         type: choice
         default: dark
         options: [light, dark]
+      engine:
+        description: 'Native UI automation engine'
+        type: choice
+        default: appium
+        options: [appium, idb]
 
 permissions:
   contents: read
@@ -42,6 +47,7 @@ jobs:
       EXPO_TOKEN: ''
       SOURCE_RUN_ID: ${{ inputs.build_run_id || '42016734035' }}
       SIMULATOR_APPEARANCE: ${{ inputs.appearance || 'dark' }}
+      DRIVER_ENGINE: ${{ inputs.engine || 'appium' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -166,6 +172,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Install idb 1.7.8 from the pinned Meta tap revision
+        if: env.DRIVER_ENGINE == 'idb'
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: |
@@ -184,7 +191,42 @@ jobs:
               assert installed.get(name) == '1.7.8', (name, installed.get(name))
           PY
 
-      - name: Reuse native binary, QA-rebundle JavaScript, and run focused IDB probes
+      - name: Install Appium 3.9.0 and XCUITest driver 12.22.8
+        if: env.DRIVER_ENGINE == 'appium'
+        run: |
+          set -euo pipefail
+          appium_dir="$RUNNER_TEMP/yard-native-appium-cli"
+          appium_home="$RUNNER_TEMP/yard-native-appium-home"
+          mkdir -m 700 "$appium_dir" "$appium_home"
+          cd "$appium_dir"
+          npm init --yes > "$GITHUB_WORKSPACE/mobile/.maestro/native-recheck-results/appium-npm-init.log"
+          npm install --no-audit --no-fund --save-exact appium@3.9.0
+          node - "$appium_dir/node_modules/appium/package.json" <<'NODE'
+          const fs = require('node:fs');
+          const p = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (p.version !== '3.9.0') throw new Error(`Unexpected Appium CLI version: ${p.version}`);
+          NODE
+          APPIUM_HOME="$appium_home" node_modules/.bin/appium driver install xcuitest@12.22.8 \
+            2>&1 | tee "$GITHUB_WORKSPACE/mobile/.maestro/native-recheck-results/appium-driver-install.log"
+          APPIUM_HOME="$appium_home" node_modules/.bin/appium driver list --installed \
+            2>&1 | tee "$GITHUB_WORKSPACE/mobile/.maestro/native-recheck-results/appium-driver-version.txt"
+          python3 - "$appium_home" <<'PY'
+          import json, sys
+          from pathlib import Path
+          matches = []
+          for manifest in Path(sys.argv[1]).rglob('package.json'):
+              try:
+                  package = json.loads(manifest.read_text())
+              except (OSError, json.JSONDecodeError):
+                  continue
+              if package.get('name') == 'appium-xcuitest-driver':
+                  matches.append(package.get('version'))
+          assert matches == ['12.22.8'], f'Unexpected installed XCUITest driver manifests: {matches}'
+          print(f'Validated Appium XCUITest driver {matches[0]}.')
+          PY
+          printf 'APPIUM_HOME=%s\nAPPIUM_BIN=%s\n' "$appium_home" "$appium_dir/node_modules/.bin/appium" >> "$GITHUB_ENV"
+
+      - name: Reuse native binary, QA-rebundle JavaScript, and run selected UI probes
         env:
           SOURCE_BUILD_SHA: ${{ steps.source.outputs.source_sha }}
           SOURCE_RUN_CONCLUSION: ${{ steps.source.outputs.source_conclusion }}
