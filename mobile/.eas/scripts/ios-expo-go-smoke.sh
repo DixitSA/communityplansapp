@@ -5,6 +5,17 @@ RESULTS_DIR=".maestro/results"
 mkdir -p "$RESULTS_DIR"
 SIMULATOR_ID=""
 
+for dotenv in .env .env.*; do
+  if [[ -e "$dotenv" || -L "$dotenv" ]]; then
+    printf 'Refusing QA startup while dotenv file is present: %s\n' "${dotenv##*/}" >&2
+    exit 1
+  fi
+done
+if [[ -n "${EXPO_PUBLIC_SUPABASE_URL:-}" || -n "${EXPO_PUBLIC_SUPABASE_ANON_KEY:-}" ]]; then
+  echo 'Refusing QA startup with Supabase environment values set.' >&2
+  exit 1
+fi
+
 log_phase() {
   printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
 }
@@ -134,10 +145,51 @@ if [ "$MANIFEST_STATUS" != "200" ] || ! grep -qi '^content-type: multipart/mixed
   exit 1
 fi
 log_phase 'Expo Go signed-manifest request returned HTTP 200 multipart/mixed.'
+
+LAUNCH_ASSET_URL="$(node -e '
+  const fs = require("node:fs");
+  const body = fs.readFileSync(process.argv[1], "utf8");
+  for (const line of body.split(/\r?\n/)) {
+    const candidate = line.trim();
+    if (!candidate.startsWith("{") || !candidate.endsWith("}")) continue;
+    try {
+      const manifest = JSON.parse(candidate);
+      const url = manifest.launchAsset?.url;
+      if (typeof url !== "string") continue;
+      const parsed = new URL(url);
+      if (parsed.protocol !== "http:" || parsed.hostname !== "localhost" || parsed.port !== "8093") {
+        throw new Error("launchAsset.url must use localhost:8093");
+      }
+      process.stdout.write(url);
+      process.exit(0);
+    } catch (error) {
+      if (error instanceof SyntaxError) continue;
+      throw error;
+    }
+  }
+  throw new Error("No JSON manifest part with launchAsset.url was found");
+' /tmp/yard-manifest.body)"
+log_phase 'Prewarming the signed-manifest launch asset.'
+PREWARM_START=$SECONDS
+curl --fail --silent --show-error --max-time 600 "$LAUNCH_ASSET_URL" -o /tmp/yard-ios-prewarm.bundle
+PREWARM_SECONDS=$((SECONDS - PREWARM_START))
+PREWARM_BYTES="$(wc -c < /tmp/yard-ios-prewarm.bundle | tr -d ' ')"
+log_phase "Launch bundle prewarmed in ${PREWARM_SECONDS}s (${PREWARM_BYTES} bytes)."
+if LC_ALL=C grep -aFq 'lvgmelaavgmyjjdggzop.supabase.co' /tmp/yard-ios-prewarm.bundle; then
+  echo 'Refusing QA bundle containing the staging Supabase host.' >&2
+  exit 1
+else
+  BUNDLE_SCAN_STATUS=$?
+  if [[ "$BUNDLE_SCAN_STATUS" -ne 1 ]]; then
+    echo 'Unable to scan the prewarmed bundle for the staging host.' >&2
+    exit "$BUNDLE_SCAN_STATUS"
+  fi
+fi
+log_phase 'Launch bundle staging-host guard passed.'
 log_phase 'Metro is ready; each Maestro suite will open Expo Go once.'
 
 FLOW_FILES=()
-for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery ios-onboarding ios-map-permission ios-profile-settings ios-chat-actions ios-event-actions ios-activity-suggest ios-privacy-resume}; do
+for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery ios-onboarding ios-map-permission ios-profile-settings ios-chat-actions ios-event-actions ios-friend-actions ios-activity-suggest ios-privacy-resume}; do
   flow_file=".maestro/$flow.yml"
   if [ ! -f "$flow_file" ]; then
     log_phase "Configured Maestro flow is missing: $flow_file"

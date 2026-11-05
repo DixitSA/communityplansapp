@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { PrimaryButton, TextField } from '@/design';
 import { Scaffold } from '@/features/onboarding/Scaffold';
@@ -8,10 +8,18 @@ import { isPlausibleEmail } from '@/lib/validation';
 
 export default function EmailScreen() {
   const router = useRouter();
+  const mounted = useRef(false);
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const valid = isPlausibleEmail(email);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const send = async () => {
     if (!valid || busy) return;
@@ -19,11 +27,11 @@ export default function EmailScreen() {
     setError(null);
     try {
       await api.sendEmailCode(email);
-      router.push({ pathname: '/verify', params: { email: email.trim().toLowerCase() } });
+      if (mounted.current) router.push({ pathname: '/verify', params: { email: email.trim().toLowerCase() } });
     } catch (err) {
-      setError(mapAuthError(errorCode(err)));
+      if (mounted.current) setError(mapAuthError(errorCode(err)));
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   };
 

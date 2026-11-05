@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,8 +17,11 @@ export default function WelcomeScreen() {
   const { afterSignIn } = useSignInFlow();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const appleSignInInFlight = useRef(false);
 
   const signInWithApple = async () => {
+    if (appleSignInInFlight.current) return;
+    appleSignInInFlight.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -30,6 +33,7 @@ export default function WelcomeScreen() {
       // Closing Apple's sheet is a choice, not an error.
       if (code !== 'cancelled') setError(mapAuthError(code));
     } finally {
+      appleSignInInFlight.current = false;
       setBusy(false);
     }
   };

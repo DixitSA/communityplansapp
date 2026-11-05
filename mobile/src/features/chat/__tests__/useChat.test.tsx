@@ -19,6 +19,7 @@ jest.mock('@/lib/chat', () => ({
 }));
 
 const svc = chatService as unknown as Record<string, jest.Mock>;
+const clients = new Set<QueryClient>();
 
 const msg = (id: string, over: Partial<ChatMessage> = {}): ChatMessage => ({
   id,
@@ -35,8 +36,14 @@ const msg = (id: string, over: Partial<ChatMessage> = {}): ChatMessage => ({
 let handlers: ChatSubscription;
 const wrapper = ({ children }: { children: ReactNode }) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  clients.add(client);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
+
+afterEach(() => {
+  for (const client of clients) client.clear();
+  clients.clear();
+});
 
 beforeEach(() => {
   jest.clearAllMocks();

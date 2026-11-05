@@ -18,9 +18,11 @@ jest.mock('../../profile/useMyProfile', () => ({ MY_PROFILE_KEY: 'my-profile' })
 
 const person = { id: 'u1', username: 'maya', displayName: 'Maya', avatarUrl: null };
 const mock = api as unknown as Record<'sendFriendRequest' | 'respondFriendRequest' | 'removeFriend', jest.Mock>;
+const clients = new Set<QueryClient>();
 
 function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  clients.add(client);
   client.setQueryData<PersonSearchResult[]>(friendKeys.search('may'), [{ ...person, friendship: 'incoming' }]);
   client.setQueryData<FriendRequest[]>(friendKeys.requests, [{ ...person, direction: 'incoming', createdAt: new Date() }]);
   const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
@@ -29,6 +31,10 @@ function setup() {
 
 describe('useFriendAction', () => {
   beforeEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    for (const client of clients) client.clear();
+    clients.clear();
+  });
 
   it('moves the search row and request list before the server answers, and celebrates an accept', async () => {
     const { client, wrapper } = setup();

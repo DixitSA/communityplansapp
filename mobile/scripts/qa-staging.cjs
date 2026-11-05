@@ -12,6 +12,7 @@ const EXPECTED_NAME = 'yard-staging';
 const ROOT = path.resolve(__dirname, '../..');
 const ENV_FILE = path.join(ROOT, 'mobile', '.env.development');
 const run = process.argv.includes('--run');
+const chatMode = process.argv.includes('--chat');
 const refIndex = process.argv.indexOf('--project-ref');
 const suppliedRef = refIndex >= 0 ? process.argv[refIndex + 1] : undefined;
 
@@ -20,8 +21,9 @@ function die(message) {
   process.exit(2);
 }
 
-if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run]');
+if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat]]');
 if (suppliedRef !== EXPECTED_REF) die('Refused: project ref does not match the guarded staging project.');
+if (chatMode && !run) die('Refused: --chat requires --run and the guarded staging project.');
 
 function envValue(name) {
   if (process.env[name]) return process.env[name];
@@ -78,7 +80,7 @@ if (host !== `${suppliedRef}.supabase.co`) die('Refused: app URL does not match 
 
 if (!run) {
   process.stdout.write(`Dry run OK: ${EXPECTED_NAME} (${suppliedRef}), app URL matches. No keys fetched and no writes performed.\n`);
-  process.stdout.write('Run again with --run to create two disposable example.test users and execute the QA flow.\n');
+  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat to include isolated chat, RSVP and realtime checks.\n');
   process.exit(0);
 }
 
@@ -97,12 +99,18 @@ try {
 const publicClient = createClient(url, publicKey, {
   auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
 });
+const supabaseClients = new Set([admin, publicClient]);
 const nonce = randomBytes(8).toString('hex');
 const created = [];
 const verifiedAbsent = new Set();
+const realtimeChannels = [];
+let qaEvent = null;
+let qaEventInsertAttempted = false;
 let checks = 0;
 let failures = 0;
 let failedCheck = null;
+let activePhase = 'staging QA flow';
+let failureRecorded = false;
 let cleanupFailedIds = [];
 
 function check(label, condition) {
@@ -110,6 +118,7 @@ function check(label, condition) {
   if (!condition) {
     failures += 1;
     failedCheck = label;
+    failureRecorded = true;
     throw new Error(`Check failed: ${label}`);
   }
   process.stdout.write(`PASS ${label}\n`);
@@ -119,6 +128,7 @@ function requireNoError(label, error) {
   if (error) {
     failures += 1;
     failedCheck = label;
+    failureRecorded = true;
     const code = error.code || error.status || 'request error';
     throw new Error(`${label} (${code})`);
   }
@@ -128,6 +138,7 @@ function authenticatedClient(session) {
   const client = createClient(url, publicKey, {
     auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
+  supabaseClients.add(client);
   return client.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token }).then(({ error }) => {
     requireNoError('restore session in fresh client', error);
     return client;
@@ -170,6 +181,135 @@ async function profileFor(client, id) {
     .maybeSingle();
   requireNoError('read own profile', result.error);
   return result.data;
+}
+
+async function checkChatRsvpRealtime(users, clients, cityId) {
+  const eventId = randomUUID();
+  const eventTitle = `QA chat ${nonce}`;
+  const externalId = `qa-chat-${nonce}`;
+  qaEvent = { id: eventId, title: eventTitle, externalId };
+
+  const { data: prior, error: priorError } = await admin.from('events').select('id').eq('id', eventId).maybeSingle();
+  requireNoError('check QA event UUID is unused', priorError);
+  check('QA event UUID is unused before insert', !prior);
+  process.stdout.write(`QA fixture event ID: ${eventId}\n`);
+
+  // Record the exact UUID before the request so cleanup can handle an ambiguous network result safely.
+  qaEventInsertAttempted = true;
+  const { data: event, error: eventError } = await admin.from('events').insert({
+    id: eventId,
+    source: 'curated',
+    external_id: externalId,
+    city_id: cityId,
+    title: eventTitle,
+    starts_at: '2099-08-20T23:00:00.000Z',
+    ends_at: '2099-08-21T03:00:00.000Z',
+    venue_name: 'QA Charlotte Venue',
+    venue_address: 'Charlotte, NC',
+    neighborhood: 'Uptown',
+    location: 'SRID=4326;POINT(-80.8431 35.2271)',
+    is_free: true,
+    status: 'active',
+  }).select('id, starts_at, status').single();
+  requireNoError('create isolated QA event fixture', eventError);
+  check('QA event fixture is active and outside the feed window',
+    event?.id === eventId && event?.status === 'active' && Date.parse(event?.starts_at) === Date.parse('2099-08-20T23:00:00.000Z'));
+
+  const [sender, recipient] = clients;
+  const recipientRsvp = await recipient.rpc('set_rsvp', { p_event_id: eventId, p_status: 'going' });
+  requireNoError('recipient RSVPs Going', recipientRsvp.error);
+  const recipientState = await recipient.from('rsvps').select('status').eq('event_id', eventId).eq('user_id', users[1].id).maybeSingle();
+  requireNoError('read recipient RSVP', recipientState.error);
+  check('recipient Going membership persisted', recipientState.data?.status === 'going');
+
+  const outsiderAttempt = await sender.from('event_messages').insert({
+    event_id: eventId,
+    user_id: users[0].id,
+    body: `QA outsider ${nonce}`,
+  });
+  check('non-Going user cannot post to chat', outsiderAttempt.error?.code === '42501');
+
+  const senderRsvp = await sender.rpc('set_rsvp', { p_event_id: eventId, p_status: 'going' });
+  requireNoError('sender RSVPs Going', senderRsvp.error);
+  const senderChats = await sender.rpc('get_my_chats');
+  requireNoError('read sender chat list after Going', senderChats.error);
+  check('Going user receives the event chat', senderChats.data?.some((row) => row.event_id === eventId));
+
+  let subscribedResolve;
+  let subscribedReject;
+  const subscribed = new Promise((resolve, reject) => {
+    subscribedResolve = resolve;
+    subscribedReject = reject;
+  });
+  let messageResolve;
+  const realtimeMessage = new Promise((resolve) => { messageResolve = resolve; });
+  const channel = recipient
+    .channel(`qa-chat:${eventId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'event_messages',
+      filter: `event_id=eq.${eventId}`,
+    }, (payload) => messageResolve(payload.new))
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') subscribedResolve();
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        subscribedReject(new Error(`Realtime subscription ${status}`));
+      }
+    });
+  realtimeChannels.push({ client: recipient, channel });
+
+  const bounded = (promise, label, milliseconds) => {
+    activePhase = label;
+    let timer;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out`)), milliseconds);
+      }),
+    ]).finally(() => clearTimeout(timer));
+  };
+  await bounded(subscribed, 'Realtime subscription', 15000);
+  check('recipient realtime channel subscribed', true);
+
+  const body = `QA realtime message ${nonce}`;
+  const inserted = await sender.from('event_messages').insert({
+    event_id: eventId,
+    user_id: users[0].id,
+    body,
+  }).select('id, body').single();
+  requireNoError('insert QA chat message as member', inserted.error);
+  check('chat message insert persisted', Boolean(inserted.data?.id) && inserted.data?.body === body);
+
+  // Verify PostgREST history independently before waiting on the Realtime delivery path.
+  const history = await recipient.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
+  requireNoError('read chat history as recipient', history.error);
+  check('recipient reads persisted chat message', history.data?.some((row) => row.id === inserted.data.id && row.body === body));
+
+  const delivered = await bounded(realtimeMessage, 'Recipient realtime INSERT', 15000);
+  check('recipient receives realtime INSERT', delivered?.id === inserted.data?.id && delivered?.body === body);
+
+  const erased = await sender.from('event_messages').update({ deleted_at: new Date().toISOString() })
+    .eq('id', inserted.data.id).select('id').single();
+  requireNoError('soft-delete own QA message', erased.error);
+  const afterDelete = await recipient.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
+  requireNoError('read history after QA message deletion', afterDelete.error);
+  check('soft delete erases the message body', afterDelete.data?.some((row) => row.id === inserted.data.id && row.body === null));
+
+  const leave = await sender.rpc('set_rsvp', { p_event_id: eventId, p_status: 'interested' });
+  requireNoError('sender leaves Going membership', leave.error);
+  const chatsAfterLeave = await sender.rpc('get_my_chats');
+  requireNoError('read chat list after leaving Going', chatsAfterLeave.error);
+  check('leaving Going removes the chat from the list', !chatsAfterLeave.data?.some((row) => row.event_id === eventId));
+  const historyAfterLeave = await sender.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
+  requireNoError('read history after leaving Going', historyAfterLeave.error);
+  check('leaving Going hides prior chat messages', historyAfterLeave.data?.length === 0);
+  const postAfterLeave = await sender.from('event_messages').insert({
+    event_id: eventId,
+    user_id: users[0].id,
+    body: `QA after leaving ${nonce}`,
+  });
+  check('leaving Going prevents further chat posts', postAfterLeave.error?.code === '42501');
 }
 
 async function main() {
@@ -265,26 +405,57 @@ async function main() {
   const { data: visible, error: visibleError } = await recipient.rpc('search_profiles', { p_query: profiles[0].updatedUsername, p_limit: 20 });
   requireNoError('search after unblock', visibleError);
   check('unblock restores profile search visibility', !unblocked?.some((person) => person.id === users[1].id) && visible?.some((person) => person.id === users[0].id));
+
+  if (chatMode) await checkChatRsvpRealtime(users, clients, city.id);
 }
 
 async function cleanup() {
   try {
+    for (const { client, channel } of realtimeChannels) {
+      try {
+        await client.removeChannel(channel);
+      } catch {
+        cleanupFailedIds.push(`channel:${qaEvent?.id || 'qa'}`);
+        process.stderr.write(`CLEANUP_FAILED realtime channel for QA event: ${qaEvent?.id || 'unknown'}\n`);
+      }
+    }
+    if (qaEvent && qaEventInsertAttempted) {
+      const { error } = await admin.from('events').delete().eq('id', qaEvent.id);
+      if (error) {
+        cleanupFailedIds.push(`event:${qaEvent.id}`);
+        process.stderr.write(`CLEANUP_FAILED QA event ID: ${qaEvent.id}\n`);
+      } else {
+        const [eventCheck, messageCheck, rsvpCheck, readCheck] = await Promise.all([
+          admin.from('events').select('id', { count: 'exact', head: true }).eq('id', qaEvent.id),
+          admin.from('event_messages').select('id', { count: 'exact', head: true }).eq('event_id', qaEvent.id),
+          admin.from('rsvps').select('event_id', { count: 'exact', head: true }).eq('event_id', qaEvent.id),
+          admin.from('event_chat_reads').select('event_id', { count: 'exact', head: true }).eq('event_id', qaEvent.id),
+        ]);
+        if ([eventCheck, messageCheck, rsvpCheck, readCheck].some((result) => result.error || result.count !== 0)) {
+          cleanupFailedIds.push(`event:${qaEvent.id}`);
+          process.stderr.write(`CLEANUP_VERIFY_FAILED QA event ID: ${qaEvent.id}\n`);
+        }
+      }
+    }
     for (const user of created) {
       const { error } = await admin.auth.admin.deleteUser(user.id);
       if (error) {
-        cleanupFailedIds = created.filter((item) => !verifiedAbsent.has(item.id)).map((item) => item.id);
-        process.stderr.write(`CLEANUP_FAILED user IDs: ${cleanupFailedIds.join(', ')}\n`);
-        return false;
+        cleanupFailedIds.push(user.id);
+        process.stderr.write(`CLEANUP_FAILED user ID: ${user.id}\n`);
+      } else {
+        verifiedAbsent.add(user.id);
       }
-      verifiedAbsent.add(user.id);
     }
+    // Supabase schedules idle Realtime disconnects; force every client socket closed so Node can exit now.
+    await Promise.allSettled([...supabaseClients].map((client) => client.removeAllChannels()));
 
     for (const user of created) {
+      if (!verifiedAbsent.has(user.id)) continue;
       const { data, error } = await admin.auth.admin.getUserById(user.id);
       if (!error || error.code !== 'user_not_found' || data?.user) {
         cleanupFailedIds.push(user.id);
         process.stderr.write(`CLEANUP_VERIFY_FAILED user ID: ${user.id}\n`);
-        return false;
+        continue;
       }
       const tableChecks = await Promise.all([
         admin.from('profiles').select('id', { count: 'exact', head: true }).eq('id', user.id),
@@ -297,12 +468,17 @@ async function cleanup() {
       if (tableChecks.some((result) => result.error || result.count !== 0)) {
         cleanupFailedIds.push(user.id);
         process.stderr.write(`CLEANUP_VERIFY_FAILED user ID: ${user.id}\n`);
-        return false;
+        continue;
       }
     }
   } catch {
-    cleanupFailedIds = created.filter((item) => !verifiedAbsent.has(item.id)).map((item) => item.id);
-    process.stderr.write(`CLEANUP_FAILED user IDs: ${cleanupFailedIds.join(', ')}\n`);
+    for (const user of created) if (!verifiedAbsent.has(user.id) && !cleanupFailedIds.includes(user.id)) cleanupFailedIds.push(user.id);
+    if (qaEventInsertAttempted && !cleanupFailedIds.some((id) => id.startsWith('event:'))) cleanupFailedIds.push(`event:${qaEvent.id}`);
+    process.stderr.write(`CLEANUP_FAILED tracked IDs: ${cleanupFailedIds.join(', ')}\n`);
+    return false;
+  }
+  if (cleanupFailedIds.length) {
+    process.stderr.write(`CLEANUP_FAILED tracked IDs: ${cleanupFailedIds.join(', ')}\n`);
     return false;
   }
   return true;
@@ -314,9 +490,11 @@ async function cleanup() {
     await main();
   } catch (error) {
     testError = error;
-    if (!failedCheck) {
-      failedCheck = 'unexpected API error';
+    if (!failureRecorded) {
+      failedCheck = activePhase;
+      checks += 1;
       failures += 1;
+      failureRecorded = true;
     }
     process.stderr.write(`FAIL ${failedCheck}\n`);
   } finally {
@@ -325,8 +503,13 @@ async function cleanup() {
       process.exitCode = 2;
       return;
     }
-    if (created.length) process.stdout.write(`CLEANUP verified ${created.length} disposable users and their owned rows absent.\n`);
-    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${created.length}\n`);
+    if (qaEventInsertAttempted && !cleanupFailedIds.some((id) => id.startsWith('event:'))) {
+      process.stdout.write(`CLEANUP verified QA event ${qaEvent.id}, messages, RSVPs and read markers absent.\n`);
+    }
+    if (created.length && !created.some((user) => cleanupFailedIds.includes(user.id))) {
+      process.stdout.write(`CLEANUP verified ${created.length} disposable users and their owned rows absent.\n`);
+    }
+    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size}${chatMode ? ' chat=yes' : ''}\n`);
     if (testError) process.exitCode = 1;
   }
 })().catch(() => {

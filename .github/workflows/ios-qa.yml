@@ -26,7 +26,7 @@ jobs:
           - group: layout
             flows: ios-smoke ios-profile-settings ios-discovery ios-privacy-resume
           - group: menus
-            flows: ios-core-flows ios-native-menus ios-chat-actions ios-event-actions
+            flows: ios-core-flows ios-native-menus ios-chat-actions ios-event-actions ios-friend-actions
           - group: onboarding
             flows: ios-onboarding ios-activity-suggest ios-map-permission
     name: iOS demo QA (${{ matrix.group }})
@@ -42,6 +42,27 @@ jobs:
       QA_FLOWS: ${{ matrix.flows }}
     steps:
       - uses: actions/checkout@v4
+      - name: Quarantine checkout dotenv files
+        run: |
+          expected="$GITHUB_WORKSPACE/mobile"
+          actual="$(pwd -P)"
+          expected_real="$(cd "$expected" && pwd -P)"
+          test "$actual" = "$expected_real"
+          quarantine="$RUNNER_TEMP/yard-qa-dotenv"
+          mkdir -p "$quarantine"
+          chmod 700 "$quarantine"
+          moved=0
+          for file in .env .env.*; do
+            if [[ -f "$file" && ! -L "$file" ]]; then
+              name="${file##*/}"
+              mv "$file" "$quarantine/$name"
+              printf 'Quarantined %s\n' "$name"
+              moved=1
+            fi
+          done
+          if [[ "$moved" -eq 0 ]]; then
+            echo 'No regular dotenv files found in the QA checkout.'
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
