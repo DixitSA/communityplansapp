@@ -42,10 +42,16 @@ export default function BlockedScreen() {
             paddingBottom: space.md,
           }}
         >
-          <AppText variant="title2" accessibilityRole="header">
+          <AppText testID="blocked-sheet-title" variant="title2" accessibilityRole="header">
             Blocked people
           </AppText>
-          <Pressable accessibilityRole="button" accessibilityLabel="Done" hitSlop={space.sm} onPress={() => router.back()}>
+          <Pressable
+            testID="blocked-sheet-done"
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+            hitSlop={space.sm}
+            onPress={() => router.back()}
+          >
             <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
               Done
             </AppText>

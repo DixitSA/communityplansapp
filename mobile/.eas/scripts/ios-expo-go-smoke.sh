@@ -4,6 +4,11 @@ set -euo pipefail
 RESULTS_DIR=".maestro/results"
 mkdir -p "$RESULTS_DIR"
 SIMULATOR_ID=""
+QA_ENGINE="${QA_ENGINE:-maestro}"
+case "$QA_ENGINE" in
+  maestro|idb) ;;
+  *) echo "Unsupported QA engine: $QA_ENGINE" >&2; exit 2 ;;
+esac
 
 for dotenv in .env .env.*; do
   if [[ -e "$dotenv" || -L "$dotenv" ]]; then
@@ -104,9 +109,15 @@ test -n "$EXPO_GO_APP"
 xcrun simctl install "$SIMULATOR_ID" "$EXPO_GO_APP"
 log_phase "Expo Go installed."
 
-command -v maestro
-maestro --version
-log_phase "Maestro CLI ready."
+if [[ "$QA_ENGINE" == idb ]]; then
+  command -v idb
+  idb_companion --version
+  log_phase 'idb CLI and simulator companion ready.'
+else
+  command -v maestro
+  maestro --version
+  log_phase 'Maestro CLI ready.'
+fi
 
 EXPO_HOME_DIR="$(mktemp -d)"
 mkdir -p "$EXPO_HOME_DIR/codesigning/00f881a0-b80c-47d5-8170-a549f87d7ca0"
@@ -114,8 +125,8 @@ cat > "$EXPO_HOME_DIR/codesigning/00f881a0-b80c-47d5-8170-a549f87d7ca0/developme
 {"easProjectId":null,"scopeKey":null,"privateKey":null,"certificateChain":null}
 JSON
 
-log_phase "Starting Metro on localhost:8093."
-env -u EXPO_TOKEN __UNSAFE_EXPO_HOME_DIRECTORY="$EXPO_HOME_DIR" EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 EXPO_NO_DEV_MENU=1 CI=1 EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_ANON_KEY= \
+log_phase "Starting Metro on IPv4 localhost:8093 (matching Expo's advertised launch asset)."
+env -u EXPO_TOKEN NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--dns-result-order=ipv4first" __UNSAFE_EXPO_HOME_DIRECTORY="$EXPO_HOME_DIR" EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 EXPO_NO_DEV_MENU=1 CI=1 EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_ANON_KEY= \
   npx expo start --localhost --port 8093 --clear > /tmp/yard-metro.log 2>&1 &
 METRO_PID=$!
 trap 'collect_artifacts; kill "$METRO_PID" 2>/dev/null || true' EXIT
@@ -130,6 +141,11 @@ if ! grep -q 'packager-status:running' /tmp/yard-metro-status.txt; then
   cat /tmp/yard-metro.log /tmp/yard-metro-status.txt /tmp/yard-metro-status-error.txt
   exit 1
 fi
+if ! curl --fail --silent --show-error --max-time 10 http://127.0.0.1:8093/status > /tmp/yard-metro-ipv4-status.txt || ! grep -q 'packager-status:running' /tmp/yard-metro-ipv4-status.txt; then
+  echo 'Metro is not reachable on the IPv4 loopback advertised to Expo Go.' >&2
+  exit 1
+fi
+log_phase 'Metro IPv4 loopback probe passed.'
 MANIFEST_STATUS="$(curl --silent --show-error --max-time 20 \
   -D /tmp/yard-manifest-headers.txt -o /tmp/yard-manifest.body -w '%{http_code}' \
   -H 'accept: multipart/mixed' \
@@ -161,8 +177,7 @@ LAUNCH_ASSET_URL="$(node -e '
       if (parsed.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname) || parsed.port !== "8093") {
         throw new Error(`launchAsset.url must use loopback port 8093 (received ${parsed.origin})`);
       }
-      // Keep the bundle path and query, using the same host as the successful Metro probe.
-      parsed.hostname = "localhost";
+      // Probe the exact advertised address that Expo Go will fetch, without rewriting its host.
       process.stdout.write(parsed.href);
       process.exit(0);
     } catch (error) {
@@ -189,7 +204,13 @@ else
   fi
 fi
 log_phase 'Launch bundle staging-host guard passed.'
-log_phase 'Metro is ready; each Maestro suite will open Expo Go once.'
+log_phase 'Metro and the isolated launch bundle are ready.'
+
+if [[ "$QA_ENGINE" == idb ]]; then
+  log_phase 'Running the independent idb layout probe.'
+  python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$RESULTS_DIR"
+  exit $?
+fi
 
 FLOW_FILES=()
 for flow in ${QA_FLOWS:-ios-smoke ios-core-flows ios-native-menus ios-discovery ios-onboarding ios-map-permission ios-profile-settings ios-chat-actions ios-event-actions ios-friend-actions ios-activity-suggest ios-privacy-resume}; do
@@ -203,7 +224,7 @@ done
 log_phase "Running Maestro flows in one CLI session: ${QA_FLOWS:-default flow set}."
 FLOW_FAILURE=0
 run_maestro() {
-  maestro test --format JUNIT --output "$RESULTS_DIR/junit.xml" --test-output-dir "$RESULTS_DIR" "${FLOW_FILES[@]}" 2>&1 | tee "$RESULTS_DIR/maestro-output.log"
+  maestro test --config .maestro/config.yaml --format JUNIT --output "$RESULTS_DIR/junit.xml" --test-output-dir "$RESULTS_DIR" "${FLOW_FILES[@]}" 2>&1 | tee "$RESULTS_DIR/maestro-output.log"
 }
 if ! run_maestro; then
   # Retry only a failed driver bootstrap, before any suite produced a result.
@@ -221,7 +242,10 @@ if ! run_maestro; then
   done < <(find "$HOME/.maestro/tests" "$RESULTS_DIR" -type f -name maestro.log -print0 2>/dev/null)
   if [[ ! -f "$RESULTS_DIR/junit.xml" && "$DRIVER_LOGS" -gt 0 && "$FLOW_STARTED" -eq 0 ]] && grep -Eq 'IOSDriverTimeoutException|iOS driver not ready in time' "$RESULTS_DIR/maestro-output.log"; then
     mv "$RESULTS_DIR/maestro-output.log" "$RESULTS_DIR/maestro-bootstrap-attempt1.log"
-    log_phase 'Maestro driver bootstrap failed before flow results; retrying once with diagnostics preserved.'
+    log_phase 'Maestro bootstrap failed before flow results; rebooting the isolated simulator before one retry.'
+    xcrun simctl shutdown "$SIMULATOR_ID"
+    xcrun simctl boot "$SIMULATOR_ID"
+    xcrun simctl bootstatus "$SIMULATOR_ID" -b
     if ! run_maestro; then FLOW_FAILURE=1; fi
   else
     FLOW_FAILURE=1

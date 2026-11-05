@@ -1,13 +1,23 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import type { ReactNode } from 'react';
+import { AppState } from 'react-native';
+import { useState, type ReactNode } from 'react';
 
 import { ApiError, type ChatMessage, type ChatSubscription } from '@/lib/api';
 import { chatService } from '@/lib/chat';
 
 import { useChat } from '../useChat';
 
-jest.mock('expo-router', () => ({ useFocusEffect: jest.fn() }));
+const mockFocusCallbacks: (() => void | (() => void))[] = [];
+
+jest.mock('expo-router', () => ({
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    React.useEffect(() => {
+      mockFocusCallbacks.push(callback);
+    }, [callback]);
+  },
+}));
 jest.mock('@/lib/chat', () => ({
   chatService: {
     getChatMessages: jest.fn(),
@@ -34,20 +44,30 @@ const msg = (id: string, over: Partial<ChatMessage> = {}): ChatMessage => ({
 });
 
 let handlers: ChatSubscription;
-const wrapper = ({ children }: { children: ReactNode }) => {
-  const client = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false, gcTime: Infinity },
-      mutations: { gcTime: Infinity },
-    },
-  });
+let restoreAppState: (() => void) | null = null;
+const Wrapper = ({ children }: { children: ReactNode }) => {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { retry: false, gcTime: Infinity },
+          mutations: { gcTime: Infinity },
+        },
+      }),
+  );
   clients.add(client);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
+const wrapper = Wrapper;
 
 afterEach(() => {
+  mockFocusCallbacks.length = 0;
+  restoreAppState?.();
+  restoreAppState = null;
   for (const client of clients) client.clear();
   clients.clear();
+  jest.useRealTimers();
+  jest.restoreAllMocks();
 });
 
 beforeEach(() => {
@@ -141,7 +161,7 @@ describe('useChat', () => {
     const { result } = await renderHook(() => useChat('e1'), { wrapper });
     await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(1));
 
-    svc.getChatMessages.mockResolvedValueOnce([msg('3'), msg('2'), msg('1')]);
+    svc.getChatMessages.mockResolvedValue([msg('3'), msg('2'), msg('1')]);
     await act(async () => {
       handlers.onSubscribed?.();
       await Promise.resolve();
@@ -181,5 +201,114 @@ describe('useChat', () => {
     await renderHook(() => useChat('e1', false), { wrapper });
     expect(svc.getChatMessages).not.toHaveBeenCalled();
     expect(svc.subscribeToEventChat).not.toHaveBeenCalled();
+  });
+
+  it('polls missed history only while focused, active and idle', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(AppState, 'currentState');
+    restoreAppState = () => {
+      if (originalDescriptor) Object.defineProperty(AppState, 'currentState', originalDescriptor);
+    };
+    Object.defineProperty(AppState, 'currentState', { configurable: true, writable: true, value: 'active' });
+    svc.getChatMessages.mockResolvedValue([]);
+    const polls: (() => void | Promise<void>)[] = [];
+    const intervalHandles: number[] = [];
+    const clearedIntervals: number[] = [];
+    const nativeSetInterval = globalThis.setInterval;
+    const nativeClearInterval = globalThis.clearInterval;
+    jest.spyOn(globalThis, 'setInterval').mockImplementation(((callback: TimerHandler, delay?: number) => {
+      if (delay !== 30_000) return nativeSetInterval(callback, delay);
+      polls.push(callback as () => void);
+      const handle = polls.length;
+      intervalHandles.push(handle);
+      return handle as unknown as ReturnType<typeof setInterval>;
+    }) as typeof setInterval);
+    jest.spyOn(globalThis, 'clearInterval').mockImplementation((handle) => {
+      if (intervalHandles.includes(handle as number)) clearedIntervals.push(handle as number);
+      else nativeClearInterval(handle);
+    });
+    const firePoll = () => polls[polls.length - 1]?.();
+    const { result, unmount } = await renderHook(() => useChat('e1'), { wrapper });
+    await waitFor(() => expect(ids(result.current.messages)).toEqual([]));
+    await waitFor(() => expect(Array.from(clients)[0]?.getQueryState(['chat', 'e1'])?.fetchStatus).toBe('idle'));
+
+    const focus = () => mockFocusCallbacks.slice(-2).map((callback) => callback());
+    let focusCleanups: ReturnType<typeof focus> = [];
+    await act(async () => {
+      focusCleanups = focus();
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+    });
+    await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(Array.from(clients)[0]?.getQueryState(['chat', 'e1'])?.fetchStatus).toBe('idle'));
+    const readCallsBeforePoll = svc.markChatRead.mock.calls.length;
+    svc.getChatMessages.mockResolvedValue([msg('3')]);
+
+    await act(async () => {
+      await firePoll();
+    });
+    await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(ids(result.current.messages)).toEqual(['3']));
+    await waitFor(() => expect(svc.markChatRead).toHaveBeenCalledTimes(readCallsBeforePoll + 1));
+    await waitFor(() => expect(Array.from(clients)[0]?.getQueryState(['chat', 'e1'])?.fetchStatus).toBe('idle'));
+    const pollCount = polls.length;
+
+    AppState.currentState = 'background';
+    await act(async () => {
+      await firePoll();
+    });
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(3);
+
+    AppState.currentState = 'active';
+    let resolveSend!: (message: ChatMessage) => void;
+    svc.sendMessage.mockReturnValue(new Promise<ChatMessage>((resolve) => (resolveSend = resolve)));
+    await act(async () => {
+      result.current.send('hello');
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(svc.sendMessage).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await firePoll();
+    });
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(3);
+    expect(polls).toHaveLength(pollCount);
+    await act(async () => resolveSend(msg('4', { isMine: true, userId: 'maya' })));
+
+    let resolveDelete!: (value: void) => void;
+    svc.deleteMessage.mockReturnValue(new Promise<void>((resolve) => (resolveDelete = resolve)));
+    let deletePromise!: Promise<void>;
+    await act(async () => {
+      deletePromise = result.current.deleteMessage('1');
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(svc.deleteMessage).toHaveBeenCalledWith('1'));
+    await act(async () => {
+      await firePoll();
+    });
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(3);
+    expect(polls).toHaveLength(pollCount);
+    await act(async () => resolveDelete());
+    await deletePromise;
+
+    await waitFor(() => expect(Array.from(clients)[0]?.getQueryState(['chat', 'e1'])?.fetchStatus).toBe('idle'));
+    focusCleanups.forEach((cleanup) => typeof cleanup === 'function' && cleanup());
+    expect(clearedIntervals).toHaveLength(1);
+    await act(async () => {
+      await firePoll();
+    });
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(3);
+    svc.getChatMessages.mockResolvedValue([msg('4'), msg('3')]);
+    await act(async () => {
+      focusCleanups = focus();
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+    });
+    await waitFor(() => expect(svc.getChatMessages).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(ids(result.current.messages)).toEqual(['4', '3']));
+    expect(polls.length).toBeGreaterThan(pollCount);
+
+    focusCleanups.forEach((cleanup) => typeof cleanup === 'function' && cleanup());
+    expect(clearedIntervals).toHaveLength(2);
+    unmount();
+    const callsAtBlur = svc.getChatMessages.mock.calls.length;
+    await act(async () => firePoll());
+    expect(svc.getChatMessages).toHaveBeenCalledTimes(callsAtBlur);
   });
 });

@@ -71,10 +71,7 @@ appId: host.exp.Exponent
     start: 96%, 75%
     end: 96%, 35%
     duration: 500
-- scrollUntilVisible:
-    element: Done
-    direction: DOWN
-    centerElement: true
+- assertVisible: Done
 - takeScreenshot: onboarding-birthday-picker
 - tapOn: Done
 - assertVisible:

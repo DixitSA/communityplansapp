@@ -31,7 +31,8 @@ appId: host.exp.Exponent
 - takeScreenshot: privacy-toggled-off
 
 # Return to Settings through Profile to verify the saved value after route changes.
-- tapOn: Done
+- tapOn:
+    id: settings-sheet-done
 - assertVisible: Any time
 - tapOn: Profile
 - extendedWaitUntil:
@@ -73,5 +74,6 @@ appId: host.exp.Exponent
     id: settings-discoverable-by-phone-switch
     checked: true
 - takeScreenshot: privacy-restored
-- tapOn: Done
+- tapOn:
+    id: settings-sheet-done
 - assertVisible: Profile

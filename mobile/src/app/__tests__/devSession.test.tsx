@@ -10,10 +10,10 @@ jest.mock('expo-router', () => ({
   Redirect: (props: { href: string }) => mockRedirect(props),
 }));
 jest.mock('@/lib/api', () => ({ api: { signInWithRefreshToken: () => mockSignIn() } }));
+jest.mock('@/lib/env', () => ({ devSessionLinkEnabled: false }));
 
 describe('yard://dev-session', () => {
-  it('never signs anyone in unless the simulator build turned it on', async () => {
-    // EXPO_PUBLIC_DEV_SESSION_LINK is unset here, as in every build people install.
+  it('redirects without signing in when the simulator link is disabled', async () => {
     await render(<DevSessionScreen />);
     expect(mockSignIn).not.toHaveBeenCalled();
     expect(mockRedirect).toHaveBeenCalledWith({ href: '/welcome' });

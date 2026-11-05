@@ -47,9 +47,13 @@ appId: host.exp.Exponent
     element: Blocked people
     direction: DOWN
 - tapOn: Blocked people
-- assertVisible: Blocked people
+- assertVisible:
+    id: blocked-sheet-title
 - assertVisible: No one blocked
-- tapOn: Done
+- tapOn:
+    id: blocked-sheet-done
+- assertNotVisible:
+    id: blocked-sheet-title
 - assertVisible: Settings
 - scrollUntilVisible:
     element: How yard works
@@ -58,13 +62,21 @@ appId: host.exp.Exponent
 - tapOn: How yard works
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: How yard works
+- assertVisible:
+    id: help-sheet-title
 - scrollUntilVisible:
-    element: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'
+    element:
+      id: help-blocking-description
     direction: DOWN
-- assertVisible: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'
-- tapOn: Done
+- assertVisible:
+    id: help-blocking-description
+    text: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'
+- tapOn:
+    id: help-sheet-done
+- assertNotVisible:
+    id: help-sheet-title
 - assertVisible: Settings
-- tapOn: Done
+- tapOn:
+    id: settings-sheet-done
 - assertVisible: Profile
 - takeScreenshot: native-profile-settings-complete

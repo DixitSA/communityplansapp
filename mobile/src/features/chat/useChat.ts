@@ -42,6 +42,8 @@ function onEveryPage(qc: QueryClient, eventId: string, fn: (list: ChatMessage[])
 
 /** How long to wait before telling the server about new messages we've read. */
 const READ_DEBOUNCE_MS = 2000;
+/** Safety net for missed Realtime deliveries while an open chat stays foregrounded. */
+const CHAT_CATCH_UP_INTERVAL_MS = 30_000;
 
 export type SendFailure = { message: string; body: string };
 
@@ -54,6 +56,7 @@ export function useChat(eventId: string, enabled = true) {
   const qc = useQueryClient();
   const [failure, setFailure] = useState<SendFailure | null>(null);
   const focused = useRef(false);
+  const pendingWrites = useRef(0);
 
   const query = useInfiniteQuery({
     queryKey: chatKey(eventId),
@@ -105,7 +108,7 @@ export function useChat(eventId: string, enabled = true) {
 
   // Realtime can miss messages: before the connection is up, after it drops, and while the app sleeps.
   // So refetch whenever it (re)connects and whenever the app comes back to the foreground.
-  const catchUp = useCallback(() => {
+  const refreshHistory = useCallback(() => {
     const queryKey = chatKey(eventId);
     const wasFetching = qc.getQueryState(queryKey)?.fetchStatus === 'fetching';
     const refresh = qc.invalidateQueries({ queryKey }, { cancelRefetch: false });
@@ -114,8 +117,13 @@ export function useChat(eventId: string, enabled = true) {
       // Queue one more invalidation after it settles so reconnect cannot miss newer messages.
       void refresh.then(() => qc.invalidateQueries({ queryKey }, { cancelRefetch: false }));
     }
+    return refresh;
+  }, [eventId, qc]);
+
+  const catchUp = useCallback(() => {
+    refreshHistory();
     if (focused.current) markRead();
-  }, [eventId, qc, markRead]);
+  }, [refreshHistory, markRead]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -139,6 +147,7 @@ export function useChat(eventId: string, enabled = true) {
   const sendMutation = useMutation({
     mutationFn: ({ body }: { tempId: string; body: string }) => chatService.sendMessage(eventId, body),
     onMutate: async ({ tempId, body }) => {
+      pendingWrites.current += 1;
       await qc.cancelQueries({ queryKey: chatKey(eventId) });
       onFirstPage(qc, eventId, (list) => [makeTempMessage(tempId, body), ...list]);
     },
@@ -149,6 +158,9 @@ export function useChat(eventId: string, enabled = true) {
     onError: (err, { tempId, body }) => {
       onFirstPage(qc, eventId, (list) => removeMessage(list, tempId));
       setFailure({ message: mapChatError(errorCode(err)), body });
+    },
+    onSettled: () => {
+      pendingWrites.current = Math.max(0, pendingWrites.current - 1);
     },
   });
 
@@ -171,6 +183,7 @@ export function useChat(eventId: string, enabled = true) {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => chatService.deleteMessage(id),
     onMutate: async (id) => {
+      pendingWrites.current += 1;
       await qc.cancelQueries({ queryKey: chatKey(eventId) });
       const before = qc.getQueryData<Pages>(chatKey(eventId));
       onEveryPage(qc, eventId, (list) => markDeleted(list, id));
@@ -179,8 +192,32 @@ export function useChat(eventId: string, enabled = true) {
     onError: (_err, _id, ctx) => {
       if (ctx?.before) qc.setQueryData(chatKey(eventId), ctx.before);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: [CHATS_KEY] }),
+    onSettled: () => {
+      pendingWrites.current = Math.max(0, pendingWrites.current - 1);
+      void qc.invalidateQueries({ queryKey: [CHATS_KEY] });
+    },
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!enabled) return;
+      const queryKey = chatKey(eventId);
+      const reconcile = () => {
+        if (!focused.current || AppState.currentState !== 'active') return Promise.resolve();
+        if (pendingWrites.current > 0 || qc.getQueryState(queryKey)?.fetchStatus === 'fetching') {
+          return Promise.resolve();
+        }
+        const before = qc.getQueryData<Pages>(queryKey)?.pages[0]?.[0]?.id;
+        return refreshHistory().then(() => {
+          const after = qc.getQueryData<Pages>(queryKey)?.pages[0]?.[0]?.id;
+          if (after && before !== after && focused.current && AppState.currentState === 'active') markRead();
+        });
+      };
+      void reconcile();
+      const interval = setInterval(() => reconcile(), CHAT_CATCH_UP_INTERVAL_MS);
+      return () => clearInterval(interval);
+    }, [enabled, eventId, markRead, qc, refreshHistory]),
+  );
 
   /** Everything from someone you blocked disappears, so refetch all views affected by blocks. */
   const refreshAfterBlock = useCallback(() => {

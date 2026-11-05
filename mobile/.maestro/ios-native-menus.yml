@@ -20,6 +20,18 @@ appId: host.exp.Exponent
 - assertVisible: Rooftop Happy Hour
 - takeScreenshot: event-report-menu-dismissed
 
+- tapOn: More options
+- assertVisible: Report
+- tapOn: Report
+- assertVisible: 'Why are you reporting this event\?'
+- assertVisible: Wrong details
+- tapOn: Wrong details
+- assertVisible: Thanks for telling us
+- assertVisible: 'We’ll review this report.'
+- tapOn: OK
+- assertVisible: Rooftop Happy Hour
+- takeScreenshot: event-report-submitted
+
 - openLink: 'exp://localhost:8093/--/user/u-maya'
 - waitForAnimationToEnd:
     timeout: 5000
@@ -32,6 +44,16 @@ appId: host.exp.Exponent
 - assertVisible: 'Why are you reporting this person\?'
 - assertVisible: Harassment
 - tapOn: Cancel
+- tapOn: More options
+- assertVisible: Report
+- tapOn: Report
+- assertVisible: 'Why are you reporting this person\?'
+- assertVisible: Harassment
+- tapOn: Harassment
+- assertVisible: Thanks for telling us
+- assertVisible: 'We’ll review this report.'
+- tapOn: OK
+- assertVisible: More options
 - tapOn: More options
 - tapOn: Block Maya Chen
 - assertVisible: 'Block Maya Chen\?'
@@ -55,7 +77,10 @@ appId: host.exp.Exponent
 - tapOn: Unblock
 - assertVisible: No one blocked
 - takeScreenshot: native-block-unblock-complete
-- tapOn: Done
+- tapOn:
+    id: blocked-sheet-done
+- assertNotVisible:
+    id: blocked-sheet-title
 
 - openLink: 'exp://localhost:8093/--/settings'
 - waitForAnimationToEnd:
@@ -72,8 +97,15 @@ appId: host.exp.Exponent
 - tapOn: How yard works
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: How yard works
+- assertVisible:
+    id: help-sheet-title
+- assertVisible:
+    id: help-interested-description
+    text: 'Interested: Saves the event for later. Only you can see it.'
 - takeScreenshot: native-settings-help
-- tapOn: Done
+- tapOn:
+    id: help-sheet-done
+- assertNotVisible:
+    id: help-sheet-title
 - assertVisible: Settings
 - takeScreenshot: native-settings-overview

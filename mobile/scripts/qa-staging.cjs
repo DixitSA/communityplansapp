@@ -13,6 +13,7 @@ const ROOT = path.resolve(__dirname, '../..');
 const ENV_FILE = path.join(ROOT, 'mobile', '.env.development');
 const run = process.argv.includes('--run');
 const chatMode = process.argv.includes('--chat');
+const deleteAccountMode = process.argv.includes('--delete-account');
 const refIndex = process.argv.indexOf('--project-ref');
 const suppliedRef = refIndex >= 0 ? process.argv[refIndex + 1] : undefined;
 
@@ -21,9 +22,10 @@ function die(message) {
   process.exit(2);
 }
 
-if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat]]');
+if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat] [--delete-account]]');
 if (suppliedRef !== EXPECTED_REF) die('Refused: project ref does not match the guarded staging project.');
 if (chatMode && !run) die('Refused: --chat requires --run and the guarded staging project.');
+if (deleteAccountMode && !run) die('Refused: --delete-account requires --run and the guarded staging project.');
 
 function envValue(name) {
   if (process.env[name]) return process.env[name];
@@ -80,7 +82,7 @@ if (host !== `${suppliedRef}.supabase.co`) die('Refused: app URL does not match 
 
 if (!run) {
   process.stdout.write(`Dry run OK: ${EXPECTED_NAME} (${suppliedRef}), app URL matches. No keys fetched and no writes performed.\n`);
-  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat to include isolated chat, RSVP and realtime checks.\n');
+  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat for chat checks or --delete-account to exercise self-delete on one disposable user.\n');
   process.exit(0);
 }
 
@@ -103,6 +105,7 @@ const supabaseClients = new Set([admin, publicClient]);
 const nonce = randomBytes(8).toString('hex');
 const created = [];
 const verifiedAbsent = new Set();
+const appDeletedIds = new Set();
 const realtimeChannels = [];
 let qaEvent = null;
 let qaEventInsertAttempted = false;
@@ -183,6 +186,37 @@ async function profileFor(client, id) {
   return result.data;
 }
 
+async function checkSelfDelete(user, client) {
+  activePhase = 'authenticated self-delete';
+  process.stdout.write('Calling delete-account as the first runner-created disposable user.\n');
+  const { data, error } = await client.functions.invoke('delete-account');
+  requireNoError('call delete-account as disposable user', error);
+  check('delete-account function confirms deletion', data?.ok === true);
+
+  const { data: authUser, error: authError } = await admin.auth.admin.getUserById(user.id);
+  check('self-delete removes the Auth user', authError?.code === 'user_not_found' && !authUser?.user);
+
+  const ownedRows = await Promise.all([
+    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('id', user.id),
+    admin.from('profiles_private').select('id', { count: 'exact', head: true }).eq('id', user.id),
+    admin.from('profile_interests').select('profile_id', { count: 'exact', head: true }).eq('profile_id', user.id),
+    admin.from('rsvps').select('user_id', { count: 'exact', head: true }).eq('user_id', user.id),
+    admin.from('friendships').select('user_a', { count: 'exact', head: true }).or(`user_a.eq.${user.id},user_b.eq.${user.id}`),
+    admin.from('blocks').select('blocker_id', { count: 'exact', head: true }).or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`),
+    admin.from('reports').select('id', { count: 'exact', head: true }).eq('reporter_id', user.id),
+    admin.from('notifications').select('id', { count: 'exact', head: true }).or(`user_id.eq.${user.id},actor_id.eq.${user.id}`),
+    admin.from('device_tokens').select('token', { count: 'exact', head: true }).eq('user_id', user.id),
+    admin.from('event_messages').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    admin.from('event_chat_reads').select('event_id', { count: 'exact', head: true }).eq('user_id', user.id),
+  ]);
+  check('self-delete removes all profile-owned rows', ownedRows.every((result) => !result.error && result.count === 0));
+
+  const { data: avatarFiles, error: avatarError } = await admin.storage.from('avatars').list(user.id, { limit: 100 });
+  requireNoError('verify self-delete removes avatar files', avatarError);
+  check('no avatar files remain after self-delete', avatarFiles?.length === 0);
+  appDeletedIds.add(user.id);
+}
+
 async function checkChatRsvpRealtime(users, clients, cityId) {
   const eventId = randomUUID();
   const eventTitle = `QA chat ${nonce}`;
@@ -243,15 +277,26 @@ async function checkChatRsvpRealtime(users, clients, cityId) {
   });
   let messageResolve;
   const realtimeMessage = new Promise((resolve) => { messageResolve = resolve; });
-  const channel = recipient
+  const realtimeStartedAt = process.hrtime.bigint();
+  const elapsedRealtimeMs = () => Math.round(Number(process.hrtime.bigint() - realtimeStartedAt) / 1e6);
+  const logRealtime = (details) => process.stdout.write(`REALTIME elapsed_ms=${elapsedRealtimeMs()} ${details}\n`);
+  let realtimeStatus = 'CREATED';
+  let channel;
+  channel = recipient
     .channel(`qa-chat:${eventId}`)
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'event_messages',
       filter: `event_id=eq.${eventId}`,
-    }, (payload) => messageResolve(payload.new))
+    }, (payload) => {
+      const row = payload.new || {};
+      logRealtime(`callback event_id=${row.event_id || 'unknown'} message_id=${row.id ?? 'unknown'} created_at=${row.created_at || 'unknown'} commit_timestamp=${payload.commit_timestamp || 'unknown'} channel_state=${channel?.state || 'unknown'}`);
+      messageResolve(row);
+    })
     .subscribe((status) => {
+      realtimeStatus = status;
+      logRealtime(`status=${status} channel_state=${channel?.state || 'unknown'}`);
       if (status === 'SUBSCRIBED') subscribedResolve();
       else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         subscribedReject(new Error(`Realtime subscription ${status}`));
@@ -270,23 +315,44 @@ async function checkChatRsvpRealtime(users, clients, cityId) {
     ]).finally(() => clearTimeout(timer));
   };
   await bounded(subscribed, 'Realtime subscription', 15000);
+  logRealtime(`subscribed_ack status=${realtimeStatus} channel_state=${channel.state}`);
   check('recipient realtime channel subscribed', true);
 
   const body = `QA realtime message ${nonce}`;
+  logRealtime(`insert_start event_id=${eventId} channel_state=${channel.state}`);
   const inserted = await sender.from('event_messages').insert({
     event_id: eventId,
     user_id: users[0].id,
     body,
-  }).select('id, body').single();
+  }).select('id, body, created_at').single();
   requireNoError('insert QA chat message as member', inserted.error);
+  logRealtime(`insert_response event_id=${eventId} message_id=${inserted.data?.id ?? 'unknown'} created_at=${inserted.data?.created_at || 'unknown'} channel_state=${channel.state}`);
   check('chat message insert persisted', Boolean(inserted.data?.id) && inserted.data?.body === body);
 
   // Verify PostgREST history independently before waiting on the Realtime delivery path.
   const history = await recipient.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
   requireNoError('read chat history as recipient', history.error);
-  check('recipient reads persisted chat message', history.data?.some((row) => row.id === inserted.data.id && row.body === body));
+  const historyHasMessage = history.data?.some((row) => row.id === inserted.data.id && row.body === body) ?? false;
+  logRealtime(`history_check event_id=${eventId} message_id=${inserted.data?.id ?? 'unknown'} visible=${historyHasMessage} channel_state=${channel.state}`);
+  check('recipient reads persisted chat message', historyHasMessage);
 
-  const delivered = await bounded(realtimeMessage, 'Recipient realtime INSERT', 15000);
+  let delivered;
+  try {
+    delivered = await bounded(realtimeMessage, 'Recipient realtime INSERT', 15000);
+  } catch (error) {
+    const assertionPhase = activePhase;
+    logRealtime(`deadline=15s status=${realtimeStatus} channel_state=${channel.state}`);
+    let arrivedLate = false;
+    try {
+      delivered = await bounded(realtimeMessage, 'Late recipient realtime INSERT', 30000);
+      arrivedLate = true;
+    } catch {
+      // Keep the original 15-second assertion failure after observing the extra window.
+    }
+    activePhase = assertionPhase;
+    logRealtime(`extra_window=30s result=${arrivedLate ? 'late' : 'absent'} status=${realtimeStatus} channel_state=${channel.state}`);
+    throw error;
+  }
   check('recipient receives realtime INSERT', delivered?.id === inserted.data?.id && delivered?.body === body);
 
   const erased = await sender.from('event_messages').update({ deleted_at: new Date().toISOString() })
@@ -407,6 +473,7 @@ async function main() {
   check('unblock restores profile search visibility', !unblocked?.some((person) => person.id === users[1].id) && visible?.some((person) => person.id === users[0].id));
 
   if (chatMode) await checkChatRsvpRealtime(users, clients, city.id);
+  if (deleteAccountMode) await checkSelfDelete(users[0], clients[0]);
 }
 
 async function cleanup() {
@@ -438,8 +505,12 @@ async function cleanup() {
       }
     }
     for (const user of created) {
+      if (appDeletedIds.has(user.id)) {
+        verifiedAbsent.add(user.id);
+        continue;
+      }
       const { error } = await admin.auth.admin.deleteUser(user.id);
-      if (error) {
+      if (error && error.code !== 'user_not_found') {
         cleanupFailedIds.push(user.id);
         process.stderr.write(`CLEANUP_FAILED user ID: ${user.id}\n`);
       } else {
@@ -509,7 +580,7 @@ async function cleanup() {
     if (created.length && !created.some((user) => cleanupFailedIds.includes(user.id))) {
       process.stdout.write(`CLEANUP verified ${created.length} disposable users and their owned rows absent.\n`);
     }
-    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size}${chatMode ? ' chat=yes' : ''}\n`);
+    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size} chat=${chatMode ? 'yes' : 'no'} delete_account=${deleteAccountMode ? 'yes' : 'no'}\n`);
     if (testError) process.exitCode = 1;
   }
 })().catch(() => {

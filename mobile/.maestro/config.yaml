@@ -1,0 +1,5 @@
+# Include visible content behind iOS form sheets in XCTest snapshots.
+# Modal flows use route-specific IDs and Help-only body assertions for disambiguation.
+platform:
+  ios:
+    snapshotKeyHonorModalViews: false

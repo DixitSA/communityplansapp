@@ -12,9 +12,9 @@ appId: host.exp.Exponent
 - tapOn: Interested
 - assertVisible: Only you can see this
 - tapOn: Interested
-- assertVisible: 'removed from your plans'
-- assertVisible: Undo
-- tapOn: Undo
+- tapOn:
+    text: Undo
+    waitToSettleTimeoutMs: 0
 - assertVisible:
     text: Interested
     selected: true

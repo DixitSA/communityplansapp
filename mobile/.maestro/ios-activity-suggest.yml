@@ -23,7 +23,7 @@ appId: host.exp.Exponent
 - tapOn:
     id: suggest-link-input
 - inputText: 'not a url'
-- hideKeyboard
+- tapOn: Suggest an event
 - tapOn:
     id: event-datetime-picker
 - scrollUntilVisible:
@@ -47,7 +47,7 @@ appId: host.exp.Exponent
     id: suggest-link-input
 - eraseText: 50
 - inputText: 'https://example.com/qa'
-- hideKeyboard
+- tapOn: Suggest an event
 - scrollUntilVisible:
     element: Send suggestion
     direction: DOWN

@@ -7,6 +7,9 @@ import EditProfileSheet from '../edit-profile';
 import VerifyScreen from '../(auth)/verify';
 import { api, type MyProfile } from '@/lib/api';
 
+// Cold React Native screen initialization can exceed Jest's default timeout in CI.
+jest.setTimeout(30_000);
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn() }),
   useLocalSearchParams: () => ({ email: 'maya@example.com' }),

@@ -16,11 +16,11 @@ concurrency:
 jobs:
   simulator:
     # Standard runner: free for this public repository. Do not use -large/-xlarge.
-    runs-on: macos-26-intel
+    runs-on: ${{ matrix.runner || 'macos-26-intel' }}
     timeout-minutes: 50
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 5
       matrix:
         include:
           - group: layout
@@ -31,6 +31,9 @@ jobs:
             flows: ios-native-menus ios-friend-actions ios-privacy-resume
           - group: onboarding
             flows: ios-onboarding ios-activity-suggest ios-map-permission
+          - group: idb
+            runner: macos-26
+            engine: idb
     name: iOS demo QA (${{ matrix.group }})
     defaults:
       run:
@@ -42,6 +45,7 @@ jobs:
       # The first ARM runner exceeded the iOS driver's 120-second startup window.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
       QA_FLOWS: ${{ matrix.flows }}
+      QA_ENGINE: ${{ matrix.engine || 'maestro' }}
     steps:
       - uses: actions/checkout@v4
       - name: Quarantine checkout dotenv files
@@ -71,6 +75,7 @@ jobs:
       - name: Install app dependencies
         run: npm ci
       - name: Install pinned Maestro CLI
+        if: matrix.engine != 'idb'
         run: |
           archive="$RUNNER_TEMP/yard-maestro.zip"
           curl --fail --location --retry 3 https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.12.1/maestro.zip --output "$archive"
@@ -81,6 +86,18 @@ jobs:
           chmod +x "$maestro_bin"
           dirname "$maestro_bin" >> "$GITHUB_PATH"
           echo "JAVA_HOME=$(/usr/libexec/java_home -v 17)" >> "$GITHUB_ENV"
+      - name: Install pinned idb toolset
+        if: matrix.engine == 'idb'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: |
+          brew tap meta/fb
+          tap_dir="$(brew --repo meta/fb)"
+          git -C "$tap_dir" fetch --depth 1 origin f2c725e984cfaa8e2c648be069f3d63925776c83
+          git -C "$tap_dir" checkout --detach f2c725e984cfaa8e2c648be069f3d63925776c83
+          brew trust meta/fb
+          brew install meta/fb/idb
+          brew list --versions meta/fb/idb meta/fb/idb-cli meta/fb/idb-companion
       - name: Run Expo Go on iOS Simulator
         run: |
           perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \

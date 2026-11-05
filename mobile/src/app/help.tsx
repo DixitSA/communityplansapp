@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText, Icon, minTouchTarget, useTheme, type SymbolName } from '@/design';
 
-type Item = { symbol: SymbolName; title: string; detail: string };
+type Item = { symbol: SymbolName; title: string; detail: string; testID?: string };
 
 /**
  * Plain-words help. Each line mirrors a rule in PRD.md section 4 / 5.5 or DATA_MODEL.md,
@@ -13,7 +13,12 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   {
     title: 'Your plans',
     items: [
-      { symbol: 'heart', title: 'Interested', detail: 'Saves the event for later. Only you can see it.' },
+      {
+        symbol: 'heart',
+        title: 'Interested',
+        detail: 'Saves the event for later. Only you can see it.',
+        testID: 'help-interested-description',
+      },
       {
         symbol: 'person.2',
         title: 'Down if friends go',
@@ -78,6 +83,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
         symbol: 'hand.raised',
         title: 'Blocking',
         detail: 'If you block someone, you stop seeing each other anywhere in yard.',
+        testID: 'help-blocking-description',
       },
     ],
   },
@@ -105,10 +111,11 @@ export default function HelpSheet() {
             paddingBottom: space.md,
           }}
         >
-          <AppText variant="title2" accessibilityRole="header">
+          <AppText testID="help-sheet-title" variant="title2" accessibilityRole="header">
             How yard works
           </AppText>
           <Pressable
+            testID="help-sheet-done"
             accessibilityRole="button"
             accessibilityLabel="Done"
             hitSlop={space.sm}
@@ -141,6 +148,7 @@ export default function HelpSheet() {
                   key={row.title}
                   accessible
                   accessibilityLabel={`${row.title}: ${row.detail}`}
+                  testID={row.testID}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'flex-start',

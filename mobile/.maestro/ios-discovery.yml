@@ -53,7 +53,8 @@ appId: host.exp.Exponent
 - assertVisible: Settings
 - assertVisible: 'Interested and Down if friends go: Only you. Your friends never see these.'
 - takeScreenshot: discovery-settings
-- tapOn: Done
+- tapOn:
+    id: settings-sheet-done
 
 - openLink: 'exp://localhost:8093/--/filters'
 - waitForAnimationToEnd:

@@ -44,22 +44,37 @@ appId: host.exp.Exponent
 - tapOn: How yard works
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible: How yard works
+- assertVisible:
+    id: help-sheet-title
+- assertVisible:
+    id: help-interested-description
+    text: 'Interested: Saves the event for later. Only you can see it.'
 - scrollUntilVisible:
-    element: 'Interested: Saves the event for later. Only you can see it.'
+    element:
+      id: help-interested-description
     direction: DOWN
-- assertVisible: 'Interested: Saves the event for later. Only you can see it.'
-- tapOn: Done
+- assertVisible:
+    id: help-interested-description
+    text: 'Interested: Saves the event for later. Only you can see it.'
+- tapOn:
+    id: help-sheet-done
+- assertNotVisible:
+    id: help-sheet-title
 - assertVisible: Settings
 - scrollUntilVisible:
     element: Blocked people
     direction: UP
 - tapOn: Blocked people
-- assertVisible: Blocked people
+- assertVisible:
+    id: blocked-sheet-title
 - assertVisible: No one blocked
-- tapOn: Done
+- tapOn:
+    id: blocked-sheet-done
+- assertNotVisible:
+    id: blocked-sheet-title
 - assertVisible: Settings
-- tapOn: Done
+- tapOn:
+    id: settings-sheet-done
 
 - openLink: 'exp://localhost:8093/--/profile'
 - waitForAnimationToEnd:

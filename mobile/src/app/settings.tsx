@@ -100,7 +100,13 @@ export default function SettingsSheet() {
         <AppText variant="title2" accessibilityRole="header">
           Settings
         </AppText>
-        <Pressable accessibilityRole="button" accessibilityLabel="Done" hitSlop={space.sm} onPress={() => router.back()}>
+        <Pressable
+          testID="settings-sheet-done"
+          accessibilityRole="button"
+          accessibilityLabel="Done"
+          hitSlop={space.sm}
+          onPress={() => router.back()}
+        >
           <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
             Done
           </AppText>

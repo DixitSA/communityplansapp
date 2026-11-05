@@ -16,6 +16,20 @@ appId: host.exp.Exponent
 - tapOn: Search
 - assertVisible: Search
 - takeScreenshot: search
+
+# Check representative screens in dark mode, then restore the default appearance.
+- setDarkMode: enabled
+- assertDarkMode
+- tapOn: Profile
+- assertVisible: Profile
+- takeScreenshot: profile-dark
+- tapOn: Feed
+- assertVisible: Nearby
+- assertDarkMode
+- takeScreenshot: feed-dark
+- setDarkMode: disabled
+- assertLightMode
+
 - openLink: 'exp://localhost:8093/--/suggest'
 - waitForAnimationToEnd:
     timeout: 5000
