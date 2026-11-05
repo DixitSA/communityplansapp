@@ -18,6 +18,12 @@ APP_ID = "com.dixitsa.yard"
 DEMO_ALERT = "No account to delete"
 
 
+def accessibility_predicate(value: str) -> str:
+    """Match an exact visible accessible element by stable ID or user-facing label."""
+    literal = json.dumps(value, ensure_ascii=False)
+    return f"(name == {literal} OR label == {literal}) AND visible == 1 AND accessible == 1"
+
+
 class AppiumError(RuntimeError):
     pass
 
@@ -102,7 +108,10 @@ class WebDriver:
         return self.request(method, f"/session/{self.session_id}{suffix}", payload, timeout)
 
     def find_all(self, value: str):
-        return self.call("POST", "/elements", {"using": "accessibility id", "value": value}) or []
+        return self.call("POST", "/elements", {
+            "using": "-ios predicate string",
+            "value": accessibility_predicate(value),
+        }) or []
 
     def wait_one(self, value: str, label: str | None = None, timeout=45):
         deadline = time.monotonic() + timeout
@@ -191,8 +200,23 @@ class Flow:
     def record(self, check: str, passed: bool, detail=""):
         item = {"check": check, "passed": bool(passed), "detail": str(detail)}
         self.checks.append(item)
+        self.write_checklist("in_progress" if passed else "failed", None if passed else check + (f": {detail}" if detail else ""))
         if not passed:
             raise AssertionError(check + (f": {detail}" if detail else ""))
+
+    def write_checklist(self, status: str, error=None):
+        payload = {
+            "status": status,
+            "passed": True if status == "completed" else False if status == "failed" else None,
+            "flow": self.name,
+            "checks": self.checks,
+        }
+        if error is not None:
+            payload["error"] = str(error)
+        target = self.root / "checklist.json"
+        temporary = target.with_suffix(".json.tmp")
+        temporary.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        temporary.replace(target)
 
     def source(self):
         source = self.driver.source()
@@ -223,6 +247,7 @@ class Flow:
         self.driver.screenshot(self.root / name)
 
     def finish_failure(self, exc):
+        self.write_checklist("failed", exc)
         try:
             self.capture("failure.png")
         except Exception as capture_exc:
@@ -231,10 +256,6 @@ class Flow:
             self.source()
         except Exception as source_exc:
             (self.root / "failure-source-error.txt").write_text(str(source_exc), encoding="utf-8")
-        (self.root / "checklist.json").write_text(
-            json.dumps({"passed": False, "flow": self.name, "error": str(exc), "checks": self.checks}, indent=2),
-            encoding="utf-8",
-        )
 
     def restart_to_feed(self):
         self.driver.restart_app()
@@ -420,9 +441,7 @@ def main():
             try:
                 (flow.root / "flow-start.txt").write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
                 getattr(flow, f"run_{flow.name}")()
-                (flow.root / "checklist.json").write_text(
-                    json.dumps({"passed": True, "flow": flow.name, "checks": flow.checks}, indent=2), encoding="utf-8"
-                )
+                flow.write_checklist("completed")
                 print(f"PASS {flow.name}: {len(flow.checks)} checks")
             except Exception as exc:
                 failures += 1
