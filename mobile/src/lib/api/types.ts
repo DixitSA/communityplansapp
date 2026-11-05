@@ -176,7 +176,7 @@ export type Api = {
   /** Saves name, username, bio and interests in one go. Rejects with the server's error code (`username_taken`, ...). */
   updateMyProfile(input: EditProfileInput): Promise<void>;
   /** Uploads a picked image (a local file URI) as the viewer's profile photo and replaces the old one. */
-  setMyAvatar(fileUri: string): Promise<void>;
+  setMyAvatar(fileUri: string, expectedUserId?: string): Promise<void>;
   /** Deletes the viewer's profile photo. */
   removeMyAvatar(): Promise<void>;
   /** Public URL for an `avatar_path` (chat messages carry paths), or null. */

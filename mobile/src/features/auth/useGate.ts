@@ -1,6 +1,7 @@
 import { isBackendConfigured } from '@/lib/env';
 
 import { useMyProfile } from '../profile/useMyProfile';
+import { useOnboardingDraft } from '../onboarding/draftStore';
 import { useSession } from './AuthProvider';
 import { resolveGate, type Gate } from './gate';
 
@@ -8,5 +9,6 @@ import { resolveGate, type Gate } from './gate';
 export function useGate(): { gate: Gate; profile: ReturnType<typeof useMyProfile> } {
   const session = useSession();
   const profile = useMyProfile();
-  return { gate: resolveGate({ configured: isBackendConfigured, dev: __DEV__, session, profile: profile.data }), profile };
+  const completionPending = useOnboardingDraft((s) => s.completionPending);
+  return { gate: resolveGate({ configured: isBackendConfigured, dev: __DEV__, session, profile: profile.data, completionPending }), profile };
 }

@@ -6,6 +6,8 @@ import { toDateOnly } from '@/lib/validation';
 /** What the person has entered so far. Lives only in memory until the last step submits it. */
 export type OnboardingDraft = {
   displayName: string;
+  /** Local picker URI; uploaded only after the profile has been created. */
+  photoUri: string | null;
   username: string;
   /** Date-only, "YYYY-MM-DD". */
   birthdate: string | null;
@@ -15,6 +17,12 @@ export type OnboardingDraft = {
 };
 
 type DraftState = OnboardingDraft & {
+  completionPending: boolean;
+  profileCreated: boolean;
+  submissionBusy: boolean;
+  /** Changes on reset so old async work cannot modify a different person's draft. */
+  revision: number;
+  setPhotoUri: (uri: string | null) => void;
   setDisplayName: (v: string) => void;
   /** Prefill from Apple, but never overwrite what someone already typed. */
   prefillDisplayName: (v: string | null) => void;
@@ -27,6 +35,7 @@ type DraftState = OnboardingDraft & {
 
 const EMPTY: OnboardingDraft = {
   displayName: '',
+  photoUri: null,
   username: '',
   birthdate: null,
   interestIds: [],
@@ -35,6 +44,11 @@ const EMPTY: OnboardingDraft = {
 
 export const useOnboardingDraft = create<DraftState>()((set) => ({
   ...EMPTY,
+  completionPending: false,
+  profileCreated: false,
+  submissionBusy: false,
+  revision: 0,
+  setPhotoUri: (photoUri) => set({ photoUri }),
   setDisplayName: (displayName) => set({ displayName }),
   prefillDisplayName: (name) =>
     set((s) => (name && name.trim() && !s.displayName.trim() ? { displayName: name.trim() } : s)),
@@ -45,5 +59,5 @@ export const useOnboardingDraft = create<DraftState>()((set) => ({
       interestIds: s.interestIds.includes(id) ? s.interestIds.filter((i) => i !== id) : [...s.interestIds, id],
     })),
   setHomeCityId: (homeCityId) => set({ homeCityId }),
-  reset: () => set(EMPTY),
+  reset: () => set((s) => ({ ...EMPTY, completionPending: false, profileCreated: false, submissionBusy: false, revision: s.revision + 1 })),
 }));

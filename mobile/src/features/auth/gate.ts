@@ -19,16 +19,20 @@ export function resolveGate({
   dev,
   session,
   profile,
+  completionPending = false,
 }: {
   configured: boolean;
   /** `__DEV__`. Demo mode is for development builds only. */
   dev: boolean;
   session: AuthSession | null | undefined;
   profile: MyProfile | null | undefined;
+  /** Keep the final onboarding step visible until its photo and profile refresh finish. */
+  completionPending?: boolean;
 }): Gate {
   if (!configured) return dev ? 'demo' : 'unconfigured';
   if (session === undefined) return 'loading';
   if (session === null) return 'auth';
+  if (completionPending) return 'onboarding';
   if (profile === undefined) return 'loading';
   if (profile === null) return 'onboarding';
   return 'app';

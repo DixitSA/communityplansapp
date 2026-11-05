@@ -6,10 +6,11 @@ import { View } from 'react-native';
 import { AppText, Avatar, Button, Icon, PrimaryButton, useTheme } from '@/design';
 import { inviteFriends } from '@/features/friends/invite';
 import { useOnboardingDraft } from '@/features/onboarding/draftStore';
-import { draftToInput } from '@/features/onboarding/finish';
+import { finishOnboarding } from '@/features/onboarding/finish';
+import { useSession } from '@/features/auth/AuthProvider';
 import { Scaffold } from '@/features/onboarding/Scaffold';
 import { MY_PROFILE_KEY } from '@/features/profile/useMyProfile';
-import { api, errorCode, mapOnboardingError, onboardingStepForError } from '@/lib/api';
+import { mapOnboardingError, onboardingStepForError } from '@/lib/api';
 import { isBackendConfigured } from '@/lib/env';
 import { success } from '@/lib/haptics';
 
@@ -20,40 +21,41 @@ export default function FindFriendsScreen() {
   const { space, colors, radius } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState(false);
+  const session = useSession();
+  const busy = useOnboardingDraft((s) => s.submissionBusy);
+  const profileCreated = useOnboardingDraft((s) => s.profileCreated);
+  const photoUri = useOnboardingDraft((s) => s.photoUri);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const [problem, setProblem] = useState<{ message: string; step: string | null } | null>(null);
 
-  const finish = async () => {
-    const result = draftToInput(useOnboardingDraft.getState());
-    if (!result.ok) {
-      router.navigate(result.step === 'profile' ? '/onboarding/profile' : '/onboarding/interests');
-      return;
-    }
-    setBusy(true);
+  const finish = async (skipPhoto = false) => {
     setProblem(null);
-    try {
-      await api.completeOnboarding(result.input);
-      success();
-      useOnboardingDraft.getState().reset();
-      // With a backend the profile now exists: refetching flips the root guards and lands on the Feed.
-      await queryClient.invalidateQueries({ queryKey: [MY_PROFILE_KEY] });
-      // Demo mode has no guards to flip, so walk to the Feed ourselves.
-      if (!isBackendConfigured) router.replace('/');
-    } catch (err) {
-      const code = errorCode(err);
-      if (code === 'already_onboarded') {
-        await queryClient.invalidateQueries({ queryKey: [MY_PROFILE_KEY] });
-      } else {
-        setProblem({ message: mapOnboardingError(code), step: onboardingStepForError(code) });
-      }
-    } finally {
-      setBusy(false);
+    const result = await finishOnboarding(
+      () => queryClient.invalidateQueries({ queryKey: [MY_PROFILE_KEY] }, { throwOnError: true }),
+      skipPhoto,
+      session?.userId,
+    );
+    switch (result.kind) {
+      case 'incomplete':
+        router.navigate(result.step === 'profile' ? '/onboarding/profile' : '/onboarding/interests');
+        break;
+      case 'photo-error':
+        setPhotoFailed(true);
+        break;
+      case 'error':
+        setProblem({ message: mapOnboardingError(result.code), step: onboardingStepForError(result.code) });
+        break;
+      case 'success':
+        success();
+        // The backend's refreshed profile flips the guards; demo mode needs an explicit navigation.
+        if (!isBackendConfigured) router.replace('/');
+        break;
     }
   };
 
   return (
     <Scaffold
-      back
+      back={!busy && !profileCreated}
       step={4}
       title="bring your people"
       subtitle="Events hit different with someone you know. Send an invite and see who’s going together."
@@ -69,8 +71,20 @@ export default function FindFriendsScreen() {
               ) : null}
             </View>
           ) : null}
-          <PrimaryButton label="Invite friends" onPress={inviteFriends} />
-          <Button label={busy ? 'Setting up…' : 'Finish'} onPress={busy ? () => {} : finish} />
+          {photoFailed && photoUri ? (
+            <>
+              <AppText variant="footnote" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
+                Your profile is ready, but your photo couldn’t upload. Try again or add it later from your profile.
+              </AppText>
+              <PrimaryButton label={busy ? 'Setting up…' : 'Retry photo'} disabled={busy} onPress={() => finish()} />
+              <Button label="Continue without photo" onPress={() => { if (!busy) void finish(true); }} />
+            </>
+          ) : (
+            <>
+              <Button label="Invite friends" onPress={() => { if (!busy) void inviteFriends(); }} />
+              <PrimaryButton label={busy ? 'Setting up…' : 'Finish'} disabled={busy} onPress={() => finish()} />
+            </>
+          )}
         </>
       }
     >
