@@ -1,0 +1,207 @@
+name: iOS native simulator recheck
+
+on:
+  # Register and exercise this workflow on the isolated QA branch.
+  push:
+    branches: ['qa/ios-sweep-*']
+    paths: ['.github/workflows/ios-native-recheck.yml']
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Completed iOS native QA run whose simulator app artifact will be reused'
+        type: string
+        required: true
+        default: '42016734035'
+      appearance:
+        description: 'iOS simulator appearance for the visual probe'
+        type: choice
+        default: dark
+        options: [light, dark]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ios-native-recheck-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  simulator-recheck:
+    # Use the same standard runner architecture as the app-producing workflow.
+    runs-on: macos-26
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_SUPABASE_URL: ''
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
+      EXPO_OFFLINE: '1'
+      EXPO_TOKEN: ''
+      SOURCE_RUN_ID: ${{ inputs.build_run_id || '42016734035' }}
+      SIMULATOR_APPEARANCE: ${{ inputs.appearance || 'dark' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Quarantine checkout dotenv files
+        run: |
+          mkdir -p .maestro/native-recheck-results
+          expected="$GITHUB_WORKSPACE/mobile"
+          actual="$(pwd -P)"
+          expected_real="$(cd "$expected" && pwd -P)"
+          test "$actual" = "$expected_real"
+          quarantine="$RUNNER_TEMP/yard-native-recheck-dotenv"
+          mkdir -p "$quarantine"
+          chmod 700 "$quarantine"
+          moved=0
+          for file in .env .env.*; do
+            if [[ -L "$file" ]]; then
+              printf 'Refusing dotenv symlink before native probe: %s\n' "${file##*/}" >&2
+              exit 1
+            elif [[ -f "$file" ]]; then
+              name="${file##*/}"
+              mv "$file" "$quarantine/$name"
+              printf 'Quarantined %s\n' "$name"
+              moved=1
+            elif [[ -e "$file" ]]; then
+              printf 'Refusing non-regular dotenv path: %s\n' "${file##*/}" >&2
+              exit 1
+            fi
+          done
+          if [[ "$moved" -eq 0 ]]; then
+            echo 'No regular dotenv files found in the QA checkout.'
+          fi
+
+      - name: Validate source run and simulator app artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REPOSITORY" == 'DixitSA/communityplansapp' ]]
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          run_json="$RUNNER_TEMP/yard-source-run.json"
+          artifacts_json="$RUNNER_TEMP/yard-source-artifacts.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > "$run_json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID/artifacts" > "$artifacts_json"
+          python3 - "$run_json" "$artifacts_json" "$SOURCE_RUN_ID" "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          run_path, artifacts_path, requested_id, output_path = sys.argv[1:]
+          run = json.loads(Path(run_path).read_text())
+          artifacts = json.loads(Path(artifacts_path).read_text()).get("artifacts", [])
+          assert str(run.get("id")) == requested_id, "source run ID mismatch"
+          assert run.get("workflow_id") == 408019709, f"wrong workflow: {run.get('workflow_id')}"
+          assert run.get("head_branch") == "qa/ios-sweep-20261105", f"wrong branch: {run.get('head_branch')}"
+          assert run.get("status") == "completed", f"source run is not complete: {run.get('status')}"
+          conclusion = run.get("conclusion")
+          assert conclusion in ("success", "failure"), f"source run was cancelled or skipped: {conclusion}"
+          artifact = next((item for item in artifacts if item.get("name") == "ios-native-simulator-qa"), None)
+          assert artifact is not None, "ios-native-simulator-qa artifact is missing"
+          assert not artifact.get("expired"), "source app artifact has expired"
+          assert artifact.get("size_in_bytes", 0) > 0, "source artifact is empty"
+          sha = run.get("head_sha")
+          assert isinstance(sha, str) and len(sha) == 40 and all(char in "0123456789abcdef" for char in sha), "source build commit SHA missing or malformed"
+          with open(output_path, "a", encoding="utf-8") as output:
+              output.write(f"source_sha={sha}\n")
+              output.write(f"source_conclusion={conclusion}\n")
+          print(f"Validated completed native build run {requested_id} at {sha}; conclusion={conclusion}.")
+          print(f"Source artifact size: {artifact['size_in_bytes']} bytes.")
+          PY
+
+      - name: Verify native build inputs match the probe revision
+        env:
+          SOURCE_BUILD_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          diff_file="$RUNNER_TEMP/native-input-diff.txt"
+          git -C "$GITHUB_WORKSPACE" diff --name-only "$SOURCE_BUILD_SHA" "$GITHUB_SHA" -- \
+            mobile/package.json \
+            mobile/package-lock.json \
+            mobile/app.config.ts \
+            mobile/assets \
+            mobile/ios \
+            mobile/plugins > "$diff_file"
+          if [[ -s "$diff_file" ]]; then
+            echo 'Refusing to reuse the native app because native build inputs changed since its build.' >&2
+            cat "$diff_file" >&2
+            exit 1
+          fi
+          printf 'No changes between source build and probe revisions for native inputs:\npackage.json, package-lock.json, app.config.ts, assets/, ios/, plugins/.\n' \
+            > .maestro/native-recheck-results/native-input-equivalence.txt
+          echo 'Native build inputs match the reused app source revision.'
+
+      - name: Download simulator app artifact from the validated source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          source_dir="$RUNNER_TEMP/yard-native-source-artifact"
+          mkdir -m 700 "$source_dir"
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name ios-native-simulator-qa \
+            --dir "$source_dir"
+          archive_list="$RUNNER_TEMP/yard-native-app-archives.txt"
+          find "$source_dir" -type f -name yard-release-simulator.zip -print > "$archive_list"
+          archive_count="$(wc -l < "$archive_list" | tr -d ' ')"
+          if [[ "$archive_count" -ne 1 ]]; then
+            printf 'Expected exactly one simulator app zip, found %s.\n' "$archive_count" >&2
+            find "$source_dir" -maxdepth 3 -type f -print >&2
+            exit 1
+          fi
+          IFS= read -r artifact_zip < "$archive_list"
+          printf 'ARTIFACT_ZIP=%s\n' "$artifact_zip" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install JavaScript dependencies for the embedded re-bundle
+        run: npm ci --no-audit --no-fund
+
+      - name: Install idb 1.7.8 from the pinned Meta tap revision
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: |
+          mkdir -p .maestro/native-recheck-results
+          brew tap meta/fb
+          tap_dir="$(brew --repo meta/fb)"
+          git -C "$tap_dir" fetch --depth 1 origin f2c725e984cfaa8e2c648be069f3d63925776c83
+          git -C "$tap_dir" checkout --detach f2c725e984cfaa8e2c648be069f3d63925776c83
+          brew trust meta/fb
+          brew install meta/fb/idb
+          brew list --versions meta/fb/idb meta/fb/idb-cli meta/fb/idb-companion | tee .maestro/native-recheck-results/idb-version.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          installed = dict(line.split(maxsplit=1) for line in Path('.maestro/native-recheck-results/idb-version.txt').read_text().splitlines())
+          for name in ('idb', 'idb-cli', 'idb-companion'):
+              assert installed.get(name) == '1.7.8', (name, installed.get(name))
+          PY
+
+      - name: Reuse native binary, QA-rebundle JavaScript, and run focused IDB probes
+        env:
+          SOURCE_BUILD_SHA: ${{ steps.source.outputs.source_sha }}
+          SOURCE_RUN_CONCLUSION: ${{ steps.source.outputs.source_conclusion }}
+          PROBE_SHA: ${{ github.sha }}
+        run: |
+          perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
+            1200 bash .eas/scripts/ios-native-recheck.sh
+
+      - name: Collect simulator diagnostics
+        if: always()
+        run: |
+          mkdir -p .maestro/native-recheck-results
+          xcrun simctl list devices available > .maestro/native-recheck-results/simulator-devices.txt 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-native-recheck
+          path: mobile/.maestro/native-recheck-results
+          retention-days: 1
