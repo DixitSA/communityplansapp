@@ -73,6 +73,8 @@ class WebDriver:
             "appium:udid": self.udid,
             "appium:bundleId": self.app_id,
             "appium:noReset": True,
+            # Hosted runners already boot the device without a Simulator.app window.
+            "appium:isHeadless": True,
             # This disables XCTest idling checks only; app performance/idle behavior is not measured.
             "appium:waitForIdleTimeout": 0,
             "appium:wdaLaunchTimeout": 120000,
