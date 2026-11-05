@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import type { DayMeta } from '@/design';
-import { api, CHARLOTTE_CITY_ID, METERS_PER_MILE, demoFeedRange, type FeedEvent, type FeedRangeParams } from '@/lib/api';
+import { api, CHARLOTTE_CITY_ID, DEMO_INTERESTS, METERS_PER_MILE, demoFeedRange, type FeedEvent, type FeedRangeParams } from '@/lib/api';
 import { toISODate } from '@/lib/dates';
 import { isBackendConfigured } from '@/lib/env';
 import { useNow } from '@/lib/useNow';
@@ -64,10 +64,10 @@ export function useFeedEvents(): {
   });
 
   const where = origin.data ?? CHARLOTTE_CENTER;
-  const interestIds = useMemo(
-    () => (interestList.data ?? []).filter((i) => interests.includes(i.slug)).map((i) => i.id),
-    [interestList.data, interests],
-  );
+  const interestIds = useMemo(() => {
+    const availableInterests = interestList.data ?? (isBackendConfigured ? [] : DEMO_INTERESTS);
+    return availableInterests.filter((i) => interests.includes(i.slug)).map((i) => i.id);
+  }, [interestList.data, interests]);
   const today = toISODate(new Date());
   const params: FeedRangeParams = {
     cityId: CHARLOTTE_CITY_ID,

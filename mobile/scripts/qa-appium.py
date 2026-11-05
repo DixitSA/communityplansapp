@@ -402,8 +402,20 @@ class Flow:
         self.record("calendar editor contains event title", self.has_visible(source, "Rooftop Happy Hour"))
         self.capture("calendar-editor-open.png")
         self.click("Cancel")
-        source = self.wait_source(lambda x: self.has_visible(x, "You're going") and not self.has_visible_exact(x, "New Event"), "Going sheet after cancel")
-        self.record("calendar editor cancelled without saving", not self.has_visible_exact(source, "New Event"))
+        source = self.wait_source(
+            lambda x: self.has_visible_exact(x, "Are you sure you want to discard this new event?")
+            and self.has_visible_exact(x, "Discard Changes"),
+            "native unsaved-event discard confirmation",
+        )
+        self.record("Cancel shows the new-event discard confirmation", self.has_visible_exact(source, "Are you sure you want to discard this new event?"))
+        self.capture("calendar-discard-confirmation.png")
+        self.click("Discard Changes")
+        source = self.wait_source(
+            lambda x: self.has_visible(x, "You're going") and not self.has_visible_exact(x, "New Event"),
+            "Going sheet after discarding unsaved calendar event",
+        )
+        self.record("discard closed the calendar editor", not self.has_visible_exact(source, "New Event"))
+        self.record("discard returned to the Going sheet", self.has_visible(source, "You're going"))
         self.capture("calendar-editor-cancelled.png")
 
 
@@ -414,6 +426,7 @@ def main():
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--appearance", choices=("light", "dark"), required=True)
     parser.add_argument("--results-dir", required=True, type=Path)
+    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar"), default=("profile", "filters", "calendar"))
     args = parser.parse_args()
     parsed_url = urllib.parse.urlparse(args.server_url)
     if parsed_url.scheme != "http" or parsed_url.hostname != "127.0.0.1" or parsed_url.port != 4723:
@@ -431,9 +444,9 @@ def main():
         "appearance": args.appearance,
         "waitForIdleTimeout": 0,
         "performanceOrIdleBehaviorValidated": False,
-        "flows": ["profile", "filters", "calendar"],
+        "flows": args.flows,
     }, indent=2), encoding="utf-8")
-    flows = [Flow(driver, args.results_dir, name) for name in ("profile", "filters", "calendar")]
+    flows = [Flow(driver, args.results_dir, name) for name in args.flows]
     failures = 0
     try:
         driver.create_session()

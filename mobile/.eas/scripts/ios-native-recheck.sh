@@ -14,7 +14,16 @@ SOURCE_BUILD_SHA="${SOURCE_BUILD_SHA:?Set SOURCE_BUILD_SHA from the source run m
 PROBE_SHA="${PROBE_SHA:?Set PROBE_SHA to the current checkout SHA}"
 SOURCE_RUN_CONCLUSION="${SOURCE_RUN_CONCLUSION:?Set SOURCE_RUN_CONCLUSION from the source run metadata}"
 DRIVER_ENGINE="${DRIVER_ENGINE:-appium}"
+PROBE_FLOW_GROUP="${PROBE_FLOW_GROUP:-all}"
 APPIUM_SERVER_PID=""
+case "$PROBE_FLOW_GROUP" in
+  all) PROBE_FLOWS=(profile filters calendar) ;;
+  profile) PROBE_FLOWS=(profile) ;;
+  filters) PROBE_FLOWS=(filters) ;;
+  calendar) PROBE_FLOWS=(calendar) ;;
+  filters-calendar) PROBE_FLOWS=(filters calendar) ;;
+  *) echo "Unsupported native flow group: $PROBE_FLOW_GROUP" >&2; exit 2 ;;
+esac
 mkdir -p "$RESULTS_DIR"
 
 for dotenv_path in .env .env.*; do
@@ -332,16 +341,16 @@ if [[ "$DRIVER_ENGINE" == 'appium' ]]; then
   printf '%s\n' '- Appium server bound to 127.0.0.1; XCTest idling disabled for this probe, app performance not validated: PASS' >> "$RESULTS_DIR/checklist.txt"
   if python3 scripts/qa-appium.py --udid "$SIMULATOR_ID" --app-id "$APP_ID" \
     --server-url http://127.0.0.1:4723 --appearance "$SIMULATOR_APPEARANCE" \
-    --results-dir "$RESULTS_DIR/appium"; then
-    printf '%s\n' '- Appium profile, filters, and calendar flows: PASS' | tee -a "$RESULTS_DIR/checklist.txt"
+    --results-dir "$RESULTS_DIR/appium" --flows "${PROBE_FLOWS[@]}"; then
+    printf '%s\n' "- Appium flows (${PROBE_FLOWS[*]}): PASS" | tee -a "$RESULTS_DIR/checklist.txt"
   else
     flow_status=$?
     printf '%s\n' "- Appium flow group: FAIL (exit $flow_status; see appium/)" | tee -a "$RESULTS_DIR/checklist.txt"
     FLOW_FAILURES=1
   fi
 else
-  log_phase 'Running profile, filters and calendar IDB probes separately against the reused native app.'
-  for flow in profile filters calendar; do
+  log_phase "Running selected IDB flows (${PROBE_FLOWS[*]}) separately against the reused native app."
+  for flow in "${PROBE_FLOWS[@]}"; do
     flow_dir="$RESULTS_DIR/$flow"
     mkdir -p "$flow_dir"
     printf '[%s] Starting IDB flow %s.\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$flow" | tee -a "$RESULTS_DIR/run.log"

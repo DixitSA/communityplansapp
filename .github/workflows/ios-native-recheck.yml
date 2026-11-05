@@ -22,6 +22,11 @@ on:
         type: choice
         default: appium
         options: [appium, idb]
+      flow_group:
+        description: 'Native UI flow selection'
+        type: choice
+        default: all
+        options: [all, profile, filters, calendar, filters-calendar]
 
 permissions:
   contents: read
@@ -48,6 +53,7 @@ jobs:
       SOURCE_RUN_ID: ${{ inputs.build_run_id || '42016734035' }}
       SIMULATOR_APPEARANCE: ${{ inputs.appearance || 'dark' }}
       DRIVER_ENGINE: ${{ inputs.engine || 'appium' }}
+      PROBE_FLOW_GROUP: ${{ inputs.flow_group || 'all' }}
     steps:
       - uses: actions/checkout@v4
         with:
