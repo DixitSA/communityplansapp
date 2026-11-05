@@ -12,7 +12,7 @@ npm run lint
 npm test -- --runInBand
 ```
 
-Latest consolidated result: 65 suites / 438 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
+Latest consolidated result: 66 suites / 439 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
 
 ## Native iOS without a local Mac
 
@@ -100,6 +100,6 @@ Full sign-off still requires the unfinished items in QA_SWEEP.md, including nati
 
 The app now opts into server-confirmed Postgres Changes readiness. The staging runner's explicit `--wait-for-postgres` flag mirrors that behavior; omitting it retains the earlier subscription signal for comparison. One guarded readiness-wait run passed 30/30, with live delivery at 1.021 seconds after setup and fixture cleanup verified. This does not establish long-term transport reliability.
 
-Latest Appium checkpoint: `42032824181` could not start WebDriverAgent (`/status` timeout), so its three flow checklists contain zero assertions. Earlier `42029546093` reached native Settings, establishing that the driver can interact, but stopped at a now-corrected Release-hidden footer check. Core flows are not signed off. The proposed extended group/accessibility audits and chat burst/reconnect mode do not exist yet; see the continuation checkpoint in QA_SWEEP.md.
+Latest native Appium result: `42110711142` passed Filters 6/6 and Calendar 8/8; profile save/reopen passed 8/8 in `42106758884`. QA-17, QA-27 and QA-31 are closed for the tested flows. Earlier WDA startup and preflight failures remain historical and are recorded in QA_SWEEP.md. The Appium-only `flow_group=extended` contains `profile-interests`, `map`, and `context-menu` flows; it has been dispatched and is awaiting results. These are not separate selectable groups. Accessibility audits and chat burst/reconnect remain unrun.
 
-Native rechecks can select `flow_group=all`, `profile`, `filters`, `calendar`, or `filters-calendar`. For the current remaining core checks, add `-f flow_group=filters-calendar` to the recheck dispatch command. Appium now matches exact visible/accessible identifiers or labels, checkpoints assertions incrementally, and handles the observed Calendar new-event discard confirmation without saving. Profile save/reopen passed 8/8 in `42106758884`; the filter fix and complete Calendar return path await recheck.
+Native rechecks can select `flow_group=all`, `profile`, `filters`, `calendar`, or `filters-calendar`; the Appium-only `extended` group has also been dispatched. Profile save/reopen passed 8/8 in `42106758884`; Filters passed 6/6 and Calendar passed 8/8 in `42110711142`. Filters verified Nightlife 19→4, Clear→19, and Apply→Feed. Calendar verified editor/title, Cancel, the observed discard confirmation, Discard Changes, and return to Going; no event was saved. Appium matches exact visible/accessible identifiers or labels and checkpoints assertions incrementally. The Appium-only `flow_group=extended` contains `profile-interests`, `map`, and `context-menu` as one group, not three separate selectable groups; it has been dispatched and is awaiting results.
