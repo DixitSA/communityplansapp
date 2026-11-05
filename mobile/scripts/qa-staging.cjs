@@ -111,6 +111,7 @@ const appDeletedIds = new Set();
 const realtimeChannels = [];
 let qaEvent = null;
 let qaEventInsertAttempted = false;
+let qaAvatar = null;
 let checks = 0;
 let failures = 0;
 let failedCheck = null;
@@ -190,6 +191,24 @@ async function profileFor(client, id) {
 
 async function checkSelfDelete(user, client) {
   activePhase = 'authenticated self-delete';
+  const avatarName = `qa-${nonce}.png`;
+  qaAvatar = { userId: user.id, name: avatarName, path: `${user.id}/${avatarName}` };
+  const avatarPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const { error: uploadError } = await client.storage.from('avatars').upload(qaAvatar.path, avatarPng, {
+    contentType: 'image/png',
+    upsert: false,
+  });
+  requireNoError('upload disposable avatar as authenticated user', uploadError);
+  const { data: uploadedFiles, error: uploadCheckError } = await admin.storage.from('avatars').list(user.id, {
+    search: avatarName,
+    limit: 10,
+  });
+  requireNoError('verify exact disposable avatar exists', uploadCheckError);
+  check('disposable avatar upload is stored', uploadedFiles?.some((file) => file.name === avatarName));
+
   process.stdout.write('Calling delete-account as the first runner-created disposable user.\n');
   const { data, error } = await client.functions.invoke('delete-account');
   requireNoError('call delete-account as disposable user', error);
@@ -213,9 +232,15 @@ async function checkSelfDelete(user, client) {
   ]);
   check('self-delete removes all profile-owned rows', ownedRows.every((result) => !result.error && result.count === 0));
 
-  const { data: avatarFiles, error: avatarError } = await admin.storage.from('avatars').list(user.id, { limit: 100 });
+  const { data: avatarFiles, error: avatarError } = await admin.storage.from('avatars').list(user.id, {
+    search: avatarName,
+    limit: 10,
+  });
   requireNoError('verify self-delete removes avatar files', avatarError);
-  check('no avatar files remain after self-delete', avatarFiles?.length === 0);
+  check(
+    'self-delete removes the exact uploaded avatar',
+    Array.isArray(avatarFiles) && !avatarFiles.some((file) => file.name === avatarName),
+  );
   appDeletedIds.add(user.id);
 }
 
@@ -508,6 +533,28 @@ async function cleanup() {
           cleanupFailedIds.push(`event:${qaEvent.id}`);
           process.stderr.write(`CLEANUP_VERIFY_FAILED QA event ID: ${qaEvent.id}\n`);
         }
+      }
+    }
+    if (qaAvatar && !appDeletedIds.has(qaAvatar.userId)) {
+      let avatarCleanupFailed = false;
+      try {
+        const { error } = await admin.storage.from('avatars').remove([qaAvatar.path]);
+        if (error) avatarCleanupFailed = true;
+        if (!avatarCleanupFailed) {
+          const { data, error: verifyError } = await admin.storage.from('avatars').list(qaAvatar.userId, {
+            search: qaAvatar.name,
+            limit: 10,
+          });
+          avatarCleanupFailed = Boolean(
+            verifyError || !Array.isArray(data) || data.some((file) => file.name === qaAvatar.name),
+          );
+        }
+      } catch {
+        avatarCleanupFailed = true;
+      }
+      if (avatarCleanupFailed) {
+        cleanupFailedIds.push(`avatar:${qaAvatar.path}`);
+        process.stderr.write(`CLEANUP_FAILED tracked avatar path: ${qaAvatar.path}\n`);
       }
     }
     for (const user of created) {

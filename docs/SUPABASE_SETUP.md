@@ -36,7 +36,7 @@ In the Supabase dashboard, under **Authentication**:
    <p>Enter this code in the app: <strong>{{ .Token }}</strong></p>
    ```
    The app asks for the code instead of opening a link.
-3. Supabase's built-in email sender is only meant for testing (very low hourly limit). That's fine for you now. Before the beta, add a custom SMTP sender.
+3. Configure an owned custom SMTP sender before testing email sign-in with ordinary users. Supabase's default sender only permits project-team addresses, currently allows two emails per hour, and provides best-effort delivery. It is insufficient for public beta login. Add your provider's SMTP host, port, credentials and verified From address in the Auth SMTP settings, then test delivery to an owned QA inbox. Keep credentials out of repository files and chat. [Supabase SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp). The November 5 staging audit found no custom SMTP configured; it did not send an email or change settings.
 
 **Apple:**
 1. **Sign In / Providers › Apple:** enable it.

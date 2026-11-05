@@ -77,20 +77,20 @@ The recheck now supports `engine=appium` (default) or `engine=idb`. Appium 3.9.0
 From `mobile/`, the runner defaults to a read-only preflight:
 
 ```sh
-node scripts/qa-staging.cjs
+node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop
 ```
 
 Explicit scoped runs require the existing Supabase CLI login and the guarded `yard-staging` project:
 
 ```sh
-node scripts/qa-staging.cjs --run
-node scripts/qa-staging.cjs --run --chat --wait-for-postgres
-node scripts/qa-staging.cjs --run --delete-account
+node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run
+node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run --chat --wait-for-postgres
+node scripts/qa-staging.cjs --project-ref lvgmelaavgmyjjdggzop --run --delete-account
 ```
 
 These create uniquely named disposable accounts; chat also creates an owned event dated 2099. OTPs are verified without sending email. The runner uses normal authenticated sessions for behavior checks and exact-ID cleanup for its fixtures. It verifies cleanup and never logs keys. Do not change the project guard or point this script at production to bypass a failure.
 
-The deletion option invokes the deployed account-deletion function for its own disposable account. It does not demonstrate native confirmation UI or avatar-file deletion without an uploaded avatar fixture. The chat runner retains a 15-second delivery failure even if a later observation sees a message. Current intermittent Realtime failures remain recorded despite passing repeats and the app's history-refresh mitigation.
+The deletion option first uploads a synthetic 1×1 PNG using the disposable account’s normal storage client, verifies the exact owned path exists, invokes the deployed account-deletion function, and verifies file/Auth/owned-row removal. It tracks the path before upload and cleans that exact path before Auth deletion on failure. The latest run passed 22/22 with exit 0 and verified cleanup of both disposable users. Native confirmation UI remains separate. The chat runner retains a 15-second delivery failure even if a later observation sees a message. Current intermittent Realtime failures remain recorded despite passing repeats and the app's history-refresh mitigation.
 
 ## Closing a finding
 
