@@ -37,6 +37,12 @@ describe('resolveGate', () => {
   it('opens the app once there is a profile', () => {
     expect(resolveGate({ configured: true, dev: false, session, profile })).toBe('app');
   });
+
+  it('holds onboarding while the photo or final refresh is pending, even if the profile refetches', () => {
+    expect(resolveGate({ configured: true, dev: false, session, profile, completionPending: true })).toBe('onboarding');
+    expect(resolveGate({ configured: true, dev: false, session, profile: undefined, completionPending: true })).toBe('onboarding');
+    expect(resolveGate({ configured: true, dev: false, session: null, profile, completionPending: true })).toBe('auth');
+  });
 });
 
 describe('gateAllows', () => {

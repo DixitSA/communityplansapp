@@ -185,10 +185,10 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
       if (error) fail(error);
     },
 
-    async setMyAvatar(fileUri) {
+    async setMyAvatar(fileUri, expectedUserId) {
       const { data: auth } = await supabase.auth.getSession();
       const uid = auth.session?.user.id;
-      if (!uid) throw new ApiError('not_authenticated');
+      if (!uid || (expectedUserId !== undefined && uid !== expectedUserId)) throw new ApiError('not_authenticated');
       const folder = supabase.storage.from('avatars');
       // A new file name each time, so image caches show the new photo straight away.
       const path = `${uid}/avatar-${Date.now()}.jpg`;

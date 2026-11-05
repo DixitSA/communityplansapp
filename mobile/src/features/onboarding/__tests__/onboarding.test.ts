@@ -45,6 +45,14 @@ describe('formatCountdown', () => {
 describe('onboarding draft', () => {
   beforeEach(() => useOnboardingDraft.getState().reset());
 
+  it('keeps a chosen photo across steps and forgets it on reset', () => {
+    useOnboardingDraft.getState().setPhotoUri('file:///profile.jpg');
+    useOnboardingDraft.getState().toggleInterest(2);
+    expect(useOnboardingDraft.getState().photoUri).toBe('file:///profile.jpg');
+    useOnboardingDraft.getState().reset();
+    expect(useOnboardingDraft.getState().photoUri).toBeNull();
+  });
+
   it('prefills the name from Apple only when empty', () => {
     const s = useOnboardingDraft.getState();
     s.prefillDisplayName('  Taylor ');
@@ -76,6 +84,7 @@ describe('onboarding draft', () => {
 describe('draftToInput', () => {
   const today = new Date(2026, 9, 28);
   const full = {
+    photoUri: null,
     displayName: ' Maya ',
     username: 'maya.c',
     birthdate: '1995-06-15',

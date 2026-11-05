@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { api, type AuthSession } from '@/lib/api';
 import { devLog } from '@/lib/devLog';
@@ -19,12 +19,14 @@ const RetryContext = createContext<() => void>(() => {});
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<AuthSession | null | undefined>(isBackendConfigured ? undefined : null);
+  const lastUserId = useRef<string | null | undefined>(undefined);
 
   // Reads the saved session. If nothing answers in 8 s the person is treated as signed out.
   const readSession = useCallback(() => {
     devLog('session read start');
     return readSessionWithWatchdog(() => api.getSession()).then((s) => {
       devLog('session read end:', s ? 'signed in' : 'no session');
+      if (lastUserId.current === undefined) lastUserId.current = s?.userId ?? null;
       setSession((prev) => (prev === undefined ? s : prev));
     });
   }, []);
@@ -34,12 +36,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isBackendConfigured) return;
     void readSession();
     const unsubscribe = api.onSessionChange((s) => {
-      setSession(s);
-      if (!s) {
-        // Signed out: forget everything that belonged to the last person.
+      const userId = s?.userId ?? null;
+      if (!s || (lastUserId.current !== undefined && lastUserId.current !== userId)) {
+        // Signed out or switched accounts: forget the previous person's cache and draft.
         queryClient.clear();
         useOnboardingDraft.getState().reset();
       }
+      lastUserId.current = userId;
+      setSession(s);
     });
     return unsubscribe;
   }, [queryClient, readSession]);

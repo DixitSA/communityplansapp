@@ -1,13 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { PrimaryButton, TextField, useTheme, type FieldStatus } from '@/design';
+import { AppText, Avatar, PrimaryButton, TextField, useTheme, type FieldStatus } from '@/design';
 import { BirthdateField } from '@/features/onboarding/BirthdateField';
 import { useSignInFlow } from '@/features/auth/useSignInFlow';
 import { useOnboardingDraft } from '@/features/onboarding/draftStore';
 import { Scaffold } from '@/features/onboarding/Scaffold';
 import { useUsernameAvailability } from '@/features/onboarding/useUsernameAvailability';
+import { useOnboardingPhoto } from '@/features/onboarding/useOnboardingPhoto';
 import {
   isAtLeast18,
   isValidDisplayName,
@@ -20,6 +21,8 @@ export default function ProfileBasicsScreen() {
   const router = useRouter();
   const { leaveOnboarding } = useSignInFlow();
   const displayName = useOnboardingDraft((s) => s.displayName);
+  const photoUri = useOnboardingDraft((s) => s.photoUri);
+  const photo = useOnboardingPhoto();
   const username = useOnboardingDraft((s) => s.username);
   const birthdateText = useOnboardingDraft((s) => s.birthdate);
   const { setDisplayName, setUsername, setBirthdate } = useOnboardingDraft.getState();
@@ -58,9 +61,46 @@ export default function ProfileBasicsScreen() {
       onBack={leaveOnboarding}
       title="the basics"
       subtitle="Tell us who you are. You can change your name later."
-      footer={<PrimaryButton label="Continue" disabled={!ready} onPress={() => router.push('/onboarding/interests')} />}
+      footer={<PrimaryButton label="Continue" disabled={!ready || photo.isPicking} onPress={() => router.push('/onboarding/interests')} />}
     >
       <View style={{ gap: space.xl }}>
+        <View style={{ alignItems: 'center', gap: space.sm }}>
+          <View accessible accessibilityRole="image" accessibilityLabel={photoUri ? 'Selected profile photo' : 'Profile photo initials'}>
+            <Avatar name={displayName} uri={photoUri} size={space.xxxl * 3} />
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.lg }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={photoUri ? 'Change profile photo' : 'Choose profile photo'}
+              accessibilityState={{ disabled: photo.isPicking, busy: photo.isPicking }}
+              disabled={photo.isPicking}
+              onPress={photo.choosePhoto}
+              style={{ minHeight: space.xxxl + space.lg, justifyContent: 'center' }}
+            >
+              <AppText variant="body" color="accent">
+                {photo.isPicking ? 'Opening photos…' : photoUri ? 'Change photo' : 'Choose photo'}
+              </AppText>
+            </Pressable>
+            {photoUri ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Remove profile photo"
+                accessibilityState={{ disabled: photo.isPicking }}
+                disabled={photo.isPicking}
+                onPress={photo.removePhoto}
+                style={{ minHeight: space.xxxl + space.lg, justifyContent: 'center' }}
+              >
+                <AppText variant="body" color="danger">Remove photo</AppText>
+              </Pressable>
+            ) : null}
+          </View>
+          <AppText variant="footnote" color="inkSecondary">Optional. You can add one later.</AppText>
+          {photo.problem ? (
+            <AppText variant="footnote" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
+              {photo.problem}
+            </AppText>
+          ) : null}
+        </View>
         <TextField
           label="Name"
           value={displayName}
