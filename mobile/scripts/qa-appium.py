@@ -145,7 +145,33 @@ class WebDriver:
         self.call("POST", f"/element/{urllib.parse.quote(str(element_id), safe='')}/value", {"text": text, "value": list(text)})
 
     def source(self):
-        return str(self.call("GET", "/source", timeout=45))
+        try:
+            return str(self.call("GET", "/source", timeout=45))
+        except AppiumError as exc:
+            expected_prefix = f"GET /session/{self.session_id}/source failed after "
+            if not (str(exc).startswith(expected_prefix) and str(exc).endswith(": TimeoutError: timed out")):
+                raise
+            self._log_source_recovery("retrying", "initial GET /source timed out")
+            print("[appium] GET /source timed out; retrying one read-only source request")
+            try:
+                source = str(self.call("GET", "/source", timeout=45))
+            except AppiumError:
+                self._log_source_recovery("retry_failed", "single GET /source retry failed")
+                print("[appium] single GET /source retry failed")
+                raise
+            self._log_source_recovery("recovered", "single GET /source retry succeeded")
+            print("[appium] GET /source recovered on the single retry")
+            return source
+
+    def _log_source_recovery(self, outcome: str, detail: str):
+        path = self.log_path.parent / "source-recovery.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as log:
+            log.write(json.dumps({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "outcome": outcome,
+                "detail": detail,
+            }, separators=(",", ":")) + "\n")
 
     def screenshot(self, path: Path):
         encoded = self.call("GET", "/screenshot", timeout=45)
