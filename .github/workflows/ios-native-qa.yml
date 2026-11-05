@@ -80,11 +80,13 @@ jobs:
           git -C "$tap_dir" checkout --detach f2c725e984cfaa8e2c648be069f3d63925776c83
           brew trust meta/fb
           brew install meta/fb/idb
-          idb_version="$(idb --version)"
-          companion_version="$(idb_companion --version)"
-          printf 'idb: %s\nidb_companion: %s\n' "$idb_version" "$companion_version" | tee .maestro/native-results/idb-version.txt
-          [[ "$idb_version" == *'1.7.8'* ]]
-          [[ "$companion_version" == *'1.7.8'* ]]
+          brew list --versions meta/fb/idb meta/fb/idb-cli meta/fb/idb-companion | tee .maestro/native-results/idb-version.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          installed = dict(line.split(maxsplit=1) for line in Path('.maestro/native-results/idb-version.txt').read_text().splitlines())
+          for name in ('idb', 'idb-cli', 'idb-companion'):
+              assert installed.get(name) == '1.7.8', (name, installed.get(name))
+          PY
       - name: Build and exercise the release simulator app
         run: |
           perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
