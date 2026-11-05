@@ -1,0 +1,81 @@
+appId: host.exp.Exponent
+---
+# Demo-only native menus. Reports and block actions affect in-memory fixtures.
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/event/ev-007'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Rooftop Happy Hour
+    timeout: 30000
+- tapOn: More options
+- assertVisible: Get directions
+- assertVisible: Report
+- tapOn: Report
+- assertVisible: 'Why are you reporting this event\?'
+- assertVisible: Wrong details
+- assertVisible: Spam or scam
+- assertVisible: Unsafe or inappropriate
+- tapOn: Cancel
+- assertVisible: Rooftop Happy Hour
+- takeScreenshot: event-report-menu-dismissed
+
+- openLink: 'exp://localhost:8093/--/user/u-maya'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: More options
+    timeout: 30000
+- tapOn: More options
+- assertVisible: Block Maya Chen
+- tapOn: Report
+- assertVisible: 'Why are you reporting this person\?'
+- assertVisible: Harassment
+- tapOn: Cancel
+- tapOn: More options
+- tapOn: Block Maya Chen
+- assertVisible: 'Block Maya Chen\?'
+- tapOn: Cancel
+- assertVisible: More options
+- tapOn: More options
+- tapOn: Block Maya Chen
+- tapOn: Block
+
+- openLink: 'exp://localhost:8093/--/blocked'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Unblock Maya Chen
+    timeout: 30000
+- tapOn: Unblock Maya Chen
+- assertVisible: 'Unblock Maya Chen\?'
+- tapOn: Cancel
+- assertVisible: Unblock Maya Chen
+- tapOn: Unblock Maya Chen
+- tapOn: Unblock
+- assertVisible: No one blocked
+- takeScreenshot: native-block-unblock-complete
+- tapOn: Done
+
+- openLink: 'exp://localhost:8093/--/settings'
+- tapOn:
+    text: Open
+    optional: true
+- assertVisible: Settings
+- assertVisible: Let people find me by phone number
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- scrollUntilVisible:
+    element: How yard works
+    direction: DOWN
+- tapOn: How yard works
+- assertVisible: How yard works
+- takeScreenshot: native-settings-help
+- tapOn: Done
+- assertVisible: Settings
+- takeScreenshot: native-settings-overview

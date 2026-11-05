@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Icon, PrimaryButton, TextField, useTheme, type FieldStatus } from '@/design';
@@ -31,6 +31,7 @@ export default function SuggestSheet() {
   const router = useRouter();
   const profile = useMyProfile();
   const { submit, isPending, isSuccess, errorCode: serverCode, errorMessage, reset } = useSubmitEvent();
+  const submittingRef = useRef(false);
 
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
@@ -39,6 +40,9 @@ export default function SuggestSheet() {
   const [details, setDetails] = useState('');
   const [touched, setTouched] = useState<Partial<Record<SubmissionField, boolean>>>({});
   const touch = (f: SubmissionField) => setTouched((t) => ({ ...t, [f]: true }));
+  const clearErrorWhenIdle = () => {
+    if (!submittingRef.current) reset();
+  };
 
   const draft = { title, link, startsAt, venue, details };
   const problems = validateSubmission(draft);
@@ -48,7 +52,8 @@ export default function SuggestSheet() {
   const cityId = profile.data?.homeCityId ?? CHARLOTTE_CITY_ID;
 
   const send = async () => {
-    if (!valid || isPending) return;
+    if (!valid || isPending || submittingRef.current) return;
+    submittingRef.current = true;
     try {
       await submit({
         cityId,
@@ -64,6 +69,8 @@ export default function SuggestSheet() {
       // Fix the field the server complained about, when we have one.
       const field = FIELD_FOR_CODE[errorCode(e)];
       if (field) touch(field);
+    } finally {
+      submittingRef.current = false;
     }
   };
 
@@ -130,28 +137,32 @@ export default function SuggestSheet() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      {header}
       <ScrollView
+        style={{ flex: 1, backgroundColor: colors.canvas }}
+        stickyHeaderIndices={[0]}
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.lg }}
+        contentContainerStyle={{ paddingBottom: space.xxxl }}
       >
+        <View style={{ backgroundColor: colors.canvas }}>{header}</View>
+        <View style={{ paddingHorizontal: space.lg, gap: space.lg }}>
         <TextField
           label="Title"
+          testID="suggest-title-input"
           value={title}
           placeholder="What’s happening?"
           autoCapitalize="sentences"
           returnKeyType="next"
           onChangeText={(t) => {
             setTitle(t);
-            reset();
+            clearErrorWhenIdle();
           }}
           onBlur={() => touch('title')}
           status={err(shown('title', false)) ?? counter(title, TITLE_MAX)}
         />
         <TextField
           label="Link"
+          testID="suggest-link-input"
           value={link}
           placeholder="Instagram, Eventbrite, or any page about it"
           keyboardType="url"
@@ -161,7 +172,7 @@ export default function SuggestSheet() {
           returnKeyType="next"
           onChangeText={(t) => {
             setLink(t);
-            reset();
+            clearErrorWhenIdle();
           }}
           onBlur={() => {
             touch('link');
@@ -176,7 +187,7 @@ export default function SuggestSheet() {
           onChange={(d) => {
             setStartsAt(d);
             touch('startsAt');
-            reset();
+            clearErrorWhenIdle();
           }}
           status={err(shown('startsAt', false))}
         />
@@ -187,7 +198,7 @@ export default function SuggestSheet() {
           returnKeyType="next"
           onChangeText={(t) => {
             setVenue(t);
-            reset();
+            clearErrorWhenIdle();
           }}
           status={err(shown('venue', true)) ?? counter(venue, VENUE_MAX)}
         />
@@ -199,7 +210,7 @@ export default function SuggestSheet() {
           textAlignVertical="top"
           onChangeText={(t) => {
             setDetails(t);
-            reset();
+            clearErrorWhenIdle();
           }}
           status={err(shown('details', true)) ?? counter(details, DETAILS_MAX)}
         />
@@ -216,8 +227,8 @@ export default function SuggestSheet() {
           disabled={!valid || isPending}
           onPress={send}
         />
+        </View>
       </ScrollView>
-    </View>
   );
 }
 

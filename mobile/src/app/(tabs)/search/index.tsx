@@ -102,7 +102,7 @@ export default function SearchScreen() {
   const [mode, setMode] = useState<SearchMode>('events');
   const people = mode === 'people';
   const { status, results, typed, refetch } = useFriendSearch(people ? text : '');
-  const { upcoming } = useFeedEvents();
+  const { upcoming, isLoading: eventsLoading, isError: eventsError, refetch: refetchEvents } = useFeedEvents();
   const eventQuery = text.trim();
   const eventResults = useMemo(() => (people ? [] : matchEvents(upcoming, eventQuery, scope)), [people, upcoming, eventQuery, scope]);
 
@@ -122,6 +122,7 @@ export default function SearchScreen() {
   const header = (
     <View style={{ gap: space.md, paddingBottom: space.sm }}>
       <SearchField
+        testID="discovery-search-input"
         value={text}
         onChangeText={onChangeText}
         placeholder={people ? 'Search people' : 'Search events'}
@@ -155,6 +156,16 @@ export default function SearchScreen() {
         <ShortcutGroup label="Neighborhoods" items={shortcuts.neighborhoods} onPick={(q) => pickShortcut(q, 'neighborhood')} />
         <ShortcutGroup label="Categories" items={shortcuts.categories} onPick={(q) => pickShortcut(q, 'category')} />
       </View>
+    ) : eventsLoading ? (
+      <AppText variant="footnote" color="inkSecondary" accessibilityLiveRegion="polite" style={{ textAlign: 'center', padding: space.xl }}>
+        Loading events…
+      </AppText>
+    ) : eventsError ? (
+      <EmptyState symbol="wifi.slash" title="couldn’t load events" message="Check your connection and try again.">
+        <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+          <Button label="Try again" onPress={refetchEvents} />
+        </View>
+      </EmptyState>
     ) : eventResults.length === 0 ? (
       <EmptyState
         symbol="calendar.badge.exclamationmark"

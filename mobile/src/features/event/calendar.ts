@@ -2,11 +2,13 @@ import { Alert } from 'react-native';
 
 import type { EventDetail } from './types';
 
-/** Events don't list an end time yet, so calendar entries last two hours. */
+/** Fallback duration for listings without a usable end time. */
 export const DEFAULT_EVENT_HOURS = 2;
 
 export function calendarEventDetails(event: EventDetail) {
-  const endDate = new Date(event.startsAt.getTime() + DEFAULT_EVENT_HOURS * 60 * 60 * 1000);
+  const endDate = event.endsAt && event.endsAt.getTime() > event.startsAt.getTime()
+    ? event.endsAt
+    : new Date(event.startsAt.getTime() + DEFAULT_EVENT_HOURS * 60 * 60 * 1000);
   return {
     title: event.title,
     startDate: event.startsAt,

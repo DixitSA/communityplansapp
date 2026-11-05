@@ -76,7 +76,7 @@ describe('demo chat API', () => {
     expect((await api.getMyChats())[0].unreadCount).toBe(0);
   });
 
-  it('hides a blocked person’s messages', async () => {
+  it('hides a blocked person’s messages and restores them after unblock', async () => {
     const api = setup();
     const theirs = (await api.getChatMessages(GOING)).find((m) => !m.isMine) as ChatMessage;
     await api.reportMessage(theirs.id, 'spam');
@@ -84,5 +84,7 @@ describe('demo chat API', () => {
     const after = await api.getChatMessages(GOING);
     expect(after.some((m) => m.userId === theirs.userId)).toBe(false);
     expect(after.length).toBeGreaterThan(0);
+    await api.unblockUser(theirs.userId);
+    expect((await api.getChatMessages(GOING)).some((m) => m.id === theirs.id)).toBe(true);
   });
 });

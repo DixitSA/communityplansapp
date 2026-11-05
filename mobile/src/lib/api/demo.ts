@@ -3,7 +3,7 @@ import { applyFilters, type DistanceMi } from '@/features/feed/filters';
 import { getFixtureEvent, getFixtureEvents, getFixtureEventsInRange } from '@/features/feed/fixtures';
 
 import { createDemoChat } from './demoChat';
-import { createDemoFriends } from './demoFriends';
+import { createDemoFriends, DEMO_PEOPLE } from './demoFriends';
 import { ApiError } from './errors';
 import { toISODate } from '../dates';
 import { METERS_PER_MILE, spotlightReason } from './feedMapping';
@@ -138,7 +138,8 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
   const clock = () => now?.() ?? new Date();
 
   const chat = createDemoChat({ wait, now });
-  const { hide, ...friends } = createDemoFriends({ wait, now });
+  const { hide, show, ...friends } = createDemoFriends({ wait, now });
+  const blockedAt = new Map<string, Date>();
 
   return {
     ...chat,
@@ -151,6 +152,7 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       await chat.blockUser(userId);
       // A blocked person vanishes from search, friends and profiles, like on the server.
       hide(userId);
+      if (!blockedAt.has(userId)) blockedAt.set(userId, clock());
     },
     async sendEmailCode(email) {
       await wait();
@@ -169,12 +171,27 @@ export function createDemoApi({ delayMs = 250, now }: { delayMs?: number; now?: 
       setSession({ userId: 'demo-user', email: null });
       return { givenName: 'Taylor' };
     },
-    async unblockUser() {
-      // Nothing is blocked in demo mode.
+    async unblockUser(userId) {
+      await chat.unblockUser(userId);
+      show(userId);
+      blockedAt.delete(userId);
     },
     async listBlockedUsers() {
       await wait();
-      return [];
+      return [...blockedAt].map(([id, at]) => {
+        const person = DEMO_PEOPLE.find((candidate) => candidate.id === id);
+        const attendee = person ? undefined : getFixtureEvents(clock())
+          .flatMap((event) => getFixtureEvent(event.id, clock())?.otherAttendees ?? [])
+          .find((candidate) => candidate.id === id);
+        return {
+          id,
+          displayName: person?.displayName ?? attendee?.name ?? 'Blocked person',
+          username: person?.username ?? '',
+          avatarUrl: person?.avatarUrl ?? null,
+          blockedAt: at,
+        };
+      })
+        .sort((a, b) => b.blockedAt.getTime() - a.blockedAt.getTime());
     },
     async getDiscoverableByPhone() {
       await wait(delayMs / 2);

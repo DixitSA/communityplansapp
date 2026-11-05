@@ -40,6 +40,7 @@ export function BirthdateField({ value, onChange, status }: BirthdateFieldProps)
         }}
       >
         <Pressable
+          testID="birthday-picker"
           accessibilityRole="button"
           accessibilityLabel="Birthday"
           accessibilityValue={{ text: value ? formatLong(value) : 'Not set' }}

@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -44,6 +45,7 @@ function Section({ title, children, trailing }: { title: string; children: React
 export default function FiltersSheet() {
   const { colors, space, radius } = useTheme();
   const insets = useSafeAreaInsets();
+  const [footerHeight, setFooterHeight] = useState(0);
   const timeOfDay = useFiltersStore((s) => s.timeOfDay);
   const interests = useFiltersStore((s) => s.interests);
   const distanceMi = useFiltersStore((s) => s.distanceMi);
@@ -64,8 +66,18 @@ export default function FiltersSheet() {
     padding: space.md,
   } as const;
 
+  // Native form sheets size a direct ScrollView child; a wrapping View breaks that sizing.
+  // Measure the overlaid footer so the last filter can always scroll above it.
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.canvas }}
+        contentContainerStyle={{ paddingBottom: footerHeight }}
+        stickyHeaderIndices={[0]}
+        showsVerticalScrollIndicator={false}
+      >
+      {/* Keep the header in the scroll hierarchy so native form sheets cannot draw controls over it. */}
+      <View style={{ backgroundColor: colors.canvas }}>
       <View
         style={{
           flexDirection: 'row',
@@ -96,13 +108,9 @@ export default function FiltersSheet() {
           </AppText>
         </Pressable>
       </View>
+      </View>
 
-      {/* flex 1: the list fills the sheet and the Show button stays pinned at the bottom. */}
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: space.lg, paddingVertical: space.md, gap: space.xxl }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={{ paddingHorizontal: space.lg, paddingVertical: space.md, gap: space.xxl }}>
         <Section title="Distance" trailing={`Within ${distanceMi} mi`}>
           <SegmentedControl
             options={distanceOptions}
@@ -155,9 +163,13 @@ export default function FiltersSheet() {
         <Section title="Price">
           <SegmentedControl options={PRICE_OPTIONS} value={price} onChange={setPrice} />
         </Section>
+      </View>
       </ScrollView>
 
-      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: Math.max(insets.bottom, space.lg) }}>
+      <View
+        onLayout={({ nativeEvent }) => setFooterHeight(nativeEvent.layout.height)}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.canvas, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: Math.max(insets.bottom, space.lg) }}
+      >
         <PrimaryButton
           accessibilityLabel={count === 0 ? 'Nothing matches' : `Show ${count} ${count === 1 ? 'event' : 'events'}`}
           disabled={count === 0}
@@ -180,6 +192,6 @@ export default function FiltersSheet() {
           )}
         </PrimaryButton>
       </View>
-    </View>
+    </>
   );
 }

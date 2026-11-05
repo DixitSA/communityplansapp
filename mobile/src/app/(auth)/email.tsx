@@ -35,6 +35,7 @@ export default function EmailScreen() {
       footer={<PrimaryButton label={busy ? 'Sending…' : 'Send code'} disabled={!valid || busy} onPress={send} />}
     >
       <TextField
+        testID="email-input"
         label="Email"
         value={email}
         onChangeText={(t) => {

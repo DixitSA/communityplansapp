@@ -12,6 +12,10 @@ import { LoadingScreen } from '@/features/auth/LoadingScreen';
 import { useGate } from '@/features/auth/useGate';
 import { useHydrated } from '@/lib/useHydrated';
 
+// Give native cold links an explicit home. Protected routes still choose auth/onboarding
+// when the tabs are unavailable; demo mode exposes every group and otherwise picks auth.
+export const unstable_settings = { anchor: '(tabs)' };
+
 /**
  * Decides which screens exist for the viewer right now. `Stack.Protected` hides a group of routes
  * when its `guard` is false, and Expo Router moves people off a hidden route by itself, so signing

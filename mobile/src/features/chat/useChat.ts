@@ -22,6 +22,7 @@ import {
   updateMessage,
 } from './messages';
 import { CHATS_KEY } from './useMyChats';
+import { invalidateBlockSensitiveQueries } from '../friends/blockCache';
 
 type Pages = InfiniteData<ChatMessage[], string | undefined>;
 
@@ -174,11 +175,10 @@ export function useChat(eventId: string, enabled = true) {
     onSettled: () => void qc.invalidateQueries({ queryKey: [CHATS_KEY] }),
   });
 
-  /** Everything from someone you blocked disappears, so refetch the chat and the list. */
+  /** Everything from someone you blocked disappears, so refetch all views affected by blocks. */
   const refreshAfterBlock = useCallback(() => {
-    void qc.invalidateQueries({ queryKey: chatKey(eventId) });
-    void qc.invalidateQueries({ queryKey: [CHATS_KEY] });
-  }, [eventId, qc]);
+    invalidateBlockSensitiveQueries(qc);
+  }, [qc]);
 
   return {
     messages,

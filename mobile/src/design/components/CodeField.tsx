@@ -21,6 +21,7 @@ export type CodeFieldProps = {
   error?: boolean;
   editable?: boolean;
   autoFocus?: boolean;
+  testID?: string;
 };
 
 /** One-time-code input: six boxes over a single hidden field, so paste and iOS code autofill just work. */
@@ -32,6 +33,7 @@ export function CodeField({
   error = false,
   editable = true,
   autoFocus = true,
+  testID,
 }: CodeFieldProps) {
   const { colors, space, radius } = useTheme();
   const reduceMotion = useReducedMotion();
@@ -85,6 +87,7 @@ export function CodeField({
           );
         })}
         <TextInput
+          testID={testID}
           ref={inputRef}
           value={value}
           onChangeText={handleChange}

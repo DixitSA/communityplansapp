@@ -360,7 +360,22 @@ export default function FeedScreen() {
       <View style={{ flex: 1, backgroundColor: colors.canvas, paddingTop: insets.top + space.md }}>
         {pinned}
         <View style={{ flex: 1, marginTop: space.xs }}>
-          <EventMap events={dayEvents} day={selected} />
+          {isLoading ? (
+            <View accessibilityLabel="Loading events" style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space.lg, gap: space.sm }}>
+              <Skeleton height={94} radius={radius.card} />
+              <Skeleton height={94} radius={radius.card} />
+            </View>
+          ) : isError ? (
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <EmptyState symbol="wifi.slash" title="couldn't load events" message="Check your connection and try again.">
+                <View style={{ alignSelf: 'stretch', paddingTop: space.md, paddingHorizontal: space.lg }}>
+                  <Button label="Retry" onPress={refetch} />
+                </View>
+              </EmptyState>
+            </View>
+          ) : (
+            <EventMap events={dayEvents} day={selected} />
+          )}
         </View>
       </View>
     );

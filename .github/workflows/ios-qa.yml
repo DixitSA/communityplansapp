@@ -1,0 +1,62 @@
+name: iOS demo QA
+
+on:
+  push:
+    branches: ['qa/ios-sweep-*']
+    paths: ['mobile/**', '.github/workflows/ios-qa.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-qa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  simulator:
+    # Standard runner: free for this public repository. Do not use -large/-xlarge.
+    runs-on: macos-26
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_SUPABASE_URL: ''
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
+      QA_FLOWS: 'ios-smoke ios-core-flows ios-discovery ios-onboarding ios-profile-settings ios-native-menus ios-chat-actions ios-event-actions ios-activity-suggest'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install app dependencies
+        run: npm ci
+      - name: Install pinned Maestro CLI
+        run: |
+          archive="$RUNNER_TEMP/yard-maestro.zip"
+          curl --fail --location --retry 3 https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.6.1/maestro.zip --output "$archive"
+          printf '%s  %s\n' 3440825f514f537c6a96bcf5de995780c2a4a7f83a43208fdc95d4f1fecfad3b "$archive" | shasum -a 256 -c -
+          unzip -q "$archive" -d "$RUNNER_TEMP/yard-maestro"
+          maestro_bin="$(find "$RUNNER_TEMP/yard-maestro" -type f -path '*/bin/maestro' -print -quit)"
+          test -n "$maestro_bin"
+          chmod +x "$maestro_bin"
+          dirname "$maestro_bin" >> "$GITHUB_PATH"
+          echo "JAVA_HOME=$(/usr/libexec/java_home -v 17)" >> "$GITHUB_ENV"
+      - name: Run Expo Go on iOS Simulator
+        run: |
+          perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
+            900 bash .eas/scripts/ios-expo-go-smoke.sh
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          mkdir -p .maestro/results
+          if [ -d "$HOME/.maestro/tests" ]; then cp -R "$HOME/.maestro/tests/." .maestro/results/; fi
+          if [ -f /tmp/yard-metro.log ]; then cp /tmp/yard-metro.log .maestro/results/metro.log; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-demo-qa
+          path: mobile/.maestro/results
+          retention-days: 1

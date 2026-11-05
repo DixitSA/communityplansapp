@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppText, CodeField, FieldStatusLine, useTheme, type FieldStatus } from '@/design';
@@ -20,6 +20,8 @@ export default function VerifyScreen() {
   const { remaining, restart } = useCountdown(RESEND_SECONDS);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const resendInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -39,7 +41,9 @@ export default function VerifyScreen() {
   };
 
   const resend = async () => {
-    if (remaining > 0) return;
+    if (remaining > 0 || resendInFlight.current) return;
+    resendInFlight.current = true;
+    setResendBusy(true);
     light();
     setError(null);
     try {
@@ -48,6 +52,9 @@ export default function VerifyScreen() {
       restart();
     } catch (err) {
       setError(mapAuthError(errorCode(err)));
+    } finally {
+      resendInFlight.current = false;
+      setResendBusy(false);
     }
   };
 
@@ -63,6 +70,7 @@ export default function VerifyScreen() {
     <Scaffold back title="check your email" subtitle={email ? `Pop in the 6-digit code we sent to ${email}.` : 'Pop in the 6-digit code we sent you.'}>
       <View style={{ gap: space.md }}>
         <CodeField
+        testID="verification-code-input"
           value={code}
           onChangeText={(t) => {
             setCode(t);
@@ -78,14 +86,14 @@ export default function VerifyScreen() {
       <View style={{ alignItems: 'center', gap: space.lg }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={remaining > 0 ? `Resend code available in ${formatCountdown(remaining)}` : 'Resend code'}
-          accessibilityState={{ disabled: remaining > 0 }}
-          disabled={remaining > 0}
+          accessibilityLabel={resendBusy ? 'Sending a new code' : remaining > 0 ? `Resend code available in ${formatCountdown(remaining)}` : 'Resend code'}
+          accessibilityState={{ disabled: remaining > 0 || resendBusy }}
+          disabled={remaining > 0 || resendBusy}
           onPress={resend}
           hitSlop={space.md}
         >
-          <AppText variant="subheadline" color={remaining > 0 ? 'inkSecondary' : 'accent'} rounded={remaining > 0} style={{ fontWeight: '600' }}>
-            {remaining > 0 ? `Resend code in ${formatCountdown(remaining)}` : 'Resend code'}
+          <AppText variant="subheadline" color={remaining > 0 || resendBusy ? 'inkSecondary' : 'accent'} rounded={remaining > 0 || resendBusy} style={{ fontWeight: '600' }}>
+            {resendBusy ? 'Sending code…' : remaining > 0 ? `Resend code in ${formatCountdown(remaining)}` : 'Resend code'}
           </AppText>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Use a different email" onPress={() => router.back()} hitSlop={space.md}>

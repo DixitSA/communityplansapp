@@ -1,0 +1,33 @@
+appId: host.exp.Exponent
+---
+- runFlow: reset-demo.yml
+- assertVisible: Any time
+- takeScreenshot: feed
+- tapOn: 'Any time'
+- assertVisible: Tonight
+- tapOn: Tonight
+- assertVisible: Tonight
+- tapOn: Chats
+- assertVisible: Chats
+- takeScreenshot: chats
+- tapOn: Profile
+- assertVisible: Profile
+- takeScreenshot: profile
+- tapOn: Search
+- assertVisible: Search
+- takeScreenshot: search
+- openLink: 'exp://localhost:8093/--/suggest'
+- tapOn:
+    text: Open
+    optional: true
+- assertVisible: Suggest an event
+- tapOn:
+    id: event-datetime-picker
+- scrollUntilVisible:
+    element: Done
+    direction: DOWN
+    centerElement: true
+- assertVisible: Done
+- takeScreenshot: date-time-picker
+- tapOn: Done
+- assertVisible: Suggest an event

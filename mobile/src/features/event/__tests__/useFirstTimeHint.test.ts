@@ -25,7 +25,7 @@ describe('showHintOnce', () => {
     expect(Alert.alert).toHaveBeenCalledTimes(1);
     expect(Alert.alert).toHaveBeenCalledWith(
       'Down if friends go',
-      expect.stringContaining('only you can see this'),
+      expect.stringContaining('Only you can see this'),
       [expect.objectContaining({ text: 'Got it' })],
     );
   });

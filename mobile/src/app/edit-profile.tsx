@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { AppText, Button, EmptyState, InterestTile, Skeleton, TextField, asSymbol, useTheme, type FieldStatus } from '@/design';
 import { useUsernameAvailability } from '@/features/onboarding/useUsernameAvailability';
@@ -74,8 +74,15 @@ function SheetHeader({ onSave }: { onSave?: { enabled: boolean; saving: boolean;
         paddingBottom: space.md,
       }}
     >
-      <Pressable accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={space.md} onPress={() => router.back()}>
-        <AppText variant="body" color="accent">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Cancel"
+        accessibilityState={{ disabled: Boolean(onSave?.saving) }}
+        disabled={Boolean(onSave?.saving)}
+        hitSlop={space.md}
+        onPress={() => router.back()}
+      >
+        <AppText variant="body" color={onSave?.saving ? 'inkSecondary' : 'accent'}>
           Cancel
         </AppText>
       </Pressable>
@@ -106,10 +113,20 @@ function EditForm({ me }: { me: MyProfile }) {
   const { colors, space, radius } = useTheme();
   const router = useRouter();
   const [draft, setDraft] = useState<EditProfileDraft>(() => draftFromProfile(me));
+  const savingRef = useRef(false);
+  const mountedRef = useRef(false);
   const update = useUpdateMyProfile();
   const interests = useQuery({ queryKey: ['interests'], queryFn: () => api.listInterests(), staleTime: Infinity });
 
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const set = (patch: Partial<EditProfileDraft>) => {
+    if (savingRef.current) return;
     update.reset();
     setDraft((d) => ({ ...d, ...patch }));
   };
@@ -150,33 +167,45 @@ function EditForm({ me }: { me: MyProfile }) {
   const canSave = isDraftValid(draft) && usernameOk && isChanged(draft, me) && !update.isPending;
 
   const save = async () => {
-    if (!canSave) return;
+    if (!canSave || savingRef.current) return;
+    savingRef.current = true;
     try {
       await update.mutateAsync(toInput(draft));
-      success();
-      router.back();
+      if (mountedRef.current) {
+        success();
+        router.back();
+      }
     } catch {
       warning();
+    } finally {
+      savingRef.current = false;
     }
   };
 
   const toggleInterest = (id: number) => {
+    if (savingRef.current) return;
     selection();
     set({ interestIds: draft.interestIds.includes(id) ? draft.interestIds.filter((x) => x !== id) : [...draft.interestIds, id] });
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <SheetHeader onSave={{ enabled: canSave, saving: update.isPending, press: save }} />
       <ScrollView
+        style={{ flex: 1, backgroundColor: colors.canvas }}
+        stickyHeaderIndices={[0]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.xl }}
+        contentContainerStyle={{ paddingBottom: space.xxxl }}
       >
+        <View style={{ backgroundColor: colors.canvas }}>
+          <SheetHeader onSave={{ enabled: canSave, saving: update.isPending, press: save }} />
+        </View>
+        <View style={{ paddingHorizontal: space.lg, gap: space.xl }}>
         <TextField
+          testID="edit-profile-name-input"
           label="Name"
           value={draft.displayName}
+          editable={!update.isPending}
           onChangeText={(t) => set({ displayName: t })}
           placeholder="your name"
           autoCapitalize="words"
@@ -189,6 +218,7 @@ function EditForm({ me }: { me: MyProfile }) {
           label="Username"
           prefix="@"
           value={draft.username}
+          editable={!update.isPending}
           onChangeText={(t) => set({ username: normalizeUsername(t) })}
           placeholder="username"
           autoCapitalize="none"
@@ -200,6 +230,7 @@ function EditForm({ me }: { me: MyProfile }) {
         <TextField
           label="Bio"
           value={draft.bio}
+          editable={!update.isPending}
           onChangeText={(t) => set({ bio: t })}
           placeholder="say something about you"
           multiline
@@ -253,7 +284,7 @@ function EditForm({ me }: { me: MyProfile }) {
             {mapEditProfileError(errorCode(update.error))}
           </AppText>
         ) : null}
+        </View>
       </ScrollView>
-    </KeyboardAvoidingView>
   );
 }

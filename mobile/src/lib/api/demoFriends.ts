@@ -72,7 +72,7 @@ export function createDemoFriends({ wait, now = () => new Date() }: {
   | 'listFriends'
   | 'listFriendRequests'
   | 'getUserProfile'
-> & { hide: (userId: string) => void } {
+> & { hide: (userId: string) => void; show: (userId: string) => void } {
   const links = new Map<string, Link>();
   DEMO_PEOPLE.forEach((d, i) => {
     // Requests are recent; friendships are older, oldest first in the list order.
@@ -94,6 +94,9 @@ export function createDemoFriends({ wait, now = () => new Date() }: {
     hide: (userId) => {
       hidden.add(userId);
       links.delete(userId);
+    },
+    show: (userId) => {
+      hidden.delete(userId);
     },
 
     async searchProfiles(query, limit = SEARCH_LIMIT) {

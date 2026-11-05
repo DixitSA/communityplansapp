@@ -1,0 +1,106 @@
+appId: host.exp.Exponent
+---
+# Demo-only onboarding. Uses the local fake OTP (123456) and sends no email.
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/email'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: 'what’s your email\?'
+    timeout: 30000
+- takeScreenshot: onboarding-email
+- tapOn:
+    id: email-input
+- eraseText: 100
+- inputText: 'not-an-email'
+- assertVisible:
+    text: Send code
+    enabled: false
+- eraseText: 50
+- inputText: 'maestro-onboarding@example.test'
+- assertVisible:
+    text: Send code
+    enabled: true
+- tapOn: Send code
+- extendedWaitUntil:
+    visible: 'check your email'
+    timeout: 30000
+- takeScreenshot: onboarding-verify
+- tapOn:
+    id: verification-code-input
+- inputText: '000000'
+- assertVisible: 'That code isn’t right. Check it and try again.'
+- tapOn: Use a different email
+- assertVisible: 'what’s your email\?'
+- tapOn:
+    id: email-input
+- eraseText: 100
+- inputText: 'maestro-onboarding@example.test'
+- tapOn: Send code
+- extendedWaitUntil:
+    visible: 'check your email'
+    timeout: 30000
+- tapOn:
+    id: verification-code-input
+- inputText: '123456'
+- extendedWaitUntil:
+    visible: 'the basics'
+    timeout: 30000
+- takeScreenshot: onboarding-profile
+- assertVisible:
+    text: Continue
+    enabled: false
+- tapOn:
+    id: onboarding-name-input
+- inputText: 'Maestro Demo'
+- tapOn:
+    id: onboarding-username-input
+- inputText: 'maestro_demo_qa'
+- extendedWaitUntil:
+    visible: '@maestro_demo_qa is available'
+    timeout: 30000
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: birthday-picker
+    direction: DOWN
+- tapOn:
+    id: birthday-picker
+# Scroll beside the wheel so Done is above the pinned Continue footer.
+- swipe:
+    start: 96%, 75%
+    end: 96%, 35%
+    duration: 500
+- scrollUntilVisible:
+    element: Done
+    direction: DOWN
+    centerElement: true
+- takeScreenshot: onboarding-birthday-picker
+- tapOn: Done
+- assertVisible:
+    text: Continue
+    enabled: true
+- tapOn: Continue
+- extendedWaitUntil:
+    visible: 'what are you into\?'
+    timeout: 30000
+- takeScreenshot: onboarding-interests
+- tapOn: Nightlife
+- tapOn: Music
+- tapOn: Food & Drinks
+- scrollUntilVisible:
+    element: '3 picked'
+    direction: DOWN
+- assertVisible: '3 picked'
+- tapOn: Continue
+- assertVisible: 'see what’s near you'
+- takeScreenshot: onboarding-location
+- tapOn: Just Charlotte
+- assertVisible: 'bring your people'
+- takeScreenshot: onboarding-friends
+- tapOn: Finish
+- extendedWaitUntil:
+    visible: 'yard\.'
+    timeout: 30000
+- takeScreenshot: onboarding-feed

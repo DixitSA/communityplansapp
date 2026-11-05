@@ -56,9 +56,17 @@ describe('event helpers', () => {
     expect(directionsUrl(e)).toBe(`https://maps.apple.com/?q=${encodeURIComponent('Haberdish, 1218 Thomas Ave, Charlotte, NC')}`);
   });
 
-  it('gives the calendar a two hour event at the venue', () => {
-    const c = calendarEventDetails(e);
-    expect(c.endDate.getTime() - c.startDate.getTime()).toBe(2 * 60 * 60 * 1000);
-    expect(c.location).toContain('Haberdish');
+  it('uses the listed end time for overnight calendar events', () => {
+    const event = getFixtureEvent('ev-005', NOW)!;
+    expect(event.endsAt).toBeDefined();
+    expect(calendarEventDetails(event).endDate).toEqual(event.endsAt);
+  });
+
+  it('gives the calendar a two hour fallback when the end is missing or invalid', () => {
+    for (const endsAt of [undefined, new Date('invalid'), new Date(e.startsAt.getTime() - 1)]) {
+      const c = calendarEventDetails({ ...e, endsAt });
+      expect(c.endDate.getTime() - c.startDate.getTime()).toBe(2 * 60 * 60 * 1000);
+      expect(c.location).toContain('Haberdish');
+    }
   });
 });

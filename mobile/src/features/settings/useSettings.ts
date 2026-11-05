@@ -4,6 +4,7 @@ import { api, type BlockedPerson } from '@/lib/api';
 
 import { useSession } from '../auth/AuthProvider';
 import { withoutBlocked } from './blockedList';
+import { invalidateBlockSensitiveQueries } from '../friends/blockCache';
 
 const DISCOVERABLE_KEY = 'discoverable-by-phone';
 const BLOCKED_KEY = 'blocked-users';
@@ -26,7 +27,15 @@ export function useDiscoverableByPhone() {
     onError: (_err, _value, ctx) => qc.setQueryData(key, ctx?.previous),
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
-  return { value: query.data, isLoading: query.isLoading, set: mutation.mutate, error: mutation.isError };
+  return {
+    value: query.data,
+    isLoading: query.isPending,
+    isReadError: query.isError,
+    retry: query.refetch,
+    isPending: mutation.isPending,
+    set: mutation.mutate,
+    error: mutation.isError,
+  };
 }
 
 export function useBlockedUsers() {
@@ -42,9 +51,7 @@ export function useUnblock() {
     mutationFn: (id: string) => api.unblockUser(id),
     onSuccess: (_data, id) => {
       qc.setQueryData<BlockedPerson[]>(key, (list) => (list ? withoutBlocked(list, id) : list));
-      // People you unblocked can show up in search, friends and feeds again.
-      qc.invalidateQueries({ queryKey: key });
-      qc.invalidateQueries({ queryKey: ['friends'] });
+      invalidateBlockSensitiveQueries(qc);
     },
   });
 }

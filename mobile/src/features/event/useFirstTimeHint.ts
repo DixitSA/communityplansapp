@@ -7,7 +7,7 @@ const KEY_PREFIX = 'hint_seen_';
 const COPY = {
   down_if_friends: {
     title: 'Down if friends go',
-    body: "We'll ping you the moment a friend taps Going. Until then, only you can see this.",
+    body: 'Only you can see this. Check back on the event to see which friends are Going.',
   },
 } as const;
 

@@ -1,0 +1,86 @@
+appId: host.exp.Exponent
+---
+- runFlow: reset-demo.yml
+- tapOn: Profile
+- extendedWaitUntil:
+    visible: Edit profile
+    timeout: 30000
+- tapOn: 'Activity(, new updates)?'
+- assertVisible: Activity
+- tapOn: 'Maya Chen is going to Sunset Vinyl Hour.*ago\.'
+- extendedWaitUntil:
+    visible: Sunset Vinyl Hour
+    timeout: 30000
+
+# Use a direct link only after leaving Activity, so no native modal is on top of Suggest.
+- openLink: 'exp://localhost:8093/--/suggest'
+- tapOn:
+    text: Open
+    optional: true
+- assertVisible: Suggest an event
+- tapOn:
+    id: suggest-title-input
+- inputText: 'QA-NATIVE-SUGGESTION-20261105-01'
+- tapOn:
+    id: suggest-link-input
+- inputText: 'not a url'
+- hideKeyboard
+- tapOn:
+    id: event-datetime-picker
+- scrollUntilVisible:
+    element: Done
+    direction: DOWN
+    centerElement: true
+- tapOn: Done
+- scrollUntilVisible:
+    element: Send suggestion
+    direction: DOWN
+- assertVisible:
+    text: Send suggestion
+    enabled: false
+
+# Replace the invalid URL with a valid one, then submit into demo-only in-memory history.
+- scrollUntilVisible:
+    element:
+      id: suggest-link-input
+    direction: UP
+- tapOn:
+    id: suggest-link-input
+- eraseText: 50
+- inputText: 'https://example.com/qa'
+- hideKeyboard
+- scrollUntilVisible:
+    element: Send suggestion
+    direction: DOWN
+- assertVisible:
+    text: Send suggestion
+    enabled: true
+- tapOn: Send suggestion
+- assertVisible: 'Thanks, we’ll take a look. If it’s a fit, it’ll show up in the feed.'
+- tapOn: Done
+
+- openLink: 'exp://localhost:8093/--/profile'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Settings
+    timeout: 30000
+- tapOn: Settings
+- assertVisible: Settings
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- scrollUntilVisible:
+    element: 'QA-NATIVE-SUGGESTION-20261105-01, Pending, suggested .*'
+    direction: DOWN
+- assertVisible: 'QA-NATIVE-SUGGESTION-20261105-01, Pending, suggested .*'
+- takeScreenshot: native-suggestion-history
+- scrollUntilVisible:
+    element: Delete account
+    direction: DOWN
+- tapOn: Delete account
+- assertVisible: No account to delete
+- tapOn: OK
+- assertVisible: Settings

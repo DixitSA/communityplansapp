@@ -1,0 +1,44 @@
+name: iOS Expo Go smoke
+
+jobs:
+  ios_smoke:
+    name: Expo Go SDK 58 on iOS Simulator
+    runs_on: macos-medium
+    image: macos-tahoe-26.5-xcode-26.6
+    environment: preview
+    env:
+      EXPO_NO_DOTENV: '1'
+      EXPO_PUBLIC_SUPABASE_URL: ''
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Install Expo Go SDK 58 and start iOS Simulator
+        run: |
+          perl -e '$limit=shift; $child=fork(); die "fork failed" unless defined $child; if (!$child) { setpgrp(0,0); exec @ARGV; exit 127 } $SIG{ALRM}=sub { kill "TERM", -$child; sleep 1; kill "KILL", -$child; exit 124 }; alarm $limit; waitpid($child,0); exit(($? & 127) ? 128 + ($? & 127) : $? >> 8)' \
+            900 bash .eas/scripts/ios-expo-go-smoke.sh
+      - name: Collect Maestro screenshots and test report
+        if: ${{ always() }}
+        run: |
+          mkdir -p .maestro/results
+          if [ -d "$HOME/.maestro/tests" ]; then
+            cp -R "$HOME/.maestro/tests/." .maestro/results/
+          fi
+          if [ -f /tmp/yard-metro.log ]; then
+            cp /tmp/yard-metro.log .maestro/results/metro.log
+          fi
+          if xcrun simctl list devices available | grep -q '(Booted)'; then
+            xcrun simctl io booted screenshot .maestro/results/simulator-last-screen.png
+          fi
+          if [ -z "$(find .maestro/results -type f -print -quit)" ]; then
+            printf 'iOS smoke job did not produce logs or screenshots.\n' > .maestro/results/diagnostics.txt
+          fi
+          mkdir -p /tmp/yard-ios-smoke-results
+          cp -R .maestro/results/. /tmp/yard-ios-smoke-results/
+      - name: Upload Maestro screenshots and test report
+        if: ${{ always() }}
+        uses: eas/upload_artifact
+        with:
+          type: other
+          name: iOS Expo Go smoke results
+          path: /tmp/yard-ios-smoke-results

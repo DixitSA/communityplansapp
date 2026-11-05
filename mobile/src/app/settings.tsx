@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
-import { AppText, Icon, NavRow, useTheme, type SymbolName } from '@/design';
+import { AppText, Button, Icon, NavRow, useTheme, type SymbolName } from '@/design';
 import { DELETE_ACCOUNT_DETAILS } from '@/features/settings/blockedList';
 import { useDeleteAccount, useDiscoverableByPhone } from '@/features/settings/useSettings';
 import { MySuggestions } from '@/features/submit/MySuggestions';
@@ -79,7 +79,13 @@ export default function SettingsSheet() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+    <ScrollView
+      stickyHeaderIndices={[0]}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={{ paddingBottom: space.xxxl }}
+    >
+      {/* StickyHeader moves its direct child's style to a wrapper; keep row layout one level inside. */}
+      <View style={{ backgroundColor: colors.canvas }}>
       <View
         style={{
           flexDirection: 'row',
@@ -88,6 +94,7 @@ export default function SettingsSheet() {
           paddingHorizontal: space.lg,
           paddingTop: space.xl,
           paddingBottom: space.md,
+          backgroundColor: colors.canvas,
         }}
       >
         <AppText variant="title2" accessibilityRole="header">
@@ -99,8 +106,9 @@ export default function SettingsSheet() {
           </AppText>
         </Pressable>
       </View>
+      </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl, gap: space.xl }}>
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, gap: space.xl }}>
         <View style={{ gap: space.sm }}>
           <SectionLabel>Who sees what</SectionLabel>
           <View
@@ -158,14 +166,28 @@ export default function SettingsSheet() {
             <AppText variant="body" style={{ flex: 1, paddingVertical: space.md }}>
               Let people find me by phone number
             </AppText>
-            <Switch
+            {discoverable.value !== undefined ? <Switch
               accessibilityLabel="Let people find me by phone number"
-              value={discoverable.value ?? true}
-              disabled={discoverable.isLoading}
+              value={discoverable.value}
+              disabled={discoverable.isLoading || discoverable.isReadError || discoverable.isPending}
+              accessibilityState={{ disabled: discoverable.isLoading || discoverable.isReadError || discoverable.isPending }}
               onValueChange={(v) => discoverable.set(v)}
               trackColor={{ true: colors.accent }}
-            />
+            /> : null}
           </View>
+          {discoverable.isLoading ? (
+            <AppText variant="footnote" color="inkSecondary">Loading privacy setting…</AppText>
+          ) : discoverable.isReadError ? (
+            <View style={{ gap: space.sm }}>
+              <AppText variant="footnote" color="danger">Couldn’t load your privacy setting.</AppText>
+              <Button label="Try again" accessibilityLabel="Retry privacy setting" onPress={() => discoverable.retry()} />
+            </View>
+          ) : null}
+          {discoverable.error ? (
+            <AppText variant="footnote" color="danger" accessibilityRole="alert">
+              Couldn’t save your choice. Check your connection and try again.
+            </AppText>
+          ) : null}
           <AppText variant="footnote" color="inkSecondary" style={{ paddingLeft: space.xs }}>
             phone matching arrives later. this saves your choice now.
           </AppText>
@@ -268,7 +290,7 @@ export default function SettingsSheet() {
             </AppText>
           </View>
         ) : null}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }

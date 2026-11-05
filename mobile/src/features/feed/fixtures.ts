@@ -1,5 +1,6 @@
 import type { EventCardData } from '@/design';
 import type { EventDetail } from '@/features/event/types';
+import { coordsForEvent, neighborhoodFor } from '@/features/map/coords';
 import { addDays, startOfDay, startOfWeekMonday } from '@/lib/dates';
 
 // Fictional sample data so the feed has something to show before the backend exists.
@@ -12,6 +13,14 @@ const P = {
 };
 
 type Seed = Omit<EventCardData, 'startsAt' | 'endsAt'> & { dayOffset: number; hour: number; minute?: number; hours?: number | null };
+type FixtureLocation = { lat: number; lng: number; neighborhood: string };
+type FixtureEvent = EventCardData & FixtureLocation;
+
+/** Use the same deterministic location already used to place demo map pins. */
+function fixtureLocation(event: Pick<EventCardData, 'id' | 'venue'>): FixtureLocation {
+  const point = coordsForEvent(event);
+  return { lat: point.latitude, lng: point.longitude, neighborhood: neighborhoodFor(event.venue).name };
+}
 
 const SEEDS: Seed[] = [
   {
@@ -67,7 +76,7 @@ const SEEDS: Seed[] = [
 ];
 
 /** Sample events spread across the current Mon-Sun week. Sunday is intentionally empty. */
-export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
+export function getFixtureEvents(now: Date = new Date()): FixtureEvent[] {
   const monday = startOfWeekMonday(now);
   return SEEDS.map(({ dayOffset, hour, minute = 0, hours = 2, ...rest }) => {
     const day = addDays(monday, dayOffset);
@@ -75,6 +84,7 @@ export function getFixtureEvents(now: Date = new Date()): EventCardData[] {
     return {
       ...rest,
       startsAt,
+      ...fixtureLocation(rest),
       ...(hours === null ? null : { endsAt: new Date(startsAt.getTime() + hours * 3_600_000) }),
     };
   });
@@ -87,15 +97,21 @@ const WEEK_SUFFIX = /^(.+)-w(-?\d+)$/;
  * The sample week repeated for the weeks `[start, start + days)` touches, so the agenda has
  * more than one week to scroll. Events outside the range are dropped. Week 0 keeps the plain ids.
  */
-export function getFixtureEventsInRange(start: Date, days: number): EventCardData[] {
+export function getFixtureEventsInRange(start: Date, days: number): FixtureEvent[] {
   const first = startOfDay(start);
   const end = addDays(first, days);
   const weeks = Math.ceil((days + 6) / 7) + 1;
-  const out: EventCardData[] = [];
+  const out: FixtureEvent[] = [];
   for (let w = 0; w < weeks; w++) {
     for (const e of getFixtureEvents(addDays(start, w * 7))) {
       // Week 0 of `getFixtureEvents` is the Mon-Sun week of `start`, so later weeks are +7 days each.
-      if (e.startsAt >= first && e.startsAt < end) out.push(w === 0 ? e : { ...e, id: `${e.id}-w${w}` });
+      if (e.startsAt >= first && e.startsAt < end) {
+        if (w === 0) out.push(e);
+        else {
+          const id = `${e.id}-w${w}`;
+          out.push({ ...e, id, ...fixtureLocation({ id, venue: e.venue }) });
+        }
+      }
     }
   }
   return out.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
@@ -224,7 +240,7 @@ const DETAILS: Record<string, DetailSeed> = {
 };
 
 /** One fixture event with everything the event page needs, or undefined for an unknown id. */
-export function getFixtureEvent(id: string, now: Date = new Date()): EventDetail | undefined {
+export function getFixtureEvent(id: string, now: Date = new Date()): (EventDetail & FixtureLocation) | undefined {
   const repeat = WEEK_SUFFIX.exec(id);
   const baseId = repeat ? repeat[1] : id;
   const card = getFixtureEvents(addDays(now, repeat ? Number(repeat[2]) * 7 : 0))
@@ -236,6 +252,7 @@ export function getFixtureEvent(id: string, now: Date = new Date()): EventDetail
     ...card,
     id,
     ...rest,
+    ...fixtureLocation({ id, venue: card.venue }),
     tags: [{ label: card.categoryLabel, interest: card.interest }, ...moreTags],
   };
 }

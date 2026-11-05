@@ -1,0 +1,89 @@
+appId: host.exp.Exponent
+---
+# Independent iOS demo discovery checks; authored and YAML-validated, not executed.
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/search'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: discovery-search-input
+    timeout: 30000
+- tapOn:
+    id: discovery-search-input
+- inputText: 'Rooftop Happy Hour'
+- extendedWaitUntil:
+    visible: Rooftop Happy Hour
+    timeout: 30000
+- takeScreenshot: discovery-search-events
+- tapOn: People
+- tapOn: Clear search
+- tapOn:
+    id: discovery-search-input
+- inputText: Noah
+- extendedWaitUntil:
+    visible: 'Noah Kim, @noah.kim'
+    timeout: 30000
+- takeScreenshot: discovery-search-people
+
+- openLink: 'exp://localhost:8093/--/friends'
+- tapOn:
+    text: Open
+    optional: true
+- scrollUntilVisible:
+    element: "Accept Noah Kim's friend request"
+    direction: DOWN
+- assertVisible: "Accept Noah Kim's friend request"
+- takeScreenshot: discovery-friend-request
+- tapOn: "Accept Noah Kim's friend request"
+- assertNotVisible: "Accept Noah Kim's friend request"
+- scrollUntilVisible:
+    element: 'Noah Kim, @noah.kim'
+    direction: DOWN
+- takeScreenshot: discovery-friend-accepted
+
+- openLink: 'exp://localhost:8093/--/profile'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Edit profile
+    timeout: 30000
+- assertVisible: Settings
+- takeScreenshot: discovery-profile
+- tapOn: Settings
+- assertVisible: Settings
+- assertVisible: 'Interested and Down if friends go: Only you. Your friends never see these.'
+- takeScreenshot: discovery-settings
+- tapOn: Done
+
+- openLink: 'exp://localhost:8093/--/filters'
+- tapOn:
+    text: Open
+    optional: true
+- assertVisible: Filters
+- assertVisible: Nightlife
+- tapOn: Nightlife
+- assertVisible:
+    text: Nightlife
+    selected: true
+- scrollUntilVisible:
+    element: Free
+    direction: DOWN
+- tapOn: Free
+- assertVisible:
+    text: Free
+    selected: true
+- scrollUntilVisible:
+    element: Uptown
+    direction: DOWN
+- tapOn: Uptown
+- assertVisible:
+    text: Uptown
+    selected: true
+- takeScreenshot: discovery-filters-selected
+- tapOn: Clear all filters
+- assertVisible:
+    text: Clear all filters
+    enabled: false

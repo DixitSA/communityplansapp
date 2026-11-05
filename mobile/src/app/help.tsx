@@ -17,7 +17,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
       {
         symbol: 'person.2',
         title: 'Down if friends go',
-        detail: 'Only you can see it. When the first friend taps Going, we let you know in Activity.',
+        detail: 'Only you can see it. Check back on the event to see which friends are Going.',
       },
       {
         symbol: 'checkmark.circle',
@@ -89,33 +89,40 @@ export default function HelpSheet() {
   const router = useRouter();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: space.lg,
-          paddingTop: space.xl,
-          paddingBottom: space.md,
-        }}
-      >
-        <AppText variant="title2" accessibilityRole="header">
-          How yard works
-        </AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Done"
-          hitSlop={space.sm}
-          style={{ minHeight: minTouchTarget, minWidth: minTouchTarget, alignItems: 'flex-end', justifyContent: 'center' }}
-          onPress={() => router.back()}>
-          <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
-            Done
+    <ScrollView
+      stickyHeaderIndices={[0]}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={{ paddingBottom: space.xxxl }}
+    >
+      <View style={{ backgroundColor: colors.canvas }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: space.lg,
+            paddingTop: space.xl,
+            paddingBottom: space.md,
+          }}
+        >
+          <AppText variant="title2" accessibilityRole="header">
+            How yard works
           </AppText>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Done"
+            hitSlop={space.sm}
+            style={{ minHeight: minTouchTarget, minWidth: minTouchTarget, alignItems: 'flex-end', justifyContent: 'center' }}
+            onPress={() => router.back()}
+          >
+            <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
+              Done
+            </AppText>
+          </Pressable>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl, gap: space.xl }}>
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, gap: space.xl }}>
         {SECTIONS.map((section) => (
           <View key={section.title} style={{ gap: space.sm }}>
             <AppText variant="overline" color="inkSecondary" accessibilityRole="header" style={{ paddingLeft: space.xs }}>
@@ -159,7 +166,7 @@ export default function HelpSheet() {
             </View>
           </View>
         ))}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }

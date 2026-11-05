@@ -1,0 +1,89 @@
+appId: host.exp.Exponent
+---
+# Isolate the suite from sheets and local mutations left by previous suites.
+- runFlow: reset-demo.yml
+
+- openLink: 'exp://localhost:8093/--/event/ev-007'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Rooftop Happy Hour
+    timeout: 30000
+- assertVisible: Interested
+- tapOn: Interested
+- assertVisible: Only you can see this
+- tapOn: Going
+- assertVisible: You're going
+- assertVisible: Open chat
+- tapOn: Open chat
+- extendedWaitUntil:
+    visible: Chat options
+    timeout: 30000
+- extendedWaitUntil:
+    visible: 'Message( Message the group)?'
+    timeout: 30000
+- tapOn: 'Message( Message the group)?'
+- inputText: 'QA-MAESTRO-ROOFTOP-CORE-20261104-01'
+- tapOn: Send message
+- assertVisible: '.*QA-MAESTRO-ROOFTOP-CORE-20261104-01.*'
+
+- openLink: 'exp://localhost:8093/--/settings'
+- tapOn:
+    text: Open
+    optional: true
+- assertVisible: Settings
+- assertVisible: 'Interested and Down if friends go: Only you. Your friends never see these.'
+- assertVisible: 'Going: Your friends, and other people going to the same event.'
+# The sheet begins below the screen midpoint; expand from its own grabber first.
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- scrollUntilVisible:
+    element: How yard works
+    direction: DOWN
+- tapOn: How yard works
+- assertVisible: How yard works
+- scrollUntilVisible:
+    element: 'Interested: Saves the event for later. Only you can see it.'
+    direction: DOWN
+- assertVisible: 'Interested: Saves the event for later. Only you can see it.'
+- tapOn: Done
+- assertVisible: Settings
+- scrollUntilVisible:
+    element: Blocked people
+    direction: UP
+- tapOn: Blocked people
+- assertVisible: Blocked people
+- assertVisible: No one blocked
+- tapOn: Done
+- assertVisible: Settings
+- tapOn: Done
+
+- openLink: 'exp://localhost:8093/--/profile'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Edit profile
+    timeout: 30000
+- tapOn: Edit profile
+- assertVisible: Edit profile
+- tapOn:
+    id: edit-profile-name-input
+- eraseText: 50
+- inputText: ' '
+- assertVisible:
+    text: Save
+    enabled: false
+- eraseText: 50
+- inputText: 'QA Maestro Smoke'
+- assertVisible:
+    text: Save
+    enabled: true
+- tapOn: Save
+- extendedWaitUntil:
+    visible: QA Maestro Smoke
+    timeout: 30000
+- takeScreenshot: core-profile-saved

@@ -3,6 +3,10 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'yard',
   slug: 'yard',
+  owner: 'xitidxs-team',
+  extra: {
+    eas: { projectId: '00f881a0-b80c-47d5-8170-a549f87d7ca0' },
+  },
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',

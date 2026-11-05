@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 
-import { AppText, EmptyState, PersonRow, PersonRowSkeleton, useTheme } from '@/design';
+import { AppText, Button, EmptyState, PersonRow, PersonRowSkeleton, useTheme } from '@/design';
 import { useBlockedUsers, useUnblock } from '@/features/settings/useSettings';
 import { warning } from '@/lib/haptics';
 
@@ -26,32 +26,42 @@ export default function BlockedScreen() {
   const people = blocked.data ?? [];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: space.lg,
-          paddingTop: space.xl,
-          paddingBottom: space.md,
-        }}
-      >
-        <AppText variant="title2" accessibilityRole="header">
-          Blocked people
-        </AppText>
-        <Pressable accessibilityRole="button" accessibilityLabel="Done" hitSlop={space.sm} onPress={() => router.back()}>
-          <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
-            Done
+    <ScrollView
+      stickyHeaderIndices={[0]}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      contentContainerStyle={{ paddingBottom: space.xxxl }}
+    >
+      <View style={{ backgroundColor: colors.canvas }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: space.lg,
+            paddingTop: space.xl,
+            paddingBottom: space.md,
+          }}
+        >
+          <AppText variant="title2" accessibilityRole="header">
+            Blocked people
           </AppText>
-        </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Done" hitSlop={space.sm} onPress={() => router.back()}>
+            <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
+              Done
+            </AppText>
+          </Pressable>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl, gap: space.md }}>
+      <View style={{ paddingHorizontal: space.lg, paddingTop: space.md, gap: space.md }}>
         {blocked.isLoading ? (
           <PersonRowSkeleton />
         ) : blocked.isError ? (
-          <EmptyState symbol="wifi.slash" title="Couldn’t load this" message="check your connection and try again." />
+          <EmptyState symbol="wifi.slash" title="Couldn’t load this" message="check your connection and try again.">
+            <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+              <Button label="Try again" onPress={() => void blocked.refetch()} />
+            </View>
+          </EmptyState>
         ) : people.length === 0 ? (
           <EmptyState symbol="hand.raised" title="No one blocked" message="no one blocked. love that for you." />
         ) : (
@@ -78,7 +88,7 @@ export default function BlockedScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }

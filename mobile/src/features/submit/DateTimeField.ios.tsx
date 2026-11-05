@@ -41,6 +41,7 @@ export function DateTimeField({ label, value, onChange, status }: DateTimeFieldP
         }}
       >
         <Pressable
+          testID="event-datetime-picker"
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityValue={{ text: text ?? 'Not set' }}

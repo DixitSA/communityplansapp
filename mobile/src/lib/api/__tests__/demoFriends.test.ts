@@ -107,4 +107,27 @@ describe('demo friends', () => {
     expect((await api.listFriends()).some((f) => f.id === 'u-maya')).toBe(false);
     expect(await codeOf(api.sendFriendRequest('u-maya'))).toBe('user_not_found');
   });
+
+  it('lists blocked people and restores discoverability without restoring friendship on unblock', async () => {
+    const api = make();
+    await api.blockUser('u-maya');
+    expect(await api.listBlockedUsers()).toEqual([
+      expect.objectContaining({ id: 'u-maya', displayName: 'Maya Chen', blockedAt: expect.any(Date) }),
+    ]);
+    await api.unblockUser('u-maya');
+    expect(await api.listBlockedUsers()).toEqual([]);
+    expect(await api.getUserProfile('u-maya')).toMatchObject({ friendship: 'none' });
+    expect(await api.searchProfiles('maya')).toEqual([expect.objectContaining({ id: 'u-maya' })]);
+    expect((await api.listFriends()).some((f) => f.id === 'u-maya')).toBe(false);
+  });
+
+  it('also lists blocked event attendees outside the friends directory', async () => {
+    const api = make();
+    await api.blockUser('o-alex');
+    expect(await api.listBlockedUsers()).toEqual([
+      expect.objectContaining({ id: 'o-alex', displayName: 'Alex Rivera' }),
+    ]);
+    await api.unblockUser('o-alex');
+    expect(await api.listBlockedUsers()).toEqual([]);
+  });
 });

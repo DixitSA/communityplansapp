@@ -1,0 +1,47 @@
+appId: host.exp.Exponent
+---
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/event/ev-007'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Rooftop Happy Hour
+    timeout: 30000
+
+# Clear an Interested plan, then restore it through the in-app undo toast.
+- tapOn: Interested
+- assertVisible: Only you can see this
+- tapOn: Interested
+- assertVisible: 'removed from your plans'
+- assertVisible: Undo
+- tapOn: Undo
+- assertVisible:
+    text: Interested
+    selected: true
+- assertVisible: Only you can see this
+
+# Both shares open the iOS system share sheet; require its Close control before dismissing.
+- tapOn: Share Rooftop Happy Hour
+- assertVisible: Close
+- tapOn: Close
+- assertVisible: Rooftop Happy Hour
+
+- tapOn: Going
+- assertVisible: You're going
+- scrollUntilVisible:
+    element: Bring a friend
+    direction: DOWN
+- tapOn: Bring a friend
+- assertVisible: Close
+- tapOn: Close
+- assertVisible: You're going
+- scrollUntilVisible:
+    element: Add to Calendar
+    direction: UP
+- tapOn: Add to Calendar
+- assertVisible: New Event
+- assertVisible: Cancel
+- tapOn: Cancel
+- assertVisible: You're going
+- takeScreenshot: native-event-actions-cancelled

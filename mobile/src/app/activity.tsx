@@ -192,7 +192,19 @@ export default function ActivityScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingHorizontal: space.lg, paddingBottom: space.xxxl, flexGrow: 1 }}
       >
-        {all.length === 0 ? (
+        {all.length === 0 && requests.isPending ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <AppText variant="subheadline" color="inkSecondary" accessibilityLiveRegion="polite">
+              Loading friend requests…
+            </AppText>
+          </View>
+        ) : all.length === 0 && requests.isError ? (
+          <EmptyState symbol="wifi.slash" title="couldn’t load activity" message="Check your connection and try again.">
+            <View style={{ alignSelf: 'stretch', paddingTop: space.md }}>
+              <Button label="Try again" onPress={() => void requests.refetch()} />
+            </View>
+          </EmptyState>
+        ) : all.length === 0 ? (
           <View style={{ flex: 1 }}>
             <EmptyState
               symbol="bell.slash"

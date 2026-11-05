@@ -1,0 +1,27 @@
+# QA upload: only the standalone mobile project is needed by the worker.
+/docs/
+/marketing/
+/supabase/
+/.claude/
+/.github/
+/events.json
+/.impeccable.md
+node_modules/
+.expo/
+dist/
+web-build/
+.screenshots/
+coverage/
+.env
+.env.*
+*.p8
+*.p12
+*.pem
+*.key
+*.jks
+*.mobileprovision
+*.tsbuildinfo
+npm-debug.*
+/mobile/ios/
+/mobile/android/
+/mobile/.maestro/results/

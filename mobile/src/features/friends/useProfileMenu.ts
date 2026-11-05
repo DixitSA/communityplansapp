@@ -5,7 +5,7 @@ import { api, errorCode, mapChatError, type PersonSummary, type ReportReason } f
 import { warning } from '@/lib/haptics';
 import { showMenu } from '@/lib/menu';
 
-import { FRIENDS_KEY } from './friendsCache';
+import { invalidateBlockSensitiveQueries } from './blockCache';
 
 const REASONS: { reason: ReportReason; label: string }[] = [
   { reason: 'spam', label: 'Spam' },
@@ -17,7 +17,7 @@ const failed = (err: unknown) => Alert.alert('That didn’t work', mapChatError(
 
 /**
  * The ··· menu on someone's profile: Report and Block (App Store guideline 1.2). Blocking removes any
- * friendship on the server, so everything that depends on friends refetches and `onBlocked` leaves the page.
+ * friendship on the server, so every block-sensitive view refetches and `onBlocked` leaves the page.
  */
 export function useProfileMenu(person: PersonSummary | null, onBlocked: () => void) {
   const client = useQueryClient();
@@ -47,10 +47,7 @@ export function useProfileMenu(person: PersonSummary | null, onBlocked: () => vo
             api
               .blockUser(person.id)
               .then(() => {
-                void client.invalidateQueries({ queryKey: [FRIENDS_KEY] });
-                void client.invalidateQueries({ queryKey: ['feed'] });
-                void client.invalidateQueries({ queryKey: ['event'] });
-                void client.invalidateQueries({ queryKey: ['chats'] });
+                invalidateBlockSensitiveQueries(client);
                 onBlocked();
               })
               .catch(failed);

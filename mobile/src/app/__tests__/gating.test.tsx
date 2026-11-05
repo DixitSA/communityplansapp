@@ -2,6 +2,9 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 
 import type { AuthSession, MyProfile } from '@/lib/api';
 
+// renderRouter imports the full route graph; cold render measured 16.3s on Windows.
+jest.setTimeout(30_000);
+
 // This file pretends Supabase is configured, so the root layout's guards are live.
 jest.mock('@/lib/env', () => ({ isBackendConfigured: true, backendHost: () => 'test.supabase.co', supabaseUrl: '', supabaseAnonKey: '' }));
 jest.mock('@/design/components/Skeleton', () => ({ Skeleton: () => null }));
@@ -37,9 +40,9 @@ describe('root guards with a backend', () => {
   it('shows the welcome screen to signed-out people, even when they ask for the feed', async () => {
     mockState.session = null;
     mockState.profile = null;
-    await renderRouter('./src/app', { initialUrl: '/' });
-    expect(await screen.findByText('Continue with email')).toBeTruthy();
-    expect(screen.queryByText('Nearby')).toBeNull();
+    const result = await renderRouter('./src/app', { initialUrl: '/' });
+    expect(result.getByLabelText('Continue with email')).toBeTruthy();
+    expect(result.queryByLabelText('Nearby')).toBeNull();
   });
 
   it('keeps signed-in people without a profile in onboarding', async () => {

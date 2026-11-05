@@ -1,0 +1,34 @@
+appId: host.exp.Exponent
+---
+- runFlow: reset-demo.yml
+- assertVisible: '(Show map|Map)'
+- tapOn: '(Show map|Map)'
+- assertVisible: '(Show list|List)'
+- extendedWaitUntil:
+    visible: '\d+ events? · .*'
+    timeout: 30000
+- takeScreenshot: native-apple-map
+- tapOn: '(Show list|List)'
+- assertVisible: '(Show map|Map)'
+- tapOn: '(Location: )?Charlotte, NC'
+- assertVisible: Charlotte, North Carolina
+- tapOn: Charlotte, North Carolina
+- assertVisible: '(Show map|Map)'
+
+- openLink: 'exp://localhost:8093/--/onboarding/location'
+- tapOn:
+    text: Open
+    optional: true
+- extendedWaitUntil:
+    visible: Use my location
+    timeout: 30000
+- tapOn: Use my location
+- extendedWaitUntil:
+    visible: 'Don.t Allow'
+    timeout: 30000
+- takeScreenshot: native-location-permission
+- tapOn: 'Don.t Allow'
+- extendedWaitUntil:
+    visible: bring your people
+    timeout: 30000
+- takeScreenshot: native-location-denied-recovery

@@ -64,6 +64,7 @@ export function createDemoChat({ wait, now = () => new Date() }: {
   | 'reportMessage'
   | 'reportUser'
   | 'blockUser'
+  | 'unblockUser'
 > {
   const rooms = new Map<string, Room>();
   const blocked = new Set<string>();
@@ -224,6 +225,10 @@ export function createDemoChat({ wait, now = () => new Date() }: {
     async blockUser(userId) {
       await wait();
       blocked.add(userId);
+    },
+    async unblockUser(userId) {
+      await wait();
+      blocked.delete(userId);
     },
   };
 }

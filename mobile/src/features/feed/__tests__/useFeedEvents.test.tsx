@@ -24,7 +24,7 @@ const listInterests = api.listInterests as jest.Mock;
 const getFeed = api.getFeedRange as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
@@ -60,14 +60,16 @@ describe('useFeedEvents scope', () => {
     useFiltersStore.setState({ interests: [], scope: 'nearby' });
     getFeed.mockResolvedValue([]);
   });
-  afterEach(() => useFiltersStore.setState({ scope: 'nearby' }));
+  afterEach(async () => {
+    await act(async () => useFiltersStore.setState({ scope: 'nearby' }));
+  });
 
   it('asks the server for p_mode = friends when the Friends segment is selected', async () => {
     const { result } = await renderHook(() => useFeedEvents(), { wrapper });
     await waitFor(() => expect(getFeed).toHaveBeenCalled());
     expect(getFeed.mock.calls[0][0]).toMatchObject({ mode: 'nearby' });
 
-    act(() => useFiltersStore.getState().setScope('friends'));
+    await act(async () => useFiltersStore.getState().setScope('friends'));
     await waitFor(() => expect(getFeed.mock.calls.some(([p]) => p.mode === 'friends')).toBe(true));
     expect(result.current.isError).toBe(false);
   });

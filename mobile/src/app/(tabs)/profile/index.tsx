@@ -58,7 +58,7 @@ function Stat({
   badge = false,
   a11yExtra,
 }: {
-  value: number;
+  value: number | null;
   label: string;
   /** Makes the stat a link (the Friends stat opens the friends list). */
   href?: Href;
@@ -70,13 +70,13 @@ function Stat({
   const body = (
     <View
       accessible
-      accessibilityLabel={`${value} ${label}${a11yExtra ? `, ${a11yExtra}` : ''}`}
+      accessibilityLabel={`${value === null ? `${label} unavailable` : `${value} ${label}`}${a11yExtra ? `, ${a11yExtra}` : ''}`}
       accessibilityRole={href ? 'link' : undefined}
       accessibilityHint={href ? 'Opens your friends' : undefined}
       style={{ flex: 1, alignItems: 'center', gap: space.xs }}
     >
       <AppText variant="title2" rounded>
-        {value}
+        {value ?? '—'}
       </AppText>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
         <AppText variant="footnote" color="inkSecondary">
@@ -210,7 +210,7 @@ export default function ProfileScreen() {
             backgroundColor: colors.surface,
           }}
         >
-          <Stat value={stats.upcoming} label="Upcoming" />
+          <Stat value={myPlans.data === undefined ? null : stats.upcoming} label="Upcoming" />
           <Stat
             value={stats.friends}
             label="Friends"
@@ -218,14 +218,21 @@ export default function ProfileScreen() {
             badge={incomingRequests > 0}
             a11yExtra={incomingRequests > 0 ? `${incomingRequests} new ${incomingRequests === 1 ? 'request' : 'requests'}` : undefined}
           />
-          <Stat value={stats.interested} label="Interested" />
+          <Stat value={myPlans.data === undefined ? null : stats.interested} label="Interested" />
         </View>
 
         <View style={{ gap: space.md }}>
           <AppText variant="overline" color="inkSecondary" accessibilityRole="header">
             your plans
           </AppText>
-          {plans.length === 0 ? (
+          {myPlans.isPending ? (
+            <View accessibilityLabel="Loading your plans"><Skeleton height={84} radius={radius.card} /></View>
+          ) : myPlans.isError ? (
+            <View style={{ gap: space.sm }}>
+              <AppText variant="body" color="inkSecondary">Couldn’t load your plans.</AppText>
+              <Button label="Try again" accessibilityLabel="Retry plans" onPress={() => myPlans.refetch()} />
+            </View>
+          ) : plans.length === 0 ? (
             <View style={{ gap: space.lg }}>
               <AppText variant="body" color="inkSecondary">
                 Nothing on your calendar yet. Tap Going on something and it lands here.
@@ -264,7 +271,14 @@ export default function ProfileScreen() {
               </AppText>
             </View>
           </View>
-          {interestedPlans.length === 0 ? (
+          {myPlans.isPending ? (
+            <View accessibilityLabel="Loading interested events"><Skeleton height={84} radius={radius.card} /></View>
+          ) : myPlans.isError ? (
+            <View style={{ gap: space.sm }}>
+              <AppText variant="body" color="inkSecondary">Couldn’t load your interested events.</AppText>
+              <Button label="Try again" accessibilityLabel="Retry interested events" onPress={() => myPlans.refetch()} />
+            </View>
+          ) : interestedPlans.length === 0 ? (
             <AppText variant="body" color="inkSecondary">
               Tap ♡ Interested on an event to stash it here.
             </AppText>

@@ -1,0 +1,68 @@
+appId: host.exp.Exponent
+---
+- runFlow: reset-demo.yml
+- assertVisible: Any time
+- tapOn: Profile
+- extendedWaitUntil:
+    visible: Edit profile
+    timeout: 30000
+- tapOn: Edit profile
+- assertVisible: Edit profile
+- tapOn:
+    id: edit-profile-name-input
+- eraseText: 50
+- assertVisible:
+    text: Save
+    enabled: false
+- inputText: 'QA Native Profile'
+- assertVisible:
+    text: Save
+    enabled: true
+- tapOn: Save
+- assertNotVisible:
+    id: edit-profile-name-input
+- extendedWaitUntil:
+    visible: Profile
+    timeout: 30000
+- assertVisible: 'QA Native Profile'
+- takeScreenshot: native-profile-name-saved
+- tapOn: Edit profile
+- assertVisible:
+    id: edit-profile-name-input
+    text: '.*QA Native Profile.*'
+- tapOn: Cancel
+- assertVisible: Profile
+
+- tapOn: Settings
+- assertVisible: Settings
+- assertVisible: 'Interested and Down if friends go: Only you. Your friends never see these.'
+- swipe:
+    start: 50%, 55%
+    end: 50%, 20%
+    duration: 500
+- assertVisible: Settings
+- takeScreenshot: native-settings-expanded
+- assertVisible: 'Let people find me by phone number'
+- scrollUntilVisible:
+    element: Blocked people
+    direction: DOWN
+- tapOn: Blocked people
+- assertVisible: Blocked people
+- assertVisible: No one blocked
+- tapOn: Done
+- assertVisible: Settings
+- scrollUntilVisible:
+    element: How yard works
+    direction: DOWN
+- takeScreenshot: native-settings-help-link
+- tapOn: How yard works
+- assertVisible: How yard works
+- scrollUntilVisible:
+    element: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'
+    direction: DOWN
+- assertVisible: 'Blocking: If you block someone, you stop seeing each other anywhere in yard.'
+- tapOn: Done
+- assertVisible: Settings
+- tapOn: Done
+- assertVisible: Profile
+- takeScreenshot: native-profile-settings-complete

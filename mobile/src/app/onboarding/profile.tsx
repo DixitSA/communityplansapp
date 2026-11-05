@@ -62,6 +62,7 @@ export default function ProfileBasicsScreen() {
     >
       <View style={{ gap: space.xl }}>
         <TextField
+          testID="onboarding-name-input"
           label="Name"
           value={displayName}
           onChangeText={setDisplayName}
@@ -73,6 +74,7 @@ export default function ProfileBasicsScreen() {
           returnKeyType="next"
         />
         <TextField
+          testID="onboarding-username-input"
           label="Username"
           prefix="@"
           value={username}
