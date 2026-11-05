@@ -145,8 +145,9 @@ sleep 10
 xcrun simctl io "$SIMULATOR_ID" screenshot "$RESULTS_DIR/native-app-first-launch.png"
 printf '%s\n' '- Installed and launched app; captured first-launch screenshot: PASS' >> "$RESULTS_DIR/checklist.txt"
 
-log_phase 'Running the iOS accessibility/action probe against the real app bundle.'
-python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$RESULTS_DIR" --app-id "$APP_ID"
-printf '%s\n' '- Completed IDB simulator interaction probe: PASS' >> "$RESULTS_DIR/checklist.txt"
-printf 'Native simulator app + idb probe: PASS\n' > "$RESULTS_DIR/summary.txt"
-log_phase 'Native simulator QA completed successfully.'
+# Release deliberately denies demo routing when backend settings are absent. Keep that
+# production guard intact; the separate recheck workflow instruments only its disposable
+# demo bundle and reuses this compiled native app for interaction tests.
+printf '%s\n' '- Demo interaction probe: NOT RUN (Release without backend correctly denies demo routing; use ios-native-recheck.yml)' >> "$RESULTS_DIR/checklist.txt"
+printf 'Native Release simulator build/install/launch: PASS. Interaction QA is separate.\n' > "$RESULTS_DIR/summary.txt"
+log_phase 'Native simulator build completed; use the reusable artifact for instrumented demo interaction QA.'

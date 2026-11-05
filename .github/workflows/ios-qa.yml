@@ -10,7 +10,7 @@ on:
         description: 'Run all groups or one focused native check'
         type: choice
         default: all
-        options: [all, layout, menus, social, onboarding, idb, navigation, event-actions]
+        options: [all, layout, menus, social, onboarding, idb, navigation, event-actions, event-undo]
 
 permissions:
   contents: read
@@ -39,7 +39,7 @@ jobs:
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ''
       # The first ARM runner exceeded the iOS driver's 120-second startup window.
       MAESTRO_DRIVER_STARTUP_TIMEOUT: '180000'
-      QA_FLOWS: ${{ matrix.group == 'layout' && 'ios-profile-settings ios-discovery ios-smoke' || matrix.group == 'menus' && 'ios-core-flows ios-chat-actions ios-event-actions' || matrix.group == 'social' && 'ios-native-menus ios-friend-actions ios-privacy-resume' || matrix.group == 'onboarding' && 'ios-onboarding ios-activity-suggest ios-map-permission' || matrix.group == 'navigation' && 'ios-navigation-menus' || matrix.group == 'event-actions' && 'ios-event-actions' || '' }}
+      QA_FLOWS: ${{ matrix.group == 'layout' && 'ios-profile-settings ios-discovery ios-smoke' || matrix.group == 'menus' && 'ios-core-flows ios-chat-actions ios-event-actions' || matrix.group == 'social' && 'ios-native-menus ios-friend-actions ios-privacy-resume' || matrix.group == 'onboarding' && 'ios-onboarding ios-activity-suggest ios-map-permission' || matrix.group == 'navigation' && 'ios-navigation-menus' || matrix.group == 'event-actions' && 'ios-event-actions' || matrix.group == 'event-undo' && 'ios-event-undo' || '' }}
       QA_ENGINE: ${{ matrix.group == 'idb' && 'idb' || 'maestro' }}
     steps:
       - uses: actions/checkout@v4

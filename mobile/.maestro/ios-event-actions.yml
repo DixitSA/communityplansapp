@@ -8,18 +8,6 @@ appId: host.exp.Exponent
     visible: Rooftop Happy Hour
     timeout: 30000
 
-# Clear an Interested plan, then restore it through the in-app undo toast.
-- tapOn: Interested
-- assertVisible: Only you can see this
-- tapOn: Interested
-- tapOn:
-    text: Undo
-    waitToSettleTimeoutMs: 0
-- assertVisible:
-    text: Interested
-    selected: true
-- assertVisible: Only you can see this
-
 # iOS 26's compact share sheet has no Close button; dismiss its observed header with a swipe.
 - tapOn: Share Rooftop Happy Hour
 - assertVisible: Copy

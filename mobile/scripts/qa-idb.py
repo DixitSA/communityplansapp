@@ -82,6 +82,7 @@ def main():
     ap.add_argument("--udid", required=True)
     ap.add_argument("--results-dir", required=True, type=Path)
     ap.add_argument("--app-id", choices=("host.exp.Exponent", "com.dixitsa.yard"), default="host.exp.Exponent")
+    ap.add_argument("--flow", choices=("all", "profile", "filters", "calendar"), default="all")
     a = ap.parse_args(); a.results_dir.mkdir(parents=True, exist_ok=True)
     global COMMAND_LOG
     COMMAND_LOG = a.results_dir / "commands.jsonl"
@@ -89,6 +90,8 @@ def main():
         ap.error("idb and xcrun must already be installed")
     if any(os.environ.get(k, "").strip() for k in ("EXPO_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_ANON_KEY")):
         ap.error("demo preflight failed: Supabase URL/key must be blank")
+    if a.flow == "calendar" and a.app_id != "com.dixitsa.yard":
+        ap.error("Calendar editor requires the standalone native simulator app")
     checks = []
     stage = "idb-companion-connect"
 
@@ -122,7 +125,7 @@ def main():
         except Exception:
             pass
         (a.results_dir / "checklist.json").write_text(json.dumps({
-            "passed": False, "failed_at": stage, "error": str(error), "checks": checks,
+            "passed": False, "flow": a.flow, "failed_at": stage, "error": str(error), "checks": checks,
         }, indent=2), encoding="utf-8")
 
     try:
@@ -149,12 +152,14 @@ def main():
         if not ok: raise AssertionError(name + (": " + detail if detail else ""))
     def ax():
         command = ["idb", "ui", "describe-all", "--api", "axbridge", "--format", "complete", "--json", "--udid", a.udid]
-        deadline = time.monotonic() + 10
+        deadline = time.monotonic() + 30
         while True:
             try:
-                return json.loads(run(command, timeout=max(0.1, deadline - time.monotonic())))
+                return json.loads(run(command, timeout=max(0.1, min(15, deadline - time.monotonic()))))
             except RuntimeError as exc:
-                if "window-server frontmost returned no application object" not in str(exc) or time.monotonic() >= deadline:
+                transient = ("window-server frontmost returned no application object" in str(exc)
+                             or isinstance(exc.__cause__, subprocess.TimeoutExpired))
+                if not transient or time.monotonic() >= deadline:
                     raise
                 time.sleep(0.25)
     def tap(text):
@@ -186,7 +191,7 @@ def main():
             (a.results_dir / "failure-ax.json").write_text(json.dumps(ax(), indent=2), encoding="utf-8")
             save_shot("failure.png")
         except Exception: pass
-        (a.results_dir / "checklist.json").write_text(json.dumps({"passed": False, "error": str(exc), "checks": checks}, indent=2), encoding="utf-8")
+        (a.results_dir / "checklist.json").write_text(json.dumps({"passed": False, "flow": a.flow, "error": str(exc), "checks": checks}, indent=2), encoding="utf-8")
     try:
         run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
         run(["xcrun", "simctl", "launch", a.udid, a.app_id], timeout=30)
@@ -197,9 +202,7 @@ def main():
                 if exact(ns, "Open"): tap("Open")
                 elif exact(ns, "Continue"): tap("Continue")
                 elif exact(ns, "Nearby"): break
-        else:
-            # app.config.ts declares scheme `yard`; SDK 58 Linking.createURL uses yard://path.
-            run(["xcrun", "simctl", "openurl", a.udid, "yard://"], timeout=30)
+        # Native launch already selects the anchored Feed. Avoid a redundant scheme handoff.
         data, ns = wait(lambda x: exact(x, "Nearby"), "demo feed")
         record("feed opened", exact(ns, "Feed") and exact(ns, "Nearby")); save_shot("feed.png")
         tap("Settings")
@@ -210,50 +213,53 @@ def main():
         data, ns = wait(lambda x: has(x, "Demo mode: there is no account to sign out of."), "demo preflight")
         record("demo preflight visible", True); tap("Done")
         _, ns = wait(lambda x: exact(x, "Nearby") and not has(x, "Demo mode: there is no account to sign out of."), "feed after Settings")
-        tap("Profile"); _, ns = wait(lambda x: exact(x, "Edit profile"), "profile page")
-        tap("Edit profile"); data, ns = wait(lambda x: exact(x, "Name") and exact(x, "Save"), "edit form")
-        field = next((n for n in ns if "edit-profile-name-input" in node_id(n)), None) or next((n for n in ns if label(n) == "Name"), None)
-        old = value(field) if field else ""
-        record("profile name field/value available", bool(field and old), "field unavailable" if not old else "")
-        new = old + " QA"
-        record("ASCII name fits", len(new) <= 50 and new.isascii())
-        ident, key = (node_id(field), "AXUniqueId") if node_id(field) else ("Name", "AXLabel")
-        run(["idb", "ui", "set-value", ident, "--match-key", key, "--value", new, "--udid", a.udid])
-        _, ns = wait(lambda x: any(label(n) == "Save" and str(fields(n).get("enabled", "true")).lower() != "false" for n in x), "enabled Save")
-        tap("Save")
-        _, ns = wait(lambda x: has(x, new) and exact(x, "Edit profile") and not any(label(n) in ("Save", "Cancel") for n in x), "saved profile screen")
-        record("save dismissed editor and updated profile", True); save_shot("profile-saved.png")
-        tap("Edit profile"); data, ns = wait(lambda x: exact(x, "Name") and exact(x, "Save"), "reopened editor")
-        field = next((n for n in ns if "edit-profile-name-input" in node_id(n)), None) or next((n for n in ns if label(n) == "Name"), None)
-        record("saved name persists after reopen", bool(field and new in value(field)), "reopened field mismatch")
-        save_shot("profile-reopened.png"); tap("Cancel")
-        _, ns = wait(lambda x: exact(x, "Edit profile") and exact(x, "Feed") and not any(label(n) in ("Save", "Cancel") for n in x), "profile after editor cancel")
-        tap("Feed"); _, ns = wait(lambda x: exact(x, "Nearby"), "Feed screen")
-        run(["xcrun", "simctl", "openurl", a.udid, FILTERS_URLS[a.app_id]], timeout=30)
-        data, ns = wait(lambda x: exact(x, "Filters") and any(re.match(r"Show \d+ events?", label(n)) for n in x), "Filters screen")
-        count = lambda xs: next((int(m.group(1)) for n in xs if (m := re.match(r"Show (\d+) events?", label(n)))), None)
-        baseline = count(ns); record("default filter count exposed", baseline is not None, str(baseline))
-        tap("Nightlife"); data, ns = wait(lambda x: count(x) is not None and count(x) != baseline, "Nightlife count change")
-        filtered = count(ns); record("Nightlife changes result count", filtered != baseline, f"{baseline} -> {filtered}"); save_shot("filters-nightlife.png")
-        tap("Clear all filters"); data, ns = wait(lambda x: count(x) == baseline, "Clear restores count")
-        record("Clear restores default result count", True, str(count(ns))); save_shot("filters-cleared.png")
-        tap(next(label(n) for n in ns if re.match(r"Show \d+ events?", label(n))))
-        _, ns = wait(lambda x: exact(x, "Nearby") and not exact(x, "Filters"), "feed after Apply")
-        record("Apply returns to feed", True); save_shot("feed-after-filters.png")
-        tap("Settings")
-        for _ in range(4):
-            data = ax(); ns = nodes_for(data, size)
-            if exact(ns, "How yard works"): break
-            run(["idb", "ui", "scroll", "down", "--udid", a.udid])
-        _, ns = wait(lambda x: exact(x, "How yard works"), "Settings Help row")
-        tap("How yard works")
-        try:
-            data, ns = wait(lambda x: has(x, "Saves the event for later. Only you can see it."), "unique Help body")
-        except Exception:
-            data = ax(); save_ax("help-ax.json", data); save_shot("help.png"); raise
-        save_ax("help-ax.json", data); save_shot("help.png")
-        record("Help-only body visible", has(ns, "Saves the event for later. Only you can see it."))
-        if a.app_id == "com.dixitsa.yard":
+        if a.flow in ("all", "profile"):
+            tap("Profile"); _, ns = wait(lambda x: exact(x, "Edit profile"), "profile page")
+            tap("Edit profile"); data, ns = wait(lambda x: exact(x, "Name") and exact(x, "Save"), "edit form")
+            field = next((n for n in ns if "edit-profile-name-input" in node_id(n)), None) or next((n for n in ns if label(n) == "Name"), None)
+            old = value(field) if field else ""
+            record("profile name field/value available", bool(field and old), "field unavailable" if not old else "")
+            new = old + " QA"
+            record("ASCII name fits", len(new) <= 50 and new.isascii())
+            ident, key = (node_id(field), "AXUniqueId") if node_id(field) else ("Name", "AXLabel")
+            run(["idb", "ui", "set-value", ident, "--match-key", key, "--value", new, "--udid", a.udid])
+            _, ns = wait(lambda x: any(label(n) == "Save" and str(fields(n).get("enabled", "true")).lower() != "false" for n in x), "enabled Save")
+            tap("Save")
+            _, ns = wait(lambda x: has(x, new) and exact(x, "Edit profile") and not any(label(n) in ("Save", "Cancel") for n in x), "saved profile screen")
+            record("save dismissed editor and updated profile", True); save_shot("profile-saved.png")
+            tap("Edit profile"); data, ns = wait(lambda x: exact(x, "Name") and exact(x, "Save"), "reopened editor")
+            field = next((n for n in ns if "edit-profile-name-input" in node_id(n)), None) or next((n for n in ns if label(n) == "Name"), None)
+            record("saved name persists after reopen", bool(field and new in value(field)), "reopened field mismatch")
+            save_shot("profile-reopened.png"); tap("Cancel")
+            _, ns = wait(lambda x: exact(x, "Edit profile") and exact(x, "Feed") and not any(label(n) in ("Save", "Cancel") for n in x), "profile after editor cancel")
+            tap("Feed"); _, ns = wait(lambda x: exact(x, "Nearby"), "Feed screen")
+        if a.flow in ("all", "filters"):
+            run(["xcrun", "simctl", "openurl", a.udid, FILTERS_URLS[a.app_id]], timeout=30)
+            data, ns = wait(lambda x: exact(x, "Filters") and any(re.match(r"Show \d+ events?", label(n)) for n in x), "Filters screen")
+            count = lambda xs: next((int(m.group(1)) for n in xs if (m := re.match(r"Show (\d+) events?", label(n)))), None)
+            baseline = count(ns); record("default filter count exposed", baseline is not None, str(baseline))
+            tap("Nightlife"); data, ns = wait(lambda x: count(x) is not None and count(x) != baseline, "Nightlife count change")
+            filtered = count(ns); record("Nightlife changes result count", filtered != baseline, f"{baseline} -> {filtered}"); save_shot("filters-nightlife.png")
+            tap("Clear all filters"); data, ns = wait(lambda x: count(x) == baseline, "Clear restores count")
+            record("Clear restores default result count", True, str(count(ns))); save_shot("filters-cleared.png")
+            tap(next(label(n) for n in ns if re.match(r"Show \d+ events?", label(n))))
+            _, ns = wait(lambda x: exact(x, "Nearby") and not exact(x, "Filters"), "feed after Apply")
+            record("Apply returns to feed", True); save_shot("feed-after-filters.png")
+        if a.flow == "all":
+            tap("Settings")
+            for _ in range(4):
+                data = ax(); ns = nodes_for(data, size)
+                if exact(ns, "How yard works"): break
+                run(["idb", "ui", "scroll", "down", "--udid", a.udid])
+            _, ns = wait(lambda x: exact(x, "How yard works"), "Settings Help row")
+            tap("How yard works")
+            try:
+                data, ns = wait(lambda x: has(x, "Saves the event for later. Only you can see it."), "unique Help body")
+            except Exception:
+                data = ax(); save_ax("help-ax.json", data); save_shot("help.png"); raise
+            save_ax("help-ax.json", data); save_shot("help.png")
+            record("Help-only body visible", has(ns, "Saves the event for later. Only you can see it."))
+        if a.app_id == "com.dixitsa.yard" and a.flow in ("all", "calendar"):
             # Expo Go does not include expo-calendar. Exercise the native iOS editor only,
             # then cancel before any calendar write.
             run(["xcrun", "simctl", "terminate", a.udid, a.app_id], allow=True)
@@ -280,7 +286,7 @@ def main():
             _, ns = wait(lambda x: exact(x, "You're going") and not exact(x, "New Event"), "Going sheet after calendar cancel")
             record("calendar editor cancelled without saving", True)
             save_shot("calendar-editor-cancelled.png")
-        (a.results_dir / "checklist.json").write_text(json.dumps({"passed": True, "checks": checks}, indent=2), encoding="utf-8")
+        (a.results_dir / "checklist.json").write_text(json.dumps({"passed": True, "flow": a.flow, "checks": checks}, indent=2), encoding="utf-8")
         print(f"PASS {len(checks)} focused IDB checks; artifacts: {a.results_dir}")
     except Exception as e:
         fail_evidence(e); print(f"FAIL after {len(checks)} checks: {type(e).__name__}: {e}", file=sys.stderr); return 1

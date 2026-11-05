@@ -12,7 +12,7 @@ npm run lint
 npm test -- --runInBand
 ```
 
-Latest consolidated result: 63 suites / 419 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
+Latest consolidated result: 64 suites / 427 tests pass, plus typecheck and lint. Jest still reports an unidentified open handle after its summary. Preserve the summary; if it remains open after ten seconds, stop only that test process. Do not use a broad Node process kill or treat an interrupted run without a summary as a pass.
 
 ## Native iOS without a local Mac
 
@@ -33,6 +33,8 @@ gh workflow run ios-qa.yml --ref qa/ios-sweep-20261105 -f group=layout
 | `social` | Report/block menus, friendship actions, privacy/resume |
 | `onboarding` | Email/demo onboarding, suggestions/activity, location/map/city |
 | `navigation` | Event-card long-press menu and dismissal |
+| `event-actions` | Focused share/invite and Expo Go Calendar feedback |
+| `event-undo` | Isolated five-second Undo toast check; manual only, excluded from `all` |
 | `idb` | Independent AXBridge/HID probe: demo disclosure, profile save/reopen, filter selection/Clear/Apply, Help |
 | `all` | All groups |
 
@@ -46,6 +48,28 @@ gh run download RUN_ID --name ios-demo-qa-idb --dir PATH_TO_ARTIFACTS
 Artifacts expire after one day. Save relevant screenshots, logs and checklists before expiry. Maestro emits per-flow commands, screenshots and usually JUnit; IDB emits a checklist and stage-specific startup/failure evidence. A watchdog may interrupt a group before aggregate JUnit exists: retain observed individual assertions, but do not mark the interrupted flow passed.
 
 The companion startup and pre-flow Maestro bootstrap have bounded handling. App assertion failures are not retried into a pass. Use a focused dispatch to investigate a specific failure, then record both attempts and the reason for any harness change.
+
+## Direct native simulator build
+
+SDK58 Calendar is unsupported in Expo Go, so the separate workflow builds yard itself with embedded demo JavaScript:
+
+```sh
+gh workflow run ios-native-qa.yml --ref qa/ios-sweep-20261105 -f appearance=dark
+```
+
+This uses a standard ARM Mac runner, generates the native project only in its disposable checkout, builds Release for the selected simulator architecture with code signing disabled, and verifies the bundle ID, automatic appearance, embedded JavaScript and staging-host exclusion. It installs and launches `com.dixitsa.yard` and captures its initial screen. Release without backend settings deliberately shows the configuration-error screen; it does not enable demo navigation. Build success is separate from interaction QA. No Apple account, device signing or distribution occurs.
+
+The `ios-native-simulator-qa` artifact contains logs/checklists/screenshots and, if compilation succeeds, a zipped simulator `.app` for reuse. It is a simulator build, not an installable iPhone or App Store package. Artifacts expire after one day.
+
+The IDB probe accepts `--flow profile`, `--flow filters`, or `--flow calendar` for independent checks; default `all` retains the combined flow with Help. Calendar requires the standalone native app. Each result records its flow, observed checks and command timings. AX reads have a bounded 30-second budget for the observed missing-frontmost-window/command-timeout transitions; assertion failures are not retried into a pass.
+
+For demo interaction tests without recompiling the native app:
+
+```sh
+gh workflow run ios-native-recheck.yml --ref qa/ios-sweep-20261105 -f build_run_id=42016734035 -f appearance=dark
+```
+
+The recheck validates the source run, archive and unchanged native build inputs, then refreshes embedded Hermes JavaScript/assets. Only in the disposable CI checkout, it changes `useGate.ts`'s `dev: __DEV__` argument to `dev: true` to allow in-memory demo routing in Release, records that exact diff, and restores the source immediately after bundling. It leaves the committed production guard and other development-only behavior intact. Metadata distinguishes native source SHA, JavaScript/probe SHA, bundle hashes and this instrumentation: results are **instrumented demo**, not production authentication sign-off. Profile, filters and Calendar run independently, so one failure does not suppress the others. No calendar event is saved. The first recheck is pending; authored tooling is not a passed native flow.
 
 ## Hosted staging checks
 

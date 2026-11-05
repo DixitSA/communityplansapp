@@ -29,6 +29,8 @@ python3 scripts/qa-idb.py --udid "$SIMULATOR_ID" --results-dir "$RESULTS_DIR" --
 
 The native-app path also opens the demo Rooftop Happy Hour event, starts the Going flow, and verifies that Add to Calendar opens the iOS `New Event` editor. It captures the editor and cancels it without saving. This check is skipped in Expo Go, which does not include the native calendar module.
 
+Use `--flow profile`, `--flow filters`, or `--flow calendar` to isolate a check; `all` is the default. Each invocation restarts the selected app and requires the visible Settings demo disclosure before changing anything. The Calendar-only flow rejects Expo Go. A normal Release build with blank backend settings intentionally blocks demo routing; use the instrumented simulator workflow documented in [QA_RUNBOOK.md](../../docs/QA_RUNBOOK.md), not a weakened production guard.
+
 Results contain a `checklist.json`, screenshots for the feed/profile/filter states, and `failure-ax.json` plus `failure.png` on failure. No app build, Expo server bootstrap, package install, or simulator creation is performed by this script.
 
 ## Version pin
