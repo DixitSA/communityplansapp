@@ -1,6 +1,7 @@
 name: iOS native simulator QA
 
 on:
+  # Register and exercise this workflow on the isolated QA branch before any merge.
   push:
     branches: ['qa/ios-sweep-*']
     paths: ['.github/workflows/ios-native-qa.yml']
