@@ -13,6 +13,7 @@ const ROOT = path.resolve(__dirname, '../..');
 const ENV_FILE = path.join(ROOT, 'mobile', '.env.development');
 const run = process.argv.includes('--run');
 const chatMode = process.argv.includes('--chat');
+const waitForPostgres = process.argv.includes('--wait-for-postgres');
 const deleteAccountMode = process.argv.includes('--delete-account');
 const refIndex = process.argv.indexOf('--project-ref');
 const suppliedRef = refIndex >= 0 ? process.argv[refIndex + 1] : undefined;
@@ -22,9 +23,10 @@ function die(message) {
   process.exit(2);
 }
 
-if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat] [--delete-account]]');
+if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat [--wait-for-postgres]] [--delete-account]]');
 if (suppliedRef !== EXPECTED_REF) die('Refused: project ref does not match the guarded staging project.');
 if (chatMode && !run) die('Refused: --chat requires --run and the guarded staging project.');
+if (waitForPostgres && (!run || !chatMode)) die('Refused: --wait-for-postgres requires --run --chat and the guarded staging project.');
 if (deleteAccountMode && !run) die('Refused: --delete-account requires --run and the guarded staging project.');
 
 function envValue(name) {
@@ -82,7 +84,7 @@ if (host !== `${suppliedRef}.supabase.co`) die('Refused: app URL does not match 
 
 if (!run) {
   process.stdout.write(`Dry run OK: ${EXPECTED_NAME} (${suppliedRef}), app URL matches. No keys fetched and no writes performed.\n`);
-  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat for chat checks or --delete-account to exercise self-delete on one disposable user.\n');
+  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat for chat checks, --wait-for-postgres to await Postgres Changes readiness, or --delete-account to exercise self-delete on one disposable user.\n');
   process.exit(0);
 }
 
@@ -282,8 +284,12 @@ async function checkChatRsvpRealtime(users, clients, cityId) {
   const logRealtime = (details) => process.stdout.write(`REALTIME elapsed_ms=${elapsedRealtimeMs()} ${details}\n`);
   let realtimeStatus = 'CREATED';
   let channel;
-  channel = recipient
-    .channel(`qa-chat:${eventId}`)
+  const channelOptions = waitForPostgres ? { config: { postgres_changes_options: { wait: true } } } : undefined;
+  process.stdout.write(`Realtime Postgres readiness wait: ${waitForPostgres ? 'enabled' : 'disabled'}\n`);
+  const newChannel = channelOptions
+    ? recipient.channel(`qa-chat:${eventId}`, channelOptions)
+    : recipient.channel(`qa-chat:${eventId}`);
+  channel = newChannel
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -580,7 +586,7 @@ async function cleanup() {
     if (created.length && !created.some((user) => cleanupFailedIds.includes(user.id))) {
       process.stdout.write(`CLEANUP verified ${created.length} disposable users and their owned rows absent.\n`);
     }
-    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size} chat=${chatMode ? 'yes' : 'no'} delete_account=${deleteAccountMode ? 'yes' : 'no'}\n`);
+    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size} chat=${chatMode ? 'yes' : 'no'} wait_for_postgres=${waitForPostgres ? 'yes' : 'no'} delete_account=${deleteAccountMode ? 'yes' : 'no'}\n`);
     if (testError) process.exitCode = 1;
   }
 })().catch(() => {

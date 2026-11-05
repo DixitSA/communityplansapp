@@ -118,8 +118,16 @@ def main():
     def tap(text):
         ns = nodes_for(ax(), size); matches = [n for n in ns if label(n) == text]
         if len(matches) != 1: raise AssertionError(f"expected one visible {text!r}, found {len(matches)}")
-        uid = node_id(matches[0]); key, marker = ("AXUniqueId", uid) if uid else ("AXLabel", text)
-        run(["idb", "ui", "tap", marker, "--match-key", key, "--expected-key", key, "--expected-value", marker, "--udid", a.udid])
+        f = fields(matches[0]); box = fields(f.get("frame", f.get("axframe", {})))
+        try:
+            x = int(float(box["x"]) + float(box["width"]) / 2)
+            y = int(float(box["y"]) + float(box["height"]) / 2)
+        except (KeyError, TypeError, ValueError):
+            raise AssertionError(f"visible {text!r} has no usable AX frame")
+        sw, sh = size
+        if not (0 <= x < sw and 0 <= y < sh):
+            raise AssertionError(f"visible {text!r} center is outside {sw:g}x{sh:g} point screen")
+        run(["idb", "ui", "tap", str(x), str(y), "--udid", a.udid])
     def wait(pred, what, timeout=45):
         end = time.monotonic() + timeout
         while time.monotonic() < end:

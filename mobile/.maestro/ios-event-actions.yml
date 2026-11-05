@@ -20,10 +20,16 @@ appId: host.exp.Exponent
     selected: true
 - assertVisible: Only you can see this
 
-# Both shares open the iOS system share sheet; require its Close control before dismissing.
+# iOS 26's compact share sheet has no Close button; dismiss its observed header with a swipe.
 - tapOn: Share Rooftop Happy Hour
-- assertVisible: Close
-- tapOn: Close
+- assertVisible: Copy
+- assertVisible: Save to Files
+- takeScreenshot: native-event-share-open
+- swipe:
+    start: 50%, 60%
+    end: 50%, 95%
+    duration: 500
+- assertNotVisible: Copy
 - assertVisible: Rooftop Happy Hour
 
 - tapOn: Going
@@ -32,8 +38,13 @@ appId: host.exp.Exponent
     element: Bring a friend
     direction: DOWN
 - tapOn: Bring a friend
-- assertVisible: Close
-- tapOn: Close
+- assertVisible: Copy
+- assertVisible: Save to Files
+- swipe:
+    start: 50%, 60%
+    end: 50%, 95%
+    duration: 500
+- assertNotVisible: Copy
 - assertVisible: You're going
 - scrollUntilVisible:
     element: Add to Calendar

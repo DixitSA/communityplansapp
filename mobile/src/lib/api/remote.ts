@@ -367,7 +367,10 @@ export function createRemoteApi(supabase: SupabaseClient<Database>): Api {
     },
 
     subscribeToEventChat(eventId, handlers) {
-      const channel = supabase.channel(`event-chat:${eventId}`);
+      // Wait for the server's Postgres Changes subscription, not only the channel join.
+      const channel = supabase.channel(`event-chat:${eventId}`, {
+        config: { postgres_changes_options: { wait: true } },
+      });
       const deliver = (row: Parameters<typeof mapTableRow>[0], handler: (m: ChatMessage) => void) => {
         void (async () => {
           try {
