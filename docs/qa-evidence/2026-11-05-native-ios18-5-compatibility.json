@@ -1,0 +1,22 @@
+{
+  "label": "NATIVE instrumented demo compatibility",
+  "run": "42158370458",
+  "source": "e008d4f",
+  "device": "iPhone 16 Pro",
+  "ios": "18.5",
+  "runner": "macOS 15.8.2 / Xcode 16.4 / arm64",
+  "map": {
+    "result": "Comedy Showcase map marker opened event details/RSVP",
+    "failed": 0,
+    "passed": 10
+  },
+  "calendar": {
+    "result": "Native calendar editor/title; Cancel showed discard prompt; discard returned to Going; no event saved",
+    "failed": 0,
+    "passed": 8
+  },
+  "limitations": [
+    "Profile and filters not tested on iOS 18.5",
+    "iOS 16 and 17 not tested"
+  ]
+}

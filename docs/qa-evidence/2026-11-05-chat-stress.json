@@ -1,0 +1,79 @@
+{
+  "project": "yard-staging",
+  "suite": "chat-stress",
+  "completed_at": "2026-11-06T03:32:52.245Z",
+  "status": "passed",
+  "checks": [
+    {
+      "check": "existing recipient subscription available for disconnect",
+      "passed": true
+    },
+    {
+      "check": "recipient unsubscribes before reconnect gap",
+      "passed": true
+    },
+    {
+      "check": "burst server-confirmed Postgres readiness",
+      "passed": true
+    },
+    {
+      "check": "burst message 1 persisted",
+      "passed": true
+    },
+    {
+      "check": "burst message 2 persisted",
+      "passed": true
+    },
+    {
+      "check": "burst message 3 persisted",
+      "passed": true
+    },
+    {
+      "check": "burst message 4 persisted",
+      "passed": true
+    },
+    {
+      "check": "burst message 5 persisted",
+      "passed": true
+    },
+    {
+      "check": "five-message burst arrives once and in insert order",
+      "passed": true
+    },
+    {
+      "check": "history returns burst in newest-first order",
+      "passed": true
+    },
+    {
+      "check": "recipient unsubscribes for reconnect gap",
+      "passed": true
+    },
+    {
+      "check": "disconnect-gap message persisted",
+      "passed": true
+    },
+    {
+      "check": "reconnect server-confirmed Postgres readiness",
+      "passed": true
+    },
+    {
+      "check": "history catches up message sent while unsubscribed",
+      "passed": true
+    },
+    {
+      "check": "post-reconnect live message persisted",
+      "passed": true
+    },
+    {
+      "check": "recipient receives live message after reconnect",
+      "passed": true
+    }
+  ],
+  "totals": {
+    "checks": 16,
+    "passed": 16,
+    "failed": 0
+  },
+  "failed_check": null,
+  "cleanup_verified": true
+}

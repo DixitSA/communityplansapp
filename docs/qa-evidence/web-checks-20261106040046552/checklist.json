@@ -1,0 +1,60 @@
+{
+  "label": "WEB / isolated DEMO (blank Supabase config)",
+  "runLabel": "20261106040046552",
+  "checks": [
+    {
+      "name": "profile: empty draft disables Save",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "profile: cancel/reopen retains saved name",
+      "pass": true,
+      "details": "value compared only in memory; not included in report"
+    },
+    {
+      "name": "filters: captures initial default count",
+      "pass": true,
+      "details": "Show 19 events"
+    },
+    {
+      "name": "filters: selected time/distance produces Show count",
+      "pass": true,
+      "details": "Show 2 events"
+    },
+    {
+      "name": "filters: applied time persists on Feed",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "filters: distance persists after reopening",
+      "pass": true,
+      "details": "rgb(46, 91, 69) vs rgba(0, 0, 0, 0)"
+    },
+    {
+      "name": "filters: Clear all restores distance and disables Clear",
+      "pass": true,
+      "details": "rgb(46, 91, 69) vs rgba(0, 0, 0, 0)"
+    },
+    {
+      "name": "filters: Clear restores the initial default count",
+      "pass": true,
+      "details": "Show 19 events -> Show 19 events"
+    },
+    {
+      "name": "filters: Clear all restores time on Feed",
+      "pass": true,
+      "details": ""
+    }
+  ],
+  "startedAt": "2026-11-06T04:00:46.583Z",
+  "observedCounts": {
+    "initialDefault": 19,
+    "selected": 2,
+    "afterClear": 19
+  },
+  "finishedAt": "2026-11-06T04:01:28.617Z",
+  "passed": 9,
+  "failed": 0
+}
