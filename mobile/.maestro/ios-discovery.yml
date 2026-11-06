@@ -60,10 +60,13 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: Filters
-- assertVisible: Nightlife
-- tapOn: Nightlife
 - assertVisible:
-    text: Nightlife
+    id: filter-interest-nightlife
+    selected: false
+- tapOn:
+    id: filter-interest-nightlife
+- assertVisible:
+    id: filter-interest-nightlife
     selected: true
 - scrollUntilVisible:
     element: Free

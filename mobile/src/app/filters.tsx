@@ -130,6 +130,7 @@ export default function FiltersSheet() {
                 <Chip
                   key={o.slug}
                   label={o.label}
+                  testID={`filter-interest-${o.slug}`}
                   symbol={o.symbol}
                   category={on ? o.slug : undefined}
                   selected={on}
@@ -149,6 +150,7 @@ export default function FiltersSheet() {
                 <Chip
                   key={h.slug}
                   label={h.name}
+                  testID={`filter-neighborhood-${h.slug}`}
                   symbol="mappin"
                   filled={on}
                   selected={on}

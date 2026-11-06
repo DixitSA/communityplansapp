@@ -1,0 +1,43 @@
+appId: host.exp.Exponent
+---
+# Stable IDs target the actual filter controls, avoiding duplicate Feed labels
+# that remain in XCTest's hierarchy behind the native form sheet.
+- runFlow: reset-demo.yml
+- openLink: 'exp://localhost:8093/--/filters'
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: Filters
+- assertVisible:
+    id: filter-interest-nightlife
+    selected: false
+- takeScreenshot: filters-before
+- tapOn:
+    id: filter-interest-nightlife
+- assertVisible:
+    id: filter-interest-nightlife
+    selected: true
+- takeScreenshot: filters-nightlife-selected
+- tapOn: Free
+- assertVisible:
+    text: Free
+    selected: true
+- tapOn:
+    id: filter-neighborhood-uptown
+- assertVisible:
+    id: filter-neighborhood-uptown
+    selected: true
+- takeScreenshot: filters-multiple-selected
+- tapOn: Clear all filters
+- assertVisible:
+    text: Clear all filters
+    enabled: false
+- assertVisible:
+    id: filter-interest-nightlife
+    selected: false
+- assertVisible:
+    text: Free
+    selected: false
+- assertVisible:
+    id: filter-neighborhood-uptown
+    selected: false
+- takeScreenshot: filters-cleared

@@ -33,6 +33,8 @@ export type ChipProps = {
   onPress?: () => void;
   /** What VoiceOver reads instead of the label, when the label alone doesn't say what tapping does. */
   accessibilityLabel?: string;
+  /** Optional stable identifier for UI automation. */
+  testID?: string;
 };
 
 const TONES: Record<ChipTone, { solid: ColorToken; soft: ColorToken; text: ColorToken }> = {
@@ -52,6 +54,7 @@ export function Chip({
   size = 'regular',
   dense = false,
   accessibilityLabel,
+  testID,
   ring,
   onPress,
 }: ChipProps) {
@@ -122,6 +125,7 @@ export function Chip({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
+      testID={testID}
       onPressIn={press.handlers.onPressIn}
       onPressOut={press.handlers.onPressOut}
       hitSlop={space.xs}
