@@ -771,6 +771,77 @@ class Flow:
         self.record("context menu dismissed without choosing an action", self.has_visible(source, "Nearby"))
         self.capture("context-menu-dismissed.png")
 
+    def accessibility_audit(self, screen_name: str):
+        self.capture(f"accessibility-{screen_name}.png")
+        source = self.source()
+        (self.root / f"accessibility-{screen_name}-page-source.xml").write_text(source, encoding="utf-8")
+        findings_path = self.root / f"accessibility-{screen_name}-findings.json"
+        try:
+            findings = self.driver.execute_mobile("performAccessibilityAudit", {})
+        except Exception as exc:
+            findings_path.write_text(json.dumps({"status": "command_error", "raw": str(exc)}, indent=2), encoding="utf-8")
+            raise
+        status = "review_required" if isinstance(findings, list) and findings else "no_findings"
+        if not isinstance(findings, list):
+            status = "invalid_result"
+        findings_path.write_text(json.dumps({"status": status, "raw": findings}, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not isinstance(findings, list):
+            self.record(f"{screen_name} accessibility audit returned a findings list", False, f"unexpected result type {type(findings).__name__}; raw result saved")
+        self.record(f"{screen_name} accessibility audit findings saved", True, f"{len(findings)} findings; {'review required' if findings else 'no findings returned'}")
+
+    def run_accessibility(self):
+        self.restart_to_feed()
+        self.settings_demo_preflight()
+        initial_size = self.driver.execute_mobile("contentSize", {})
+        supported_sizes = {
+            "extra-small", "small", "medium", "large", "extra-large",
+            "extra-extra-large", "extra-extra-extra-large", "accessibility-medium",
+            "accessibility-large", "accessibility-extra-large",
+            "accessibility-extra-extra-large", "accessibility-extra-extra-extra-large",
+        }
+        self.record("simulator reports a restorable initial text size", isinstance(initial_size, str) and initial_size in supported_sizes, str(initial_size))
+        (self.root / "text-size-before.json").write_text(json.dumps({"contentSize": initial_size}, indent=2), encoding="utf-8")
+        changed_size = False
+        try:
+            self.capture("accessibility-feed-default-text.png")
+            changed_size = True
+            self.driver.execute_mobile("setContentSize", {"size": "accessibility-extra-extra-extra-large"})
+            actual_size = self.driver.execute_mobile("contentSize", {})
+            (self.root / "text-size-large.json").write_text(json.dumps({"contentSize": actual_size}, indent=2), encoding="utf-8")
+            self.record("accessibility text size applied to simulator", actual_size == "accessibility-extra-extra-extra-large", str(actual_size))
+            source = self.wait_source(lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed"), "Feed after accessibility text-size change")
+            self.record("Feed remains available at accessibility text size", self.has_visible(source, "Nearby") and self.has_visible(source, "Feed"))
+            self.accessibility_audit("feed")
+
+            self.click("Settings")
+            source = self.wait_source(lambda x: self.has_visible(x, "Who sees what") and self.has_visible_exact(x, "Done"), "Settings sheet at accessibility text size")
+            self.driver.wait_one("Done")
+            self.record("Settings Done control remains reachable at accessibility text size", self.has_visible_exact(source, "Done"))
+            self.accessibility_audit("settings")
+            self.click("Done")
+
+            self.click("Profile")
+            source = self.wait_source(lambda x: self.has_visible(x, "Edit profile"), "Profile tab at accessibility text size")
+            self.record("Profile Edit profile control remains reachable at accessibility text size", self.has_visible(source, "Edit profile"))
+            self.click("Edit profile")
+            source = self.wait_source(lambda x: self.has_visible_exact(x, "Save") and self.has_visible_exact(x, "Name"), "Edit Profile sheet at accessibility text size")
+            self.driver.wait_one("Save")
+            self.record("Edit Profile Save control remains reachable at accessibility text size", self.has_visible_exact(source, "Save"))
+            self.accessibility_audit("edit-profile")
+        finally:
+            if changed_size:
+                try:
+                    self.driver.execute_mobile("setContentSize", {"size": initial_size})
+                    restored_size = self.driver.execute_mobile("contentSize", {})
+                    (self.root / "text-size-restored.json").write_text(json.dumps({"contentSize": restored_size}, indent=2), encoding="utf-8")
+                    if restored_size != initial_size:
+                        raise AppiumError(f"Simulator text size restoration mismatch: expected {initial_size!r}, got {restored_size!r}")
+                    self.record("simulator text size restored to its initial value", True, str(restored_size))
+                except Exception as exc:
+                    (self.root / "text-size-restore-error.txt").write_text(str(exc), encoding="utf-8")
+                    print("[appium] could not restore simulator text size", file=sys.stderr)
+                    self.record("simulator text size restored to its initial value", False, str(exc))
+
     def run_calendar(self):
         self.restart_to_feed()
         self.settings_demo_preflight()
@@ -815,7 +886,7 @@ def main():
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--appearance", choices=("light", "dark"), required=True)
     parser.add_argument("--results-dir", required=True, type=Path)
-    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "profile-interests", "map", "context-menu"), default=("profile", "filters", "calendar"))
+    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "profile-interests", "map", "context-menu", "accessibility"), default=("profile", "filters", "calendar"))
     args = parser.parse_args()
     parsed_url = urllib.parse.urlparse(args.server_url)
     if parsed_url.scheme != "http" or parsed_url.hostname != "127.0.0.1" or parsed_url.port != 4723:

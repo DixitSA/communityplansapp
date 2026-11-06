@@ -23,10 +23,10 @@ on:
         default: appium
         options: [appium, idb]
       flow_group:
-        description: 'all = core profile/filters/calendar; extended = profile-interests/map/context-menu; context-menu = context menu only'
+        description: 'all = core profile/filters/calendar; extended = profile-interests/map/context-menu; context-menu = context menu only; accessibility = large text and XCTest audits'
         type: choice
         default: all
-        options: [all, profile, filters, calendar, filters-calendar, extended, context-menu]
+        options: [all, profile, filters, calendar, filters-calendar, extended, context-menu, accessibility]
 
 permissions:
   contents: read
