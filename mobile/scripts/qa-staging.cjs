@@ -4,6 +4,7 @@
 const { execSync } = require('node:child_process');
 const { randomBytes, randomUUID } = require('node:crypto');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -13,6 +14,7 @@ const ROOT = path.resolve(__dirname, '../..');
 const ENV_FILE = path.join(ROOT, 'mobile', '.env.development');
 const run = process.argv.includes('--run');
 const chatMode = process.argv.includes('--chat');
+const chatStressMode = process.argv.includes('--chat-stress');
 const waitForPostgres = process.argv.includes('--wait-for-postgres');
 const deleteAccountMode = process.argv.includes('--delete-account');
 const refIndex = process.argv.indexOf('--project-ref');
@@ -23,10 +25,11 @@ function die(message) {
   process.exit(2);
 }
 
-if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat [--wait-for-postgres]] [--delete-account]]');
+if (!suppliedRef) die('Usage: node mobile/scripts/qa-staging.cjs --project-ref <staging-ref> [--run [--chat [--wait-for-postgres [--chat-stress]]] [--delete-account]]');
 if (suppliedRef !== EXPECTED_REF) die('Refused: project ref does not match the guarded staging project.');
 if (chatMode && !run) die('Refused: --chat requires --run and the guarded staging project.');
 if (waitForPostgres && (!run || !chatMode)) die('Refused: --wait-for-postgres requires --run --chat and the guarded staging project.');
+if (chatStressMode && (!run || !chatMode || !waitForPostgres)) die('Refused: --chat-stress requires --run --chat --wait-for-postgres and the guarded staging project.');
 if (deleteAccountMode && !run) die('Refused: --delete-account requires --run and the guarded staging project.');
 
 function envValue(name) {
@@ -84,7 +87,7 @@ if (host !== `${suppliedRef}.supabase.co`) die('Refused: app URL does not match 
 
 if (!run) {
   process.stdout.write(`Dry run OK: ${EXPECTED_NAME} (${suppliedRef}), app URL matches. No keys fetched and no writes performed.\n`);
-  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat for chat checks, --wait-for-postgres to await Postgres Changes readiness, or --delete-account to exercise self-delete on one disposable user.\n');
+  process.stdout.write('Run again with --run to create two disposable example.test users; add --chat for chat checks, --wait-for-postgres to await Postgres Changes readiness, --chat-stress with both flags for burst/reconnect checks, or --delete-account to exercise self-delete on one disposable user.\n');
   process.exit(0);
 }
 
@@ -118,6 +121,8 @@ let failedCheck = null;
 let activePhase = 'staging QA flow';
 let failureRecorded = false;
 let cleanupFailedIds = [];
+const chatStressChecks = [];
+let chatStressEvidencePath = null;
 
 function check(label, condition) {
   checks += 1;
@@ -244,6 +249,135 @@ async function checkSelfDelete(user, client) {
   appDeletedIds.add(user.id);
 }
 
+async function checkChatStressRealtime(users, clients, eventId) {
+  const [sender, recipient] = clients;
+  const priorChannels = realtimeChannels.filter((entry) => entry.client === recipient && !entry.removed);
+  const stressCheck = (label, condition) => {
+    const passed = Boolean(condition);
+    chatStressChecks.push({ check: label, passed });
+    check(`chat stress: ${label}`, passed);
+  };
+  const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+  const bounded = (promise, label, milliseconds) => {
+    activePhase = label;
+    let timer;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out`)), milliseconds);
+      }),
+    ]).finally(() => clearTimeout(timer));
+  };
+  const waitFor = async (predicate, label, milliseconds = 15000) => {
+    activePhase = label;
+    const deadline = Date.now() + milliseconds;
+    while (Date.now() < deadline) {
+      if (predicate()) return;
+      await delay(100);
+    }
+    throw new Error(`${label} timed out`);
+  };
+
+  stressCheck('existing recipient subscription available for disconnect', priorChannels.length === 1);
+  const priorEntry = priorChannels[0];
+  const removed = await recipient.removeChannel(priorEntry.channel);
+  priorEntry.removed = removed === 'ok';
+  stressCheck('recipient unsubscribes before reconnect gap', priorEntry.removed);
+
+  const topic = `qa-chat:${eventId}`;
+  const openSubscription = async (phase) => {
+    const received = [];
+    let subscribedResolve;
+    let subscribedReject;
+    const subscribed = new Promise((resolve, reject) => {
+      subscribedResolve = resolve;
+      subscribedReject = reject;
+    });
+    let status = 'CREATED';
+    let channel;
+    const options = { config: { postgres_changes_options: { wait: true } } };
+    channel = recipient.channel(topic, options)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'event_messages',
+        filter: `event_id=eq.${eventId}`,
+      }, (payload) => {
+        const row = payload.new || {};
+        received.push(row);
+        process.stdout.write(`CHAT_STRESS_REALTIME event_id=${row.event_id || 'unknown'} message_id=${row.id ?? 'unknown'}\n`);
+      })
+      .subscribe((nextStatus) => {
+        status = nextStatus;
+        process.stdout.write(`CHAT_STRESS_REALTIME phase=${phase} status=${status}\n`);
+        if (status === 'SUBSCRIBED') subscribedResolve();
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          subscribedReject(new Error(`chat stress subscription ${status}`));
+        }
+      });
+    const entry = { client: recipient, channel, removed: false };
+    realtimeChannels.push(entry);
+    await bounded(subscribed, `${phase} readiness`, 15000);
+    stressCheck(`${phase} server-confirmed Postgres readiness`, status === 'SUBSCRIBED');
+    return { channel, entry, received };
+  };
+
+  const live = await openSubscription('burst');
+  const burstBodies = Array.from({ length: 5 }, (_, index) => `QA stress burst ${nonce} ${index + 1}`);
+  const inserted = [];
+  activePhase = 'chat stress ordered burst inserts';
+  for (let index = 0; index < burstBodies.length; index += 1) {
+    const { data, error } = await sender.from('event_messages').insert({
+      event_id: eventId,
+      user_id: users[0].id,
+      body: burstBodies[index],
+    }).select('id, body').single();
+    requireNoError(`insert stress burst message ${index + 1}`, error);
+    inserted.push(data);
+    stressCheck(`burst message ${index + 1} persisted`, data?.body === burstBodies[index] && data?.id != null);
+  }
+  await waitFor(() => inserted.every((row) => live.received.some((message) => message.id === row.id)), 'ordered burst realtime delivery');
+  const deliveredBurst = live.received.filter((message) => inserted.some((row) => row.id === message.id));
+  stressCheck('five-message burst arrives once and in insert order',
+    deliveredBurst.length === inserted.length && deliveredBurst.every((row, index) => row.id === inserted[index].id));
+
+  const burstHistory = await recipient.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
+  requireNoError('read recipient history after stress burst', burstHistory.error);
+  const historyBurstBodies = (burstHistory.data ?? []).filter((row) => burstBodies.includes(row.body)).map((row) => row.body);
+  stressCheck('history returns burst in newest-first order',
+    JSON.stringify(historyBurstBodies) === JSON.stringify([...burstBodies].reverse()));
+
+  const gapRemoved = await recipient.removeChannel(live.channel);
+  live.entry.removed = gapRemoved === 'ok';
+  stressCheck('recipient unsubscribes for reconnect gap', live.entry.removed);
+  const missedBody = `QA stress reconnect gap ${nonce}`;
+  const missedInsert = await sender.from('event_messages').insert({
+    event_id: eventId,
+    user_id: users[0].id,
+    body: missedBody,
+  }).select('id, body').single();
+  requireNoError('insert message during recipient disconnect', missedInsert.error);
+  stressCheck('disconnect-gap message persisted', missedInsert.data?.body === missedBody && missedInsert.data?.id != null);
+
+  const reconnected = await openSubscription('reconnect');
+  const caughtUp = await recipient.rpc('get_chat_messages', { p_event_id: eventId, p_before_id: null, p_limit: 50 });
+  requireNoError('read recipient history after reconnect', caughtUp.error);
+  stressCheck('history catches up message sent while unsubscribed',
+    caughtUp.data?.some((row) => row.id === missedInsert.data?.id && row.body === missedBody));
+
+  const liveBody = `QA stress post-reconnect live ${nonce}`;
+  const liveInsert = await sender.from('event_messages').insert({
+    event_id: eventId,
+    user_id: users[0].id,
+    body: liveBody,
+  }).select('id, body').single();
+  requireNoError('insert message after recipient reconnect', liveInsert.error);
+  stressCheck('post-reconnect live message persisted', liveInsert.data?.body === liveBody && liveInsert.data?.id != null);
+  await waitFor(() => reconnected.received.some((row) => row.id === liveInsert.data?.id), 'post-reconnect realtime delivery');
+  stressCheck('recipient receives live message after reconnect',
+    reconnected.received.some((row) => row.id === liveInsert.data?.id && row.body === liveBody));
+}
+
 async function checkChatRsvpRealtime(users, clients, cityId) {
   const eventId = randomUUID();
   const eventTitle = `QA chat ${nonce}`;
@@ -333,7 +467,8 @@ async function checkChatRsvpRealtime(users, clients, cityId) {
         subscribedReject(new Error(`Realtime subscription ${status}`));
       }
     });
-  realtimeChannels.push({ client: recipient, channel });
+  const realtimeEntry = { client: recipient, channel, removed: false };
+  realtimeChannels.push(realtimeEntry);
 
   const bounded = (promise, label, milliseconds) => {
     activePhase = label;
@@ -385,6 +520,8 @@ async function checkChatRsvpRealtime(users, clients, cityId) {
     throw error;
   }
   check('recipient receives realtime INSERT', delivered?.id === inserted.data?.id && delivered?.body === body);
+
+  if (chatStressMode) await checkChatStressRealtime(users, clients, eventId);
 
   const erased = await sender.from('event_messages').update({ deleted_at: new Date().toISOString() })
     .eq('id', inserted.data.id).select('id').single();
@@ -510,6 +647,7 @@ async function main() {
 async function cleanup() {
   try {
     for (const { client, channel } of realtimeChannels) {
+      if (realtimeChannels.find((entry) => entry.channel === channel)?.removed) continue;
       try {
         await client.removeChannel(channel);
       } catch {
@@ -623,6 +761,29 @@ async function cleanup() {
     process.stderr.write(`FAIL ${failedCheck}\n`);
   } finally {
     const cleaned = await cleanup();
+    if (chatStressMode) {
+      chatStressEvidencePath = path.join(os.tmpdir(), `yard-chat-stress-${Date.now()}-${process.pid}.json`);
+      const evidence = {
+        project: EXPECTED_NAME,
+        suite: 'chat-stress',
+        completed_at: new Date().toISOString(),
+        status: testError ? 'failed' : cleaned ? 'passed' : 'cleanup_failed',
+        checks: chatStressChecks,
+        totals: {
+          checks: chatStressChecks.length,
+          passed: chatStressChecks.filter((item) => item.passed).length,
+          failed: chatStressChecks.filter((item) => !item.passed).length,
+        },
+        failed_check: failedCheck,
+        cleanup_verified: cleaned,
+      };
+      try {
+        fs.writeFileSync(chatStressEvidencePath, `${JSON.stringify(evidence, null, 2)}\n`, { flag: 'wx' });
+        process.stdout.write(`CHAT_STRESS_EVIDENCE ${chatStressEvidencePath}\n`);
+      } catch {
+        process.stderr.write('CHAT_STRESS_EVIDENCE_WRITE_FAILED\n');
+      }
+    }
     if (!cleaned) {
       process.exitCode = 2;
       return;
@@ -633,7 +794,7 @@ async function cleanup() {
     if (created.length && !created.some((user) => cleanupFailedIds.includes(user.id))) {
       process.stdout.write(`CLEANUP verified ${created.length} disposable users and their owned rows absent.\n`);
     }
-    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size} chat=${chatMode ? 'yes' : 'no'} wait_for_postgres=${waitForPostgres ? 'yes' : 'no'} delete_account=${deleteAccountMode ? 'yes' : 'no'}\n`);
+    process.stdout.write(`RESULT checks=${checks} failures=${failures} passes=${checks - failures} created=${created.length} cleaned=${verifiedAbsent.size} chat=${chatMode ? 'yes' : 'no'} chat_stress=${chatStressMode ? 'yes' : 'no'} wait_for_postgres=${waitForPostgres ? 'yes' : 'no'} delete_account=${deleteAccountMode ? 'yes' : 'no'}\n`);
     if (testError) process.exitCode = 1;
   }
 })().catch(() => {
