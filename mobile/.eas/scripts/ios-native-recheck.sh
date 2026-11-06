@@ -23,6 +23,7 @@ case "$PROBE_FLOW_GROUP" in
   filters) PROBE_FLOWS=(filters) ;;
   calendar) PROBE_FLOWS=(calendar) ;;
   filters-calendar) PROBE_FLOWS=(filters calendar) ;;
+  calendar-save) PROBE_FLOWS=(calendar-save) ;;
   extended) PROBE_FLOWS=(profile-interests map context-menu) ;;
   context-menu) PROBE_FLOWS=(context-menu) ;;
   accessibility) PROBE_FLOWS=(accessibility) ;;
@@ -87,8 +88,8 @@ case "$DRIVER_ENGINE" in
   appium|idb) ;;
   *) echo "Unsupported native automation engine: $DRIVER_ENGINE" >&2; exit 2 ;;
 esac
-if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' || "$PROBE_FLOW_GROUP" == 'compatibility' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
-  echo 'The extended, context-menu, accessibility, and compatibility flows require the Appium engine.' >&2
+if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' || "$PROBE_FLOW_GROUP" == 'compatibility' || "$PROBE_FLOW_GROUP" == 'calendar-save' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
+  echo 'The extended, context-menu, accessibility, compatibility, and calendar-save flows require the Appium engine.' >&2
   exit 2
 fi
 

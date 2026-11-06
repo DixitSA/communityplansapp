@@ -1044,6 +1044,63 @@ class Flow:
         self.record("discard returned to the Going sheet", self.has_visible(source, "You're going"))
         self.capture("calendar-editor-cancelled.png")
 
+    def run_calendar_save(self):
+        # This probe accepts one prefilled event only in the disposable CI simulator.
+        # It verifies the system composer submission result, not Calendar persistence.
+        (self.root / "scope.txt").write_text(
+            "Disposable simulator only. Verifies Add closes the system editor and returns to Going; does not verify persistence/readback.\n",
+            encoding="utf-8",
+        )
+        self.restart_to_feed()
+        self.settings_demo_preflight()
+        self.driver.deep_link("yard://event/ev-007")
+        source = self.wait_source(lambda x: self.has_visible(x, "Rooftop Happy Hour"), "calendar probe event")
+        self.record("calendar probe event opened", self.has_visible(source, "Rooftop Happy Hour"))
+        self.click("Going")
+        source = self.wait_source(lambda x: self.has_visible(x, "You're going"), "Going confirmation")
+        self.record("Going confirmation opened", self.has_visible(source, "You're going"))
+        for _ in range(5):
+            source = self.source()
+            if self.has_visible(source, "Add to Calendar"):
+                break
+            self.driver.swipe("up")
+        self.click("Add to Calendar")
+        source = self.wait_source(lambda x: self.has_visible_exact(x, "New Event") and self.has_visible_exact(x, "Cancel"), "native calendar editor")
+        self.record("native calendar editor opened", True)
+        self.record("calendar editor contains event title", self.has_visible(source, "Rooftop Happy Hour"))
+        (self.root / "calendar-save-editor-page-source.xml").write_text(source, encoding="utf-8")
+        self.capture("calendar-save-editor-open.png")
+        add = self.driver.wait_one("Add")
+        add_enabled = self.driver.attribute(add, "enabled").lower() == "true"
+        self.record("Calendar Add control is enabled", add_enabled)
+        self.driver.click(add)
+        source = self.wait_source(
+            lambda x: not self.has_visible_exact(x, "New Event") and self.has_visible(x, "You're going"),
+            "Going sheet after Calendar Add submission",
+        )
+        (self.root / "calendar-save-result-page-source.xml").write_text(source, encoding="utf-8")
+        self.record("Calendar editor closed after Add", not self.has_visible_exact(source, "New Event"))
+        self.record("Going sheet returned after Add", self.has_visible(source, "You're going"))
+        visible_alerts = [
+            node for node in ET.fromstring(source).iter()
+            if node.tag == "XCUIElementTypeAlert" and node.attrib.get("visible", "").lower() == "true"
+        ]
+        known_calendar_errors = (
+            "Couldn't open your calendar",
+            "Calendar access needed",
+            "Calendar unavailable in Expo Go",
+            "Calendar not available here",
+        )
+        error_copy = [message for message in known_calendar_errors if self.has_visible(source, message)]
+        alert_details = [node.attrib.get("label") or node.attrib.get("name") or "unnamed system alert" for node in visible_alerts]
+        alert_details.extend(error_copy)
+        self.record(
+            "No system or calendar error alert appeared after Add",
+            not visible_alerts and not error_copy,
+            "; ".join(alert_details),
+        )
+        self.capture("calendar-add-submitted.png")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -1052,7 +1109,7 @@ def main():
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--appearance", choices=("light", "dark"), required=True)
     parser.add_argument("--results-dir", required=True, type=Path)
-    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "profile-interests", "map", "context-menu", "accessibility"), default=("profile", "filters", "calendar"))
+    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "calendar-save", "profile-interests", "map", "context-menu", "accessibility"), default=("profile", "filters", "calendar"))
     args = parser.parse_args()
     parsed_url = urllib.parse.urlparse(args.server_url)
     if parsed_url.scheme != "http" or parsed_url.hostname != "127.0.0.1" or parsed_url.port != 4723:
