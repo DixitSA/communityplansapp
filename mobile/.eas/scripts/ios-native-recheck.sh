@@ -15,6 +15,7 @@ PROBE_SHA="${PROBE_SHA:?Set PROBE_SHA to the current checkout SHA}"
 SOURCE_RUN_CONCLUSION="${SOURCE_RUN_CONCLUSION:?Set SOURCE_RUN_CONCLUSION from the source run metadata}"
 DRIVER_ENGINE="${DRIVER_ENGINE:-appium}"
 PROBE_FLOW_GROUP="${PROBE_FLOW_GROUP:-all}"
+PROBE_IOS_RUNTIME="${PROBE_IOS_RUNTIME:-26}"
 APPIUM_SERVER_PID=""
 case "$PROBE_FLOW_GROUP" in
   all) PROBE_FLOWS=(profile filters calendar) ;;
@@ -25,6 +26,7 @@ case "$PROBE_FLOW_GROUP" in
   extended) PROBE_FLOWS=(profile-interests map context-menu) ;;
   context-menu) PROBE_FLOWS=(context-menu) ;;
   accessibility) PROBE_FLOWS=(accessibility) ;;
+  compatibility) PROBE_FLOWS=(map calendar) ;;
   *) echo "Unsupported native flow group: $PROBE_FLOW_GROUP" >&2; exit 2 ;;
 esac
 mkdir -p "$RESULTS_DIR"
@@ -71,6 +73,11 @@ case "$SIMULATOR_APPEARANCE" in
   *) echo "Unsupported simulator appearance: $SIMULATOR_APPEARANCE" >&2; exit 2 ;;
 esac
 
+case "$PROBE_IOS_RUNTIME" in
+  18.5|18.6|26) ;;
+  *) echo "Unsupported requested iOS Simulator runtime: $PROBE_IOS_RUNTIME" >&2; exit 2 ;;
+esac
+
 case "$SOURCE_RUN_CONCLUSION" in
   success|failure) ;;
   *) echo "Refusing source run conclusion: $SOURCE_RUN_CONCLUSION" >&2; exit 2 ;;
@@ -80,8 +87,8 @@ case "$DRIVER_ENGINE" in
   appium|idb) ;;
   *) echo "Unsupported native automation engine: $DRIVER_ENGINE" >&2; exit 2 ;;
 esac
-if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
-  echo 'The extended, context-menu, and accessibility native flows require the Appium engine.' >&2
+if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' || "$PROBE_FLOW_GROUP" == 'compatibility' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
+  echo 'The extended, context-menu, accessibility, and compatibility flows require the Appium engine.' >&2
   exit 2
 fi
 
@@ -161,12 +168,19 @@ test -n "$EXECUTABLE"
 test -f "$APP_PATH/$EXECUTABLE"
 
 RUNNER_ARCH="$(uname -m)"
+RUNNER_MACOS_VERSION="$(sw_vers -productVersion)"
+XCODE_VERSION="$(xcodebuild -version | tr '\n' ' ')"
+RUNNER_MACOS_MAJOR="${RUNNER_MACOS_VERSION%%.*}"
 APP_ARCHS="$(lipo -archs "$APP_PATH/$EXECUTABLE")"
 case "$RUNNER_ARCH" in
   arm64|x86_64) ;;
   *) echo "Unsupported simulator runner architecture: $RUNNER_ARCH" >&2; exit 2 ;;
 esac
 [[ " $APP_ARCHS " == *" $RUNNER_ARCH "* ]]
+case "$PROBE_IOS_RUNTIME:$RUNNER_MACOS_MAJOR:$RUNNER_ARCH" in
+  26:26:arm64|18.5:15:arm64|18.6:15:arm64) ;;
+  *) echo "Requested iOS $PROBE_IOS_RUNTIME requires its mapped ARM64 macOS runner; got macOS $RUNNER_MACOS_VERSION ($RUNNER_ARCH)." >&2; exit 2 ;;
+esac
 
 if LC_ALL=C grep -aFq 'lvgmelaavgmyjjdggzop.supabase.co' "$APP_PATH/main.jsbundle"; then
   echo 'Refusing native QA app whose embedded bundle contains the staging Supabase host.' >&2
@@ -186,7 +200,9 @@ printf '%s\n' \
   "App archive SHA-256: $ZIP_SHA256" \
   "Bundle ID: $BUILT_APP_ID" \
   "UIUserInterfaceStyle: $BUILT_STYLE" \
-  "Runner/app architectures: $RUNNER_ARCH / $APP_ARCHS" | tee "$RESULTS_DIR/source-and-probe.txt"
+  "Runner/app architectures: $RUNNER_ARCH / $APP_ARCHS" \
+  "Runner macOS/Xcode: $RUNNER_MACOS_VERSION / $XCODE_VERSION" \
+  "Requested iOS Simulator runtime: $PROBE_IOS_RUNTIME" | tee "$RESULTS_DIR/source-and-probe.txt"
 printf '%s\n' '- Reused simulator app: bundle ID and architecture match; native binary reused: PASS' >> "$RESULTS_DIR/checklist.txt"
 
 log_phase 'Temporarily enabling the demo routing gate in this disposable checkout.'
@@ -282,22 +298,52 @@ printf '%s\n' \
 printf '%s\n' "Pre-rebundle main.jsbundle SHA-256: $PRE_REBUNDLE_SHA256" "Post-rebundle main.jsbundle SHA-256: $POST_REBUNDLE_SHA256" >> "$RESULTS_DIR/source-and-probe.txt"
 printf '%s\n' '- QA-only demo routing gate diff recorded and restored; embedded Hermes JS/assets refreshed; staging host absent: PASS' >> "$RESULTS_DIR/checklist.txt"
 
-log_phase 'Selecting latest available iPhone simulator on iOS 26.'
-SIMULATOR_ID="$(xcrun simctl list devices available -j | python3 -c '
+log_phase "Selecting an available iPhone simulator for requested iOS $PROBE_IOS_RUNTIME."
+SIMULATOR_SELECTION="$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
+requested = sys.argv[1]
+base_id = "com.apple.CoreSimulator.SimRuntime.iOS-"
 devices = json.load(sys.stdin)["devices"]
-candidates = []
-for runtime, entries in devices.items():
-    if not runtime.startswith("com.apple.CoreSimulator.SimRuntime.iOS-26-"):
-        continue
-    version = tuple(int(part) for part in runtime.rsplit("iOS-", 1)[1].split("-"))
-    candidates.extend((version, device) for device in entries if device.get("isAvailable") and "iPhone" in device.get("name", ""))
-if not candidates:
-    raise SystemExit("No available iPhone simulator on iOS 26.x")
-print(max(candidates, key=lambda item: item[0])[1]["udid"])
-')"
+if requested == "26":
+    candidates = []
+    for runtime_id, entries in devices.items():
+        suffix = runtime_id[len(base_id):] if runtime_id.startswith(base_id) else ""
+        if suffix != "26" and not suffix.startswith("26-"):
+            continue
+        try:
+            version = tuple(int(part) for part in suffix.split("-"))
+        except ValueError:
+            continue
+        candidates.extend((version, runtime_id, device) for device in entries if device.get("isAvailable") and "iPhone" in device.get("name", ""))
+    if not candidates:
+        raise SystemExit("No available iPhone simulator for requested iOS 26.x.")
+    version, runtime_id, device = max(candidates, key=lambda item: item[0])
+else:
+    runtime_id = base_id + requested.replace(".", "-")
+    entries = devices.get(runtime_id, [])
+    candidates = [device for device in entries if device.get("isAvailable") and "iPhone" in device.get("name", "")]
+    if not candidates:
+        raise SystemExit(f"No available iPhone simulator for exact runtime {runtime_id}; refusing fallback to another iOS version.")
+    device = candidates[0]
+print("\t".join((device["udid"], runtime_id, device["name"])))
+' "$PROBE_IOS_RUNTIME")"
+IFS=$'\t' read -r SIMULATOR_ID SIMULATOR_RUNTIME_ID SIMULATOR_NAME <<< "$SIMULATOR_SELECTION"
 test -n "$SIMULATOR_ID"
-printf 'Simulator UDID: %s\n' "$SIMULATOR_ID" | tee "$RESULTS_DIR/simulator.txt"
+printf 'Simulator UDID: %s\nRuntime: %s\nDevice: %s\n' "$SIMULATOR_ID" "$SIMULATOR_RUNTIME_ID" "$SIMULATOR_NAME" | tee "$RESULTS_DIR/simulator.txt"
+python3 - "$RESULTS_DIR/simulator-metadata.json" "$PROBE_IOS_RUNTIME" "$SIMULATOR_RUNTIME_ID" "$SIMULATOR_NAME" "$RUNNER_MACOS_VERSION" "$XCODE_VERSION" "$RUNNER_ARCH" "$APP_ARCHS" <<'PY'
+import json, sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(json.dumps({
+    "requestedIOSRuntime": sys.argv[2],
+    "selectedRuntimeIdentifier": sys.argv[3],
+    "deviceName": sys.argv[4],
+    "runnerMacOSVersion": sys.argv[5],
+    "xcodeVersion": sys.argv[6],
+    "runnerArchitecture": sys.argv[7],
+    "appArchitectures": sys.argv[8],
+}, indent=2) + "\n", encoding="utf-8")
+PY
+printf '%s\n' "Selected simulator runtime $SIMULATOR_RUNTIME_ID on $RUNNER_MACOS_VERSION with $(xcodebuild -version | head -1)" | tee -a "$RESULTS_DIR/source-and-probe.txt"
 
 log_phase "Booting simulator with $SIMULATOR_APPEARANCE appearance."
 if ! xcrun simctl list devices booted | grep -q "$SIMULATOR_ID"; then
@@ -305,7 +351,7 @@ if ! xcrun simctl list devices booted | grep -q "$SIMULATOR_ID"; then
 fi
 xcrun simctl bootstatus "$SIMULATOR_ID" -b 2>&1 | tee -a "$RESULTS_DIR/simulator-boot.log"
 xcrun simctl ui "$SIMULATOR_ID" appearance "$SIMULATOR_APPEARANCE"
-printf '%s\n' '- Selected and booted latest available iPhone on iOS 26: PASS' >> "$RESULTS_DIR/checklist.txt"
+printf '%s\n' "- Selected and booted available iPhone for requested iOS $PROBE_IOS_RUNTIME (runtime $SIMULATOR_RUNTIME_ID): PASS" >> "$RESULTS_DIR/checklist.txt"
 
 log_phase 'Installing the reused simulator app. No project build or backend request is performed.'
 xcrun simctl install "$SIMULATOR_ID" "$APP_PATH" 2>&1 | tee "$RESULTS_DIR/install.log"
