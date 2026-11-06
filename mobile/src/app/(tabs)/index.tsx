@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, SectionList, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, ScrollView, SectionList, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -48,6 +48,7 @@ type Token = { isViewable: boolean; item?: FeedEvent | null; section?: unknown }
 
 export default function FeedScreen() {
   const { space, colors, radius } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { demoPlans } = useLocalSearchParams<{ demoPlans?: string }>();
   useDemoPlans(demoPlans);
@@ -214,73 +215,90 @@ export default function FeedScreen() {
     />
   );
 
-  const topRow = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg }}>
-      <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1, fontWeight: '800' }}>
-        yard.
+  const wordmark = (
+    <AppText variant="title" color="accent" accessibilityRole="header" style={{ letterSpacing: -1, fontWeight: '800' }}>
+      yard.
+    </AppText>
+  );
+  const locationControl = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Location: Charlotte, NC"
+      accessibilityHint="Opens the city picker"
+      // 32pt pill + 2x8 = 48pt tall; the top row is taller than 44pt so this can't reach the scope control.
+      hitSlop={{ top: space.sm, bottom: space.sm }}
+      onPress={() => {
+        selection();
+        router.push('/city');
+      }}
+      style={({ pressed }) => ({
+        minHeight: 32,
+        flexShrink: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.xs,
+        paddingHorizontal: space.md,
+        borderRadius: radius.pill,
+        borderCurve: 'continuous',
+        backgroundColor: colors.surfaceMuted,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Icon name="mappin.circle.fill" size={16} color="accent" />
+      <AppText variant="subheadline" numberOfLines={1} style={{ flexShrink: 1, fontWeight: '600' }}>
+        Charlotte, NC
       </AppText>
-      <View style={{ flex: 1, flexDirection: 'row' }}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Location: Charlotte, NC"
-          accessibilityHint="Opens the city picker"
-          // 32pt pill + 2x8 = 48pt tall; the top row is taller than 44pt so this can't reach the scope control.
-          hitSlop={{ top: space.sm, bottom: space.sm }}
-          onPress={() => {
-            selection();
-            router.push('/city');
-          }}
-          style={({ pressed }) => ({
-            minHeight: 32,
-            flexShrink: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: space.xs,
-            paddingHorizontal: space.md,
-            borderRadius: radius.pill,
-            borderCurve: 'continuous',
-            backgroundColor: colors.surfaceMuted,
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Icon name="mappin.circle.fill" size={16} color="accent" />
-          <AppText variant="subheadline" numberOfLines={1} style={{ flexShrink: 1, fontWeight: '600' }}>
-            Charlotte, NC
-          </AppText>
-          <Icon name="chevron.down" size={10} color="inkSecondary" weight="semibold" />
-        </Pressable>
+      <Icon name="chevron.down" size={10} color="inkSecondary" weight="semibold" />
+    </Pressable>
+  );
+  const mapControl = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={isMap ? 'Show list' : 'Show map'}
+      hitSlop={{ top: space.sm, bottom: space.sm }}
+      onPress={() => {
+        selection();
+        // Coming back from the map, the list places itself on the selected day again.
+        placed.current = false;
+        setTodayOff(false);
+        setView(isMap ? 'list' : 'map');
+      }}
+      style={({ pressed }) => ({
+        minHeight: 32,
+        minWidth: minTouchTarget,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: space.xs,
+        paddingHorizontal: space.md,
+        borderRadius: radius.pill,
+        borderCurve: 'continuous',
+        backgroundColor: colors.surfaceMuted,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Icon name={isMap ? 'list.bullet' : 'map'} size={16} color="accent" />
+      <AppText variant="subheadline" numberOfLines={1} style={{ fontWeight: '600' }}>
+        {isMap ? 'List' : 'Map'}
+      </AppText>
+    </Pressable>
+  );
+  const settingsControl = <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />;
+  const topRow = fontScale > 1.2 ? (
+    <View style={{ gap: space.sm, paddingHorizontal: space.lg }}>
+      {wordmark}
+      {locationControl}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: space.md }}>
+        {mapControl}
+        {settingsControl}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={isMap ? 'Show list' : 'Show map'}
-        hitSlop={{ top: space.sm, bottom: space.sm }}
-        onPress={() => {
-          selection();
-          // Coming back from the map, the list places itself on the selected day again.
-          placed.current = false;
-          setTodayOff(false);
-          setView(isMap ? 'list' : 'map');
-        }}
-        style={({ pressed }) => ({
-          minHeight: 32,
-          minWidth: minTouchTarget,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: space.xs,
-          paddingHorizontal: space.md,
-          borderRadius: radius.pill,
-          borderCurve: 'continuous',
-          backgroundColor: colors.surfaceMuted,
-          opacity: pressed ? 0.7 : 1,
-        })}
-      >
-        <Icon name={isMap ? 'list.bullet' : 'map'} size={16} color="accent" />
-        <AppText variant="subheadline" numberOfLines={1} style={{ fontWeight: '600' }}>
-          {isMap ? 'List' : 'Map'}
-        </AppText>
-      </Pressable>
-      <GlassButton symbol="gearshape" accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+    </View>
+  ) : (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg }}>
+      {wordmark}
+      <View style={{ flex: 1, flexDirection: 'row' }}>{locationControl}</View>
+      {mapControl}
+      {settingsControl}
     </View>
   );
 

@@ -337,6 +337,47 @@ class Flow:
                 candidates.add(frame)
         return max(candidates, key=lambda frame: frame[2] * frame[3]) if candidates else None
 
+    @classmethod
+    def scroll_target(cls, source, label: str):
+        """Describe a hidden accessible control only when a measured ancestor scroll view can reach it."""
+        if isinstance(source, ET.Element):
+            root = source
+        else:
+            try:
+                root = ET.fromstring(source)
+            except ET.ParseError as exc:
+                raise AppiumError(f"XCUITest page source was not valid XML: {exc}") from exc
+        visible = [node for node in cls.accessible_nodes(root) if cls.label_of(node) == label]
+        if len(visible) == 1:
+            return {"visible": True, "frame": cls.frame_of(visible[0])}
+        if len(visible) > 1:
+            return None
+        matches = [
+            node for node in root.iter()
+            if cls.label_of(node) == label
+            and node.attrib.get("accessible", "").lower() == "true"
+            and cls.frame_of(node)
+        ]
+        if len(matches) != 1:
+            return None
+        parents = {child: parent for parent in root.iter() for child in parent}
+        target = matches[0]
+        tx, ty, tw, th = cls.frame_of(target)
+        parent = parents.get(target)
+        while parent is not None:
+            if parent.attrib.get("type") == "XCUIElementTypeScrollView" and parent.attrib.get("visible", "").lower() == "true":
+                viewport = cls.frame_of(parent)
+                if viewport:
+                    sx, sy, sw, sh = viewport
+                    covers_x = sx <= tx and sx + sw >= tx + tw
+                    if covers_x and ty + th > sy + sh:
+                        return {"visible": False, "direction": "up", "frame": cls.frame_of(target), "viewport": viewport}
+                    if covers_x and ty < sy:
+                        return {"visible": False, "direction": "down", "frame": cls.frame_of(target), "viewport": viewport}
+                    return None
+            parent = parents.get(parent)
+        return None
+
     def quick_plan_entries(self, source: str):
         try:
             nodes = ET.fromstring(source).iter()
@@ -417,6 +458,27 @@ class Flow:
                 return source
             time.sleep(0.6)
         raise AssertionError(f"Timed out after {timeout}s waiting for {what}")
+
+    def scroll_until_accessible(self, source: str, label: str, artifact_prefix: str, max_swipes=4):
+        (self.root / f"{artifact_prefix}-before-scroll-page-source.xml").write_text(source, encoding="utf-8")
+        self.capture(f"{artifact_prefix}-before-scroll.png")
+        for attempt in range(max_swipes + 1):
+            target = self.scroll_target(source, label)
+            if target and target.get("visible"):
+                self.record(f"{label} control is visible and accessible", True, f"frame {target.get('frame')}; scroll attempts {attempt}")
+                (self.root / f"{artifact_prefix}-after-scroll-page-source.xml").write_text(source, encoding="utf-8")
+                self.capture(f"{artifact_prefix}-after-scroll.png")
+                return source
+            if not target:
+                self.record(f"{label} is reachable within an observed scroll view", False, "control/scroll relationship is missing or ambiguous")
+            if attempt == max_swipes:
+                self.record(f"{label} becomes visible after bounded scrolling", False, f"not visible after {max_swipes} swipes")
+            if attempt == 0:
+                self.record(f"{label} is below the measured scroll viewport", True, f"control {target['frame']}; viewport {target['viewport']}")
+            self.driver.swipe(target["direction"])
+            source = self.source()
+            (self.root / f"{artifact_prefix}-scroll-{attempt + 1}-page-source.xml").write_text(source, encoding="utf-8")
+        raise AssertionError(f"{label} not reachable")
 
     def click(self, label: str, timeout=45):
         self.driver.click(self.driver.wait_one(label, timeout=timeout))
@@ -775,6 +837,7 @@ class Flow:
         self.capture(f"accessibility-{screen_name}.png")
         source = self.source()
         (self.root / f"accessibility-{screen_name}-page-source.xml").write_text(source, encoding="utf-8")
+        self.assert_header_geometry(screen_name, source)
         findings_path = self.root / f"accessibility-{screen_name}-findings.json"
         try:
             findings = self.driver.execute_mobile("performAccessibilityAudit", {})
@@ -788,6 +851,73 @@ class Flow:
         if not isinstance(findings, list):
             self.record(f"{screen_name} accessibility audit returned a findings list", False, f"unexpected result type {type(findings).__name__}; raw result saved")
         self.record(f"{screen_name} accessibility audit findings saved", True, f"{len(findings)} findings; {'review required' if findings else 'no findings returned'}")
+
+    def header_geometry(self, screen_name: str, source: str):
+        labels = {
+            "feed": (("yard.", "XCUIElementTypeStaticText"), ("Location: Charlotte, NC", "XCUIElementTypeButton"), ("Show map", "XCUIElementTypeButton"), ("Settings", "XCUIElementTypeButton")),
+            "settings": (("Settings", "XCUIElementTypeStaticText"), ("Done", "XCUIElementTypeButton")),
+            "edit-profile": (("Cancel", "XCUIElementTypeButton"), ("Edit profile", "XCUIElementTypeStaticText"), ("Save", "XCUIElementTypeButton")),
+        }
+        required = labels[screen_name]
+        root = ET.fromstring(source)
+        app_frames = {
+            self.frame_of(node) for node in root.iter()
+            if node.attrib.get("type") == "XCUIElementTypeApplication"
+            and node.attrib.get("visible", "").lower() == "true"
+            and self.frame_of(node)
+        }
+        if len(app_frames) != 1:
+            return None
+        app_frame = next(iter(app_frames))
+        nodes = self.accessible_nodes(root)
+        frames = []
+        for label, node_type in required:
+            matches = [node for node in nodes if node.attrib.get("type") == node_type and self.label_of(node) == label and self.frame_of(node)]
+            if len(matches) != 1:
+                return None
+            frames.append((label, self.frame_of(matches[0])))
+        return app_frame, tuple(frames)
+
+    def wait_for_stable_header(self, screen_name: str, predicate, what: str, timeout=90):
+        deadline = time.monotonic() + timeout
+        previous = None
+        stable = 0
+        while time.monotonic() < deadline:
+            source = self.source()
+            geometry = self.header_geometry(screen_name, source) if predicate(source) else None
+            if geometry is not None and geometry == previous:
+                stable += 1
+                if stable >= 1:
+                    return source
+            else:
+                stable = 0
+            previous = geometry
+            time.sleep(0.6)
+        raise AssertionError(f"Timed out after {timeout}s waiting for stable {what} header frames")
+
+    def assert_header_geometry(self, screen_name: str, source: str):
+        geometry = self.header_geometry(screen_name, source)
+        self.record(f"{screen_name} header controls have unique measured frames", geometry is not None, str(geometry))
+        if geometry is None:
+            raise AssertionError(f"Could not measure every expected {screen_name} header control")
+        (ax, ay, aw, ah), frames = geometry
+        in_bounds = all(
+            x >= ax and y >= ay and x + width <= ax + aw and y + height <= ay + ah
+            for _, (x, y, width, height) in frames
+        )
+        overlaps = []
+        for i, (left_label, (lx, ly, lw, lh)) in enumerate(frames):
+            for right_label, (rx, ry, rw, rh) in frames[i + 1:]:
+                if min(lx + lw, rx + rw) > max(lx, rx) and min(ly + lh, ry + rh) > max(ly, ry):
+                    overlaps.append((left_label, right_label))
+        (self.root / f"accessibility-{screen_name}-header-geometry.json").write_text(json.dumps({
+            "appFrame": [ax, ay, aw, ah],
+            "controls": {label: list(frame) for label, frame in frames},
+            "insideAppBounds": in_bounds,
+            "overlaps": overlaps,
+        }, indent=2), encoding="utf-8")
+        self.record(f"{screen_name} header controls stay inside app bounds", in_bounds, str(frames))
+        self.record(f"{screen_name} header controls do not overlap", not overlaps, str(overlaps))
 
     def run_accessibility(self):
         self.restart_to_feed()
@@ -809,25 +939,61 @@ class Flow:
             actual_size = self.driver.execute_mobile("contentSize", {})
             (self.root / "text-size-large.json").write_text(json.dumps({"contentSize": actual_size}, indent=2), encoding="utf-8")
             self.record("accessibility text size applied to simulator", actual_size == "accessibility-extra-extra-extra-large", str(actual_size))
-            source = self.wait_source(lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed"), "Feed after accessibility text-size change")
+            self.driver.restart_app()
+            feed_ready = lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed")
+            source = self.wait_for_stable_header("feed", feed_ready, "Feed after accessibility text-size change")
             self.record("Feed remains available at accessibility text size", self.has_visible(source, "Nearby") and self.has_visible(source, "Feed"))
             self.accessibility_audit("feed")
 
             self.click("Settings")
-            source = self.wait_source(lambda x: self.has_visible(x, "Who sees what") and self.has_visible_exact(x, "Done"), "Settings sheet at accessibility text size")
+            settings_header = lambda x: self.has_visible_exact(x, "Settings") and self.has_visible_exact(x, "Done")
+            source = self.wait_for_stable_header("settings", settings_header, "Settings sheet at accessibility text size")
             self.driver.wait_one("Done")
             self.record("Settings Done control remains reachable at accessibility text size", self.has_visible_exact(source, "Done"))
+            self.capture("accessibility-settings-header.png")
+            (self.root / "accessibility-settings-header-page-source.xml").write_text(source, encoding="utf-8")
+            self.assert_header_geometry("settings", source)
+            source = self.scroll_until_accessible(source, "Who sees what", "accessibility-settings", max_swipes=4)
             self.accessibility_audit("settings")
             self.click("Done")
 
             self.click("Profile")
-            source = self.wait_source(lambda x: self.has_visible(x, "Edit profile"), "Profile tab at accessibility text size")
-            self.record("Profile Edit profile control remains reachable at accessibility text size", self.has_visible(source, "Edit profile"))
+            source = self.wait_source(
+                lambda x: any(
+                    n.attrib.get("type") == "XCUIElementTypeButton"
+                    and self.label_of(n) == "Profile"
+                    and n.attrib.get("value") == "1"
+                    and "Selected" in n.attrib.get("traits", "")
+                    for n in self.accessible_nodes(x)
+                ) and self.scroll_target(x, "Edit profile") is not None,
+                "Profile screen at accessibility text size",
+            )
+            self.record("Profile screen opened at accessibility text size", True)
+            source = self.scroll_until_accessible(source, "Edit profile", "accessibility-profile", max_swipes=4)
             self.click("Edit profile")
-            source = self.wait_source(lambda x: self.has_visible_exact(x, "Save") and self.has_visible_exact(x, "Name"), "Edit Profile sheet at accessibility text size")
-            self.driver.wait_one("Save")
-            self.record("Edit Profile Save control remains reachable at accessibility text size", self.has_visible_exact(source, "Save"))
+            source = self.wait_source(
+                lambda x: self.has_visible_exact(x, "Cancel") and self.has_visible_exact(x, "Save") and self.has_visible_exact(x, "Edit profile"),
+                "Edit Profile sheet header at accessibility text size",
+            )
+            save = self.driver.wait_one("Save")
+            self.record("Edit Profile Save control is exposed at accessibility text size", True, f"enabled={self.driver.attribute(save, 'enabled')}")
+            self.capture("accessibility-edit-profile-header.png")
+            (self.root / "accessibility-edit-profile-header-page-source.xml").write_text(source, encoding="utf-8")
+            self.assert_header_geometry("edit-profile", source)
+            source = self.scroll_until_accessible(source, "Name", "accessibility-edit-profile", max_swipes=4)
             self.accessibility_audit("edit-profile")
+            self.click("Cancel")
+            self.wait_source(
+                lambda x: any(
+                    n.attrib.get("type") == "XCUIElementTypeButton"
+                    and self.label_of(n) == "Profile"
+                    and n.attrib.get("value") == "1"
+                    and "Selected" in n.attrib.get("traits", "")
+                    for n in self.accessible_nodes(x)
+                ),
+                "Profile after canceling the large-text editor",
+            )
+            self.record("Edit Profile Cancel returns to Profile at accessibility text size", True)
         finally:
             if changed_size:
                 try:

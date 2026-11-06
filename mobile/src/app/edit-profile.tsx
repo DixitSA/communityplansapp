@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { AppText, Button, EmptyState, InterestTile, Skeleton, TextField, asSymbol, useTheme, type FieldStatus } from '@/design';
 import { useUsernameAvailability } from '@/features/onboarding/useUsernameAvailability';
@@ -63,47 +63,59 @@ export default function EditProfileSheet() {
 function SheetHeader({ onSave }: { onSave?: { enabled: boolean; saving: boolean; press: () => void } }) {
   const { space } = useTheme();
   const router = useRouter();
+  const { fontScale } = useWindowDimensions();
+  const cancel = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Cancel"
+      accessibilityState={{ disabled: Boolean(onSave?.saving) }}
+      disabled={Boolean(onSave?.saving)}
+      hitSlop={space.md}
+      onPress={() => router.back()}
+    >
+      <AppText variant="body" color={onSave?.saving ? 'inkSecondary' : 'accent'}>
+        Cancel
+      </AppText>
+    </Pressable>
+  );
+  const save = onSave ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={onSave.saving ? 'Saving your profile' : 'Save'}
+      accessibilityState={{ disabled: !onSave.enabled }}
+      disabled={!onSave.enabled}
+      hitSlop={space.md}
+      onPress={onSave.press}
+    >
+      <AppText variant="body" color={onSave.enabled ? 'accent' : 'inkSecondary'} style={{ fontWeight: '600' }}>
+        {onSave.saving ? 'Saving…' : 'Save'}
+      </AppText>
+    </Pressable>
+  ) : <View />;
+  const title = <AppText variant="headline" accessibilityRole="header">Edit profile</AppText>;
+  const largeText = fontScale > 1.2;
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: largeText ? 'column' : 'row',
+        alignItems: largeText ? 'stretch' : 'center',
+        justifyContent: largeText ? 'flex-start' : 'space-between',
         paddingHorizontal: space.lg,
         paddingTop: space.xl,
         paddingBottom: space.md,
+        gap: largeText ? space.sm : 0,
       }}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Cancel"
-        accessibilityState={{ disabled: Boolean(onSave?.saving) }}
-        disabled={Boolean(onSave?.saving)}
-        hitSlop={space.md}
-        onPress={() => router.back()}
-      >
-        <AppText variant="body" color={onSave?.saving ? 'inkSecondary' : 'accent'}>
-          Cancel
-        </AppText>
-      </Pressable>
-      <AppText variant="headline" accessibilityRole="header">
-        Edit profile
-      </AppText>
-      {onSave ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={onSave.saving ? 'Saving your profile' : 'Save'}
-          accessibilityState={{ disabled: !onSave.enabled }}
-          disabled={!onSave.enabled}
-          hitSlop={space.md}
-          onPress={onSave.press}
-        >
-          <AppText variant="body" color={onSave.enabled ? 'accent' : 'inkSecondary'} style={{ fontWeight: '600' }}>
-            {onSave.saving ? 'Saving…' : 'Save'}
-          </AppText>
-        </Pressable>
+      {largeText ? (
+        <>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            {cancel}
+            {save}
+          </View>
+          {title}
+        </>
       ) : (
-        <View />
+        <>{cancel}{title}{save}</>
       )}
     </View>
   );

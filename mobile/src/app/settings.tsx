@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, useWindowDimensions, View } from 'react-native';
 
 import { AppText, Button, Icon, NavRow, useTheme, type SymbolName } from '@/design';
 import { DELETE_ACCOUNT_DETAILS } from '@/features/settings/blockedList';
@@ -29,6 +29,7 @@ function SectionLabel({ children }: { children: string }) {
 /** Settings: who sees what, suggesting events, and sign out. Notifications arrive with push. */
 export default function SettingsSheet() {
   const { colors, space, radius } = useTheme();
+  const { fontScale } = useWindowDimensions();
   const router = useRouter();
   const discoverable = useDiscoverableByPhone();
   const deleteAccount = useDeleteAccount();
@@ -88,9 +89,9 @@ export default function SettingsSheet() {
       <View style={{ backgroundColor: colors.canvas }}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: fontScale > 1.2 ? 'column' : 'row',
+          alignItems: fontScale > 1.2 ? 'stretch' : 'center',
+          justifyContent: fontScale > 1.2 ? 'flex-start' : 'space-between',
           paddingHorizontal: space.lg,
           paddingTop: space.xl,
           paddingBottom: space.md,
@@ -106,6 +107,7 @@ export default function SettingsSheet() {
           accessibilityLabel="Done"
           hitSlop={space.sm}
           onPress={() => router.back()}
+          style={fontScale > 1.2 ? { alignSelf: 'flex-end', marginTop: space.sm } : undefined}
         >
           <AppText variant="body" color="accent" style={{ fontWeight: '600' }}>
             Done
