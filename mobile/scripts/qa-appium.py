@@ -854,9 +854,9 @@ class Flow:
 
     def header_geometry(self, screen_name: str, source: str):
         labels = {
-            "feed": (("yard.", "XCUIElementTypeStaticText"), ("Location: Charlotte, NC", "XCUIElementTypeButton"), ("Show map", "XCUIElementTypeButton"), ("Settings", "XCUIElementTypeButton")),
-            "settings": (("Settings", "XCUIElementTypeStaticText"), ("Done", "XCUIElementTypeButton")),
-            "edit-profile": (("Cancel", "XCUIElementTypeButton"), ("Edit profile", "XCUIElementTypeStaticText"), ("Save", "XCUIElementTypeButton")),
+            "feed": (("yard.", "XCUIElementTypeStaticText", "full"), ("Location: Charlotte, NC", "XCUIElementTypeButton", "full"), ("Show map", "XCUIElementTypeButton", "full"), ("Settings", "XCUIElementTypeButton", "full"), ("popping this week", "XCUIElementTypeStaticText", "horizontal")),
+            "settings": (("Settings", "XCUIElementTypeStaticText", "full"), ("Done", "XCUIElementTypeButton", "full")),
+            "edit-profile": (("Cancel", "XCUIElementTypeButton", "full"), ("Edit profile", "XCUIElementTypeStaticText", "full"), ("Save", "XCUIElementTypeButton", "full")),
         }
         required = labels[screen_name]
         root = ET.fromstring(source)
@@ -871,11 +871,11 @@ class Flow:
         app_frame = next(iter(app_frames))
         nodes = self.accessible_nodes(root)
         frames = []
-        for label, node_type in required:
+        for label, node_type, bounds in required:
             matches = [node for node in nodes if node.attrib.get("type") == node_type and self.label_of(node) == label and self.frame_of(node)]
             if len(matches) != 1:
                 return None
-            frames.append((label, self.frame_of(matches[0])))
+            frames.append((label, self.frame_of(matches[0]), bounds))
         return app_frame, tuple(frames)
 
     def wait_for_stable_header(self, screen_name: str, predicate, what: str, timeout=90):
@@ -902,24 +902,40 @@ class Flow:
             raise AssertionError(f"Could not measure every expected {screen_name} header control")
         (ax, ay, aw, ah), frames = geometry
         in_bounds = all(
-            x >= ax and y >= ay and x + width <= ax + aw and y + height <= ay + ah
-            for _, (x, y, width, height) in frames
+            x >= ax and x + width <= ax + aw and y >= ay
+            and (bounds == "horizontal" or y + height <= ay + ah)
+            for _, (x, y, width, height), bounds in frames
         )
         overlaps = []
-        for i, (left_label, (lx, ly, lw, lh)) in enumerate(frames):
-            for right_label, (rx, ry, rw, rh) in frames[i + 1:]:
+        for i, (left_label, (lx, ly, lw, lh), _left_bounds) in enumerate(frames):
+            for right_label, (rx, ry, rw, rh), _right_bounds in frames[i + 1:]:
                 if min(lx + lw, rx + rw) > max(lx, rx) and min(ly + lh, ry + rh) > max(ly, ry):
                     overlaps.append((left_label, right_label))
         (self.root / f"accessibility-{screen_name}-header-geometry.json").write_text(json.dumps({
             "appFrame": [ax, ay, aw, ah],
-            "controls": {label: list(frame) for label, frame in frames},
+            "controlsAndHeadings": {label: {"frame": list(frame), "verticalBoundsRequired": bounds == "full"} for label, frame, bounds in frames},
             "insideAppBounds": in_bounds,
             "overlaps": overlaps,
         }, indent=2), encoding="utf-8")
-        self.record(f"{screen_name} header controls stay inside app bounds", in_bounds, str(frames))
-        self.record(f"{screen_name} header controls do not overlap", not overlaps, str(overlaps))
+        self.record(f"{screen_name} header and key text fit horizontal app bounds", in_bounds, str(frames))
+        self.record(f"{screen_name} header and key text do not overlap", not overlaps, str(overlaps))
 
     def run_accessibility(self):
+        self._run_accessibility(run_native_audits=True)
+
+    def run_accessibility_layout(self):
+        self._run_accessibility(run_native_audits=False)
+
+    def _run_accessibility(self, run_native_audits: bool):
+        def inspect_screen(screen_name: str):
+            if run_native_audits:
+                self.accessibility_audit(screen_name)
+                return
+            self.capture(f"accessibility-layout-{screen_name}.png")
+            source = self.source()
+            (self.root / f"accessibility-layout-{screen_name}-page-source.xml").write_text(source, encoding="utf-8")
+            self.assert_header_geometry(screen_name, source)
+
         self.restart_to_feed()
         self.settings_demo_preflight()
         initial_size = self.driver.execute_mobile("contentSize", {})
@@ -943,7 +959,7 @@ class Flow:
             feed_ready = lambda x: self.has_visible(x, "Nearby") and self.has_visible(x, "Feed")
             source = self.wait_for_stable_header("feed", feed_ready, "Feed after accessibility text-size change")
             self.record("Feed remains available at accessibility text size", self.has_visible(source, "Nearby") and self.has_visible(source, "Feed"))
-            self.accessibility_audit("feed")
+            inspect_screen("feed")
 
             self.click("Settings")
             settings_header = lambda x: self.has_visible_exact(x, "Settings") and self.has_visible_exact(x, "Done")
@@ -954,7 +970,7 @@ class Flow:
             (self.root / "accessibility-settings-header-page-source.xml").write_text(source, encoding="utf-8")
             self.assert_header_geometry("settings", source)
             source = self.scroll_until_accessible(source, "Who sees what", "accessibility-settings", max_swipes=4)
-            self.accessibility_audit("settings")
+            inspect_screen("settings")
             self.click("Done")
 
             self.click("Profile")
@@ -981,7 +997,7 @@ class Flow:
             (self.root / "accessibility-edit-profile-header-page-source.xml").write_text(source, encoding="utf-8")
             self.assert_header_geometry("edit-profile", source)
             source = self.scroll_until_accessible(source, "Name", "accessibility-edit-profile", max_swipes=4)
-            self.accessibility_audit("edit-profile")
+            inspect_screen("edit-profile")
             self.click("Cancel")
             self.wait_source(
                 lambda x: any(
@@ -1109,7 +1125,7 @@ def main():
     parser.add_argument("--server-url", required=True)
     parser.add_argument("--appearance", choices=("light", "dark"), required=True)
     parser.add_argument("--results-dir", required=True, type=Path)
-    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "calendar-save", "profile-interests", "map", "context-menu", "accessibility"), default=("profile", "filters", "calendar"))
+    parser.add_argument("--flows", nargs="+", choices=("profile", "filters", "calendar", "calendar-save", "profile-interests", "map", "context-menu", "accessibility", "accessibility-layout"), default=("profile", "filters", "calendar"))
     args = parser.parse_args()
     parsed_url = urllib.parse.urlparse(args.server_url)
     if parsed_url.scheme != "http" or parsed_url.hostname != "127.0.0.1" or parsed_url.port != 4723:

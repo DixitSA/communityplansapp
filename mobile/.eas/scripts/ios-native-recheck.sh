@@ -27,6 +27,7 @@ case "$PROBE_FLOW_GROUP" in
   extended) PROBE_FLOWS=(profile-interests map context-menu) ;;
   context-menu) PROBE_FLOWS=(context-menu) ;;
   accessibility) PROBE_FLOWS=(accessibility) ;;
+  accessibility-layout) PROBE_FLOWS=(accessibility-layout) ;;
   compatibility) PROBE_FLOWS=(map calendar) ;;
   *) echo "Unsupported native flow group: $PROBE_FLOW_GROUP" >&2; exit 2 ;;
 esac
@@ -88,8 +89,8 @@ case "$DRIVER_ENGINE" in
   appium|idb) ;;
   *) echo "Unsupported native automation engine: $DRIVER_ENGINE" >&2; exit 2 ;;
 esac
-if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' || "$PROBE_FLOW_GROUP" == 'compatibility' || "$PROBE_FLOW_GROUP" == 'calendar-save' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
-  echo 'The extended, context-menu, accessibility, compatibility, and calendar-save flows require the Appium engine.' >&2
+if [[ ( "$PROBE_FLOW_GROUP" == 'extended' || "$PROBE_FLOW_GROUP" == 'context-menu' || "$PROBE_FLOW_GROUP" == 'accessibility' || "$PROBE_FLOW_GROUP" == 'accessibility-layout' || "$PROBE_FLOW_GROUP" == 'compatibility' || "$PROBE_FLOW_GROUP" == 'calendar-save' ) && "$DRIVER_ENGINE" != 'appium' ]]; then
+  echo 'The extended, context-menu, accessibility, accessibility-layout, compatibility, and calendar-save flows require the Appium engine.' >&2
   exit 2
 fi
 

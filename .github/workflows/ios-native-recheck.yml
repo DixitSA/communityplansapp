@@ -29,10 +29,10 @@ on:
         default: appium
         options: [appium, idb]
       flow_group:
-        description: 'all = core profile/filters/calendar; calendar-save = disposable simulator Add submission; extended = profile-interests/map/context-menu; context-menu = menu only; accessibility = large text/audits; compatibility = map/calendar'
+        description: 'all = core profile/filters/calendar; calendar-save = disposable simulator Add submission; extended = profile-interests/map/context-menu; context-menu = menu only; accessibility = large text/XCTest audits; accessibility-layout = large text geometry/interactions; compatibility = map/calendar'
         type: choice
         default: all
-        options: [all, profile, filters, calendar, calendar-save, filters-calendar, extended, context-menu, accessibility, compatibility]
+        options: [all, profile, filters, calendar, calendar-save, filters-calendar, extended, context-menu, accessibility, accessibility-layout, compatibility]
 
 permissions:
   contents: read

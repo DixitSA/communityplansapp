@@ -12,14 +12,18 @@ export type SpotlightRailProps = { events: SpotlightEvent[] };
 /** "popping this week": a swipeable row of compact event cards at the top of the feed. */
 export function SpotlightRail({ events }: SpotlightRailProps) {
   const { space } = useTheme();
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const cardWidth = width - space.lg * 2 - PEEK;
 
   return (
     <View style={{ gap: space.sm, paddingTop: space.md, paddingBottom: space.xs }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.lg }}>
         <Icon name="flame.fill" size={24} color="hot" />
-        <AppText variant="sectionTitle" accessibilityRole="header">
+        <AppText
+          variant={fontScale > 1.2 ? 'title2' : 'sectionTitle'}
+          accessibilityRole="header"
+          style={{ flexShrink: 1 }}
+        >
           popping this week
         </AppText>
       </View>
