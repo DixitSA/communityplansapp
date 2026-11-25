@@ -1,301 +1,281 @@
-import { AbsoluteFill, Img, Series, interpolate, staticFile, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Audio, Easing, Sequence, Series, interpolate, staticFile, useCurrentFrame } from 'remotion';
 
-import { Centered, Phone, Words, useEnter } from './components';
-import { SCENES, colors, font } from './theme';
+import { Burst, Caption, Screen, Tap, at, useEnter } from './components';
+import { Messages, type Msg } from './Messages';
+import { BEAT, PT, SCENES, STATUS_BAR, colors, font } from './theme';
 
-const PAD = 90;
+// Scene start frames, for the sound effects.
+const S = (() => {
+  let t = 0;
+  const out = {} as Record<keyof typeof SCENES, number>;
+  for (const [k, v] of Object.entries(SCENES)) {
+    out[k as keyof typeof SCENES] = t;
+    t += v;
+  }
+  return out;
+})();
 
-/** 1. The hook: the question every group chat asks. */
-function Hook() {
-  const frame = useCurrentFrame();
-  const glow = interpolate(frame, [0, SCENES.hook], [0.9, 1.15]);
-  return (
-    <AbsoluteFill style={{ background: colors.night }}>
-      <div
-        style={{
-          position: 'absolute',
-          inset: -200,
-          background: `radial-gradient(circle at 30% 40%, ${colors.accent}aa 0%, transparent 45%), radial-gradient(circle at 75% 70%, ${colors.hot}88 0%, transparent 40%)`,
-          transform: `scale(${glow})`,
-        }}
-      />
-      <Centered style={{ alignItems: 'flex-start', padding: PAD }}>
-        <Words text="it's friday night." size={128} color="#FFFFFF" />
-        <Words text="what are we doing?" size={128} color={colors.peach} delay={26} style={{ marginTop: 24 }} />
-      </Centered>
-    </AbsoluteFill>
-  );
-}
+const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
-const MONTAGE = [
-  { img: 'music-1.jpg', word: 'live music' },
-  { img: 'food_drinks-1.jpg', word: 'food trucks' },
-  { img: 'nightlife-1.jpg', word: 'warehouse parties' },
-  { img: 'sports-1.jpg', word: 'game day' },
-  { img: 'arts_culture-1.jpg', word: 'art nights' },
+const THREAD: Msg[] = [
+  { at: 25, from: 'them', text: "it's friday. wtm?", typing: 16 },
+  { at: 58, from: 'me', text: "idk everything's kinda dead" },
+  { at: 100, from: 'them', text: "nah there's literally so much going on", typing: 20 },
+  { at: 132, from: 'them', card: true },
+  { at: 172, from: 'me', text: "wait maya's going??" },
+  { at: 200, from: 'me', text: 'say less' },
 ];
 
-/** 2. Quick cuts of the city. */
-function Montage() {
+/** 1. The group chat. Ends by pushing into the app on the drop. */
+function Texts() {
   const frame = useCurrentFrame();
-  const per = Math.ceil(SCENES.montage / MONTAGE.length);
-  const i = Math.min(MONTAGE.length - 1, Math.floor(frame / per));
-  const local = frame - i * per;
-  const shot = MONTAGE[i];
+  const out = interpolate(frame, [SCENES.texts - 10, SCENES.texts], [1, 1.12], clamp);
+  const fade = interpolate(frame, [SCENES.texts - 6, SCENES.texts], [0, 1], clamp);
+  return (
+    <AbsoluteFill style={{ background: '#FFF' }}>
+      <AbsoluteFill style={{ transform: `scale(${out})` }}>
+        <Messages messages={THREAD} />
+      </AbsoluteFill>
+      <AbsoluteFill style={{ background: colors.canvas, opacity: fade }} />
+    </AbsoluteFill>
+  );
+}
+
+/** Push in from the right, like opening a screen. */
+function usePush() {
+  const s = useEnter(0, { damping: 20, stiffness: 170 });
+  return { transform: `translateX(${interpolate(s, [0, 1], [380, 0])}px)`, opacity: Math.min(1, s * 1.6) };
+}
+
+const WAREHOUSE_ROW_PT = 913; // "Warehouse Party" in the feed's tomorrow list (full capture)
+const FEED_SCROLL = 1500;
+
+/** 2. The feed, scrolled like a screen recording. */
+function Feed() {
+  const frame = useCurrentFrame();
+  const scroll = interpolate(frame, [22, 90], [0, FEED_SCROLL], { ...clamp, easing: Easing.bezier(0.3, 0.0, 0.1, 1) });
+  const zoomIn = interpolate(useEnter(0, { damping: 18 }), [0, 1], [1.08, 1]);
+  const row = at(196, WAREHOUSE_ROW_PT);
+  return (
+    <AbsoluteFill style={{ transform: `scale(${zoomIn})` }}>
+      <Screen src="feed-full.png" scroll={scroll} statusBg={colors.canvas}>
+        <Tap x={row.x} y={row.y} at={106} />
+      </Screen>
+      <Caption text="every event in charlotte. one feed." at={6} top={1580} />
+    </AbsoluteFill>
+  );
+}
+
+const EVENT_SCROLL = 569; // bottom of the event page lines up with the bottom of the frame
+const FRIENDS = { top: 625, bottom: 685, left: 16, right: 377 }; // pt, the "friends going" row
+const GOING = { x: 349, y: 771 }; // pt, the Going button
+
+/** 3. The event page: who's going. */
+function Event() {
+  const frame = useCurrentFrame();
+  const push = usePush();
+  const scroll = interpolate(frame, [40, 64], [0, EVENT_SCROLL], { ...clamp, easing: Easing.bezier(0.3, 0.0, 0.1, 1) });
+  const ring = useEnter(66, { damping: 10, stiffness: 180 });
+  const pulse = 1 + Math.sin(frame / 4) * 0.01;
   return (
     <AbsoluteFill style={{ background: '#000' }}>
-      <Img
-        src={staticFile(shot.img)}
-        style={{
-          position: 'absolute',
-          height: '100%',
-          left: '50%',
-          transform: `translateX(-50%) scale(${interpolate(local, [0, per], [1.08, 1.2])})`,
-        }}
-      />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.75) 100%)' }} />
-      <div style={{ position: 'absolute', left: PAD, right: PAD, bottom: 260, fontFamily: font, color: '#FFFFFF' }}>
-        <div style={{ fontSize: 64, fontWeight: 600, opacity: 0.9 }}>charlotte has</div>
-        <div key={i} style={{ fontSize: 132, fontWeight: 900, letterSpacing: -4, lineHeight: 1 }}>
-          <Words text={shot.word} size={132} color="#FFFFFF" stagger={2} />
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-}
-
-/** A canvas scene: a kinetic caption on top and a phone rising from below. */
-const PHONE_W = 720;
-const PHONE_TOP = 560;
-const SCREEN_H = (PHONE_W * 1704) / 786;
-const BEZEL = PHONE_W * 0.03;
-
-/**
- * `highlight` pans the phone up at `from` and rings a band of the screen, given as fractions of the
- * 393×852 pt screen (top/bottom) — e.g. the "friends going" row on the event page.
- */
-function PhoneScene({
-  caption,
-  accent,
-  src,
-  highlight,
-}: {
-  caption: string;
-  accent?: string;
-  src: string;
-  highlight?: { from: number; top: number; bottom: number; pan: number };
-}) {
-  const frame = useCurrentFrame();
-  const rise = useEnter(4, { damping: 18, stiffness: 90 });
-  const pan = highlight
-    ? interpolate(frame, [highlight.from, highlight.from + 22], [0, highlight.pan], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
-    : 0;
-  // Always call the hook (rules of hooks); without a highlight it's simply unused.
-  const ringIn = useEnter((highlight?.from ?? 0) + 18, { damping: 10, stiffness: 160 });
-  const ring = highlight ? ringIn : 0;
-  const pulse = 1 + Math.sin(frame / 5) * 0.012;
-  return (
-    <AbsoluteFill style={{ background: colors.canvas, overflow: 'hidden' }}>
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: PHONE_TOP,
-          transform: `translate(-50%, ${interpolate(rise, [0, 1], [1400, 0]) - pan}px)`,
-        }}
-      >
-        <Phone src={src} width={PHONE_W} />
-        {highlight ? (
+      <AbsoluteFill style={push}>
+        <Screen src="event-open.png" scroll={scroll} statusBg="#000" statusTone="light">
           <div
             style={{
               position: 'absolute',
-              left: BEZEL + PHONE_W * 0.02,
-              right: BEZEL + PHONE_W * 0.02,
-              top: BEZEL + SCREEN_H * highlight.top - 14,
-              height: SCREEN_H * (highlight.bottom - highlight.top) + 28,
-              borderRadius: 44,
+              left: FRIENDS.left * PT - 12,
+              width: (FRIENDS.right - FRIENDS.left) * PT + 24,
+              top: STATUS_BAR + FRIENDS.top * PT - 12,
+              height: (FRIENDS.bottom - FRIENDS.top) * PT + 24,
+              borderRadius: 52,
               border: `8px solid ${colors.hot}`,
-              boxShadow: `0 0 0 14px ${colors.hot}33`,
+              boxShadow: `0 0 0 16px ${colors.hot}30`,
               opacity: ring,
-              transform: `scale(${interpolate(ring, [0, 1], [1.15, 1]) * pulse})`,
+              transform: `scale(${interpolate(ring, [0, 1], [1.12, 1]) * pulse})`,
             }}
           />
-        ) : null}
-      </div>
-      {/* Caption band sits above the phone so a panned phone never covers it. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          paddingTop: 150,
-          paddingLeft: PAD,
-          paddingRight: PAD,
-          paddingBottom: 60,
-          background: `linear-gradient(180deg, ${colors.canvas} 82%, ${colors.canvas}00 100%)`,
-        }}
-      >
-        <Words text={caption} size={96} />
-        {accent ? <Words text={accent} size={96} color={colors.accent} delay={10} /> : null}
-      </div>
+        </Screen>
+      </AbsoluteFill>
+      <Caption text="and who's actually going 👀" at={68} top={330} />
     </AbsoluteFill>
   );
 }
 
-/** 5. The Going tap, with a burst. */
+/** 4. Tap Going. */
 function Going() {
   const frame = useCurrentFrame();
-  const tap = frame >= 22;
-  const press = interpolate(frame, [16, 22, 30], [1, 0.9, 1.08], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const settle = interpolate(frame, [30, 40], [1.08, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const scale = frame < 30 ? press : settle;
-  const burst = interpolate(frame, [22, 55], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const after = useEnter(56);
+  const g = at(GOING.x, GOING.y);
+  const y = g.y - EVENT_SCROLL;
+  const press = interpolate(frame, [12, 15, 22], [1, 0.97, 1], clamp);
+  const banner = useEnter(30, { damping: 16, stiffness: 150 });
   return (
-    <AbsoluteFill style={{ background: tap ? colors.accent : colors.canvas }}>
-      <div style={{ position: 'absolute', top: 260, left: PAD, right: PAD }}>
-        <Words text="tap Going." size={120} color={tap ? '#FFFFFF' : colors.ink} />
-      </div>
-      <Centered>
-        {/* rings and sparkles */}
-        {[0, 1].map((r) => (
-          <div
-            key={r}
-            style={{
-              position: 'absolute',
-              width: 420,
-              height: 420,
-              borderRadius: 420,
-              border: `6px solid ${colors.peach}`,
-              opacity: (1 - burst) * (tap ? 1 : 0),
-              transform: `scale(${0.6 + burst * (1.6 + r * 0.6)})`,
-            }}
-          />
-        ))}
-        {Array.from({ length: 16 }).map((_, k) => {
-          const a = (k / 16) * Math.PI * 2;
-          const d = burst * (260 + (k % 3) * 60);
-          return (
-            <div
-              key={k}
-              style={{
-                position: 'absolute',
-                width: 22,
-                height: 22,
-                borderRadius: 22,
-                background: k % 2 ? colors.peach : '#FFFFFF',
-                opacity: tap ? 1 - burst : 0,
-                transform: `translate(${Math.cos(a) * d}px, ${Math.sin(a) * d}px)`,
-              }}
-            />
-          );
-        })}
+    <AbsoluteFill style={{ background: '#000' }}>
+      <AbsoluteFill style={{ transform: `scale(${press})`, transformOrigin: `${g.x}px ${y}px` }}>
+        <Screen src="event-open.png" scroll={EVENT_SCROLL} statusBg="#000" statusTone="light" />
+      </AbsoluteFill>
+      <Tap x={g.x} y={y} at={14} />
+      <Burst x={g.x} y={y} at={16} />
+      {/* an in-app style toast */}
+      <div
+        style={{
+          position: 'absolute',
+          top: STATUS_BAR + 20,
+          left: 40,
+          right: 40,
+          padding: '30px 36px',
+          borderRadius: 40,
+          background: 'rgba(255,255,255,0.96)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+          fontFamily: font,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 26,
+          transform: `translateY(${interpolate(banner, [0, 1], [-360, 0])}px)`,
+        }}
+      >
         <div
           style={{
-            transform: `scale(${scale})`,
-            width: 420,
-            height: 260,
-            borderRadius: 64,
-            background: tap ? '#FFFFFF' : colors.surface,
-            boxShadow: '0 40px 80px rgba(0,0,0,0.25)',
+            width: 90,
+            height: 90,
+            borderRadius: 24,
+            background: colors.accent,
+            color: '#FFF',
+            fontSize: 40,
+            fontWeight: 900,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 18,
-            fontFamily: font,
           }}
         >
-          <svg width="96" height="96" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke={colors.accent} strokeWidth="2" fill={tap ? colors.accentSoft : 'none'} />
-            <path d="M7.5 12.5l3 3 6-6.5" stroke={colors.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div style={{ fontSize: 64, fontWeight: 800, color: colors.accent }}>Going</div>
+          y.
         </div>
-      </Centered>
-      <div style={{ position: 'absolute', bottom: 300, left: PAD, right: PAD, opacity: after }}>
-        <Words text="you're in." size={150} color="#FFFFFF" delay={56} />
+        <div>
+          <div style={{ fontSize: 40, fontWeight: 800, color: colors.ink }}>you're Going 🎉</div>
+          <div style={{ fontSize: 34, color: colors.inkSecondary, marginTop: 4 }}>Warehouse Party chat unlocked</div>
+        </div>
       </div>
+      <Caption text="tap Going → you're in the group chat" at={40} top={880} />
     </AbsoluteFill>
   );
 }
 
-/** 8. Wordmark. */
-function EndCard() {
-  const mark = useEnter(6, { damping: 12, stiffness: 140 });
-  const tag = useEnter(30);
-  const foot = useEnter(60);
+/** 5. The event chat. */
+function Chat() {
+  const push = usePush();
   return (
-    <AbsoluteFill style={{ background: colors.canvas }}>
-      <Centered>
+    <AbsoluteFill style={{ background: '#FBE1EA' }}>
+      <AbsoluteFill style={push}>
+        <Screen src="chat.png" statusBg="rgb(251,225,234)" />
+      </AbsoluteFill>
+      <Caption text="where the plan actually happens" at={10} top={1560} />
+    </AbsoluteFill>
+  );
+}
+
+/** 6. Back in the texts. */
+function Callback() {
+  const thread: Msg[] = [
+    ...THREAD.map((m) => ({ ...m, at: m.at - 400, typing: undefined })),
+    { at: 4, from: 'me', text: "ok i'm Going" },
+    { at: 34, from: 'them', text: 'bet. see u at 9 🔥', typing: 14 },
+  ];
+  return (
+    <AbsoluteFill>
+      <Messages messages={thread} />
+    </AbsoluteFill>
+  );
+}
+
+/** 7. The end card, slammed in on the downbeat. */
+function End() {
+  const frame = useCurrentFrame();
+  const mark = useEnter(0, { damping: 11, stiffness: 260 });
+  const line = useEnter(BEAT * 2, { damping: 14 });
+  const foot = useEnter(BEAT * 4, { damping: 18 });
+  const shake = frame < 8 ? Math.sin(frame * 3) * (8 - frame) * 1.5 : 0;
+  return (
+    <AbsoluteFill style={{ background: colors.canvas, transform: `translate(${shake}px, ${-shake * 0.6}px)` }}>
+      <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', fontFamily: font }}>
         <div
           style={{
-            fontFamily: font,
-            fontSize: 320,
+            fontSize: 330,
             fontWeight: 900,
-            letterSpacing: -14,
+            letterSpacing: -16,
             color: colors.accent,
-            transform: `scale(${interpolate(mark, [0, 1], [0.6, 1])})`,
-            opacity: mark,
+            transform: `scale(${interpolate(mark, [0, 1], [1.6, 1])})`,
+            opacity: Math.min(1, mark * 2),
           }}
         >
           yard<span style={{ color: colors.hot }}>.</span>
         </div>
-        <div style={{ fontFamily: font, fontSize: 72, fontWeight: 800, color: colors.ink, opacity: tag, marginTop: 10 }}>
-          find your people.
-        </div>
         <div
           style={{
-            fontFamily: font,
-            fontSize: 40,
-            fontWeight: 600,
-            color: colors.inkSecondary,
-            opacity: foot,
-            marginTop: 90,
-            textAlign: 'center',
-            lineHeight: 1.4,
+            fontSize: 80,
+            fontWeight: 800,
+            color: colors.ink,
+            letterSpacing: -2,
+            opacity: line,
+            transform: `translateY(${interpolate(line, [0, 1], [30, 0])}px)`,
           }}
         >
-          charlotte · coming soon on the App Store
+          know the move.
         </div>
-      </Centered>
+        <div style={{ position: 'absolute', bottom: 230, fontSize: 40, fontWeight: 600, color: colors.inkSecondary, opacity: foot }}>
+          charlotte · coming soon to the App Store
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 }
 
+/** Sound effects, placed on the full timeline. */
+const SFX: { file: string; at: number; volume?: number }[] = [
+  { file: 'sfx-receive.wav', at: 25 },
+  { file: 'sfx-send.wav', at: 58 },
+  { file: 'sfx-receive.wav', at: 100 },
+  { file: 'sfx-receive.wav', at: 132 },
+  { file: 'sfx-send.wav', at: 172 },
+  { file: 'sfx-send.wav', at: 200 },
+  { file: 'sfx-tap.wav', at: S.feed + 106 },
+  { file: 'sfx-tap.wav', at: S.going + 14 },
+  { file: 'sfx-sparkle.wav', at: S.going + 16, volume: 0.8 },
+  { file: 'sfx-send.wav', at: S.callback + 4 },
+  { file: 'sfx-receive.wav', at: S.callback + 34 },
+];
+
 export function Trailer() {
   return (
-    <Series>
-      <Series.Sequence durationInFrames={SCENES.hook}>
-        <Hook />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.montage}>
-        <Montage />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.feed}>
-        <PhoneScene caption="everything happening in charlotte." accent="one feed." src="feed.png" />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.friends}>
-        <PhoneScene
-          caption="see which friends"
-          accent="are going."
-          src="event.png"
-          highlight={{ from: 50, top: 625 / 852, bottom: 685 / 852, pan: 560 }}
-        />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.going}>
-        <Going />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.chat}>
-        <PhoneScene caption="the plan happens" accent="in the chat." src="chat.png" />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.privacy}>
-        <PhoneScene caption="Interested stays yours." accent="only you see it." src="profile.png" />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={SCENES.end}>
-        <EndCard />
-      </Series.Sequence>
-    </Series>
+    <AbsoluteFill style={{ background: '#000' }}>
+      <Audio src={staticFile('music.wav')} volume={0.9} />
+      {SFX.map((s, i) => (
+        <Sequence key={i} from={s.at} durationInFrames={30}>
+          <Audio src={staticFile(s.file)} volume={s.volume ?? 0.7} />
+        </Sequence>
+      ))}
+      <Series>
+        <Series.Sequence durationInFrames={SCENES.texts}>
+          <Texts />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.feed}>
+          <Feed />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.event}>
+          <Event />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.going}>
+          <Going />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.chat}>
+          <Chat />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.callback}>
+          <Callback />
+        </Series.Sequence>
+        <Series.Sequence durationInFrames={SCENES.end}>
+          <End />
+        </Series.Sequence>
+      </Series>
+    </AbsoluteFill>
   );
 }
